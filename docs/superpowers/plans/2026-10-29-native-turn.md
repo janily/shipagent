@@ -23,28 +23,28 @@
 ## Task A — typed boundary and reducer (T-0-05/T-0-06 prerequisites)
 Files: protocol/src/prototype.rs; client/src/api.rs; store/src/core.rs; store/tests/streaming.rs.
 Produces: Workspace/Session/Message/SessionEvent DTOs; WorkbenchApi facade; ChatState::apply and optimistic lifecycle.
-- [ ] Write replay tests for text delta/complete/discard, optimistic user replacement, tools, permission, interruption and session isolation; observe RED.
-- [ ] Implement only supported prototype events, preserve unknown raw payload; keep pure state independent of GPUI.
-- [ ] Typed methods for workspace/session bootstrap, send/cancel/permission/model connection setup; exact positional args from upstream.
-- [ ] Core tests/fmt/clippy and task commit.
+- [x] Write replay tests for text delta/complete/discard, optimistic user replacement, tools, permission, interruption and session isolation; observe RED.
+- [x] Implement only supported prototype events, preserve unknown raw payload; keep pure state independent of GPUI.
+- [x] Typed methods for workspace/session bootstrap, send/cancel/permission/model connection setup; exact positional args from upstream.
+- [x] Core tests/fmt/clippy and task commit.
 
 ## Task B — local fake model and real full turn (minimal T-0-08 supporting T-0-06)
 Files: tools/fake-llm/server.mjs and tests; client/tests or app integration harness.
 Produces: loopback HTTP SSE endpoint, text → read tool call → final text based on actual read result.
-- [ ] Test SSE framing, tool-call finish_reason, and rejecting a second response without tool result.
-- [ ] Start real bundled backend with isolated config; configure custom OpenAI endpoint via RPC, create safe session and send.
-- [ ] Assert actual tool_start/tool_result and final persisted messages; cancellation and failures do not count as complete success.
-- [ ] Bound all waits and clean up processes; commit evidence, not credentials or session contents.
+- [x] Test SSE framing, tool-call finish_reason, and rejecting a second response without tool result.
+- [x] Start real bundled backend with isolated config; configure custom OpenAI endpoint via RPC, create safe session and send.
+- [x] Assert actual tool_start/tool_result and final persisted messages; cancellation and failures do not count as complete success.
+- [x] Bound all waits and clean up processes; commit evidence, not credentials or session contents.
 
 ## Task C — native UI and controller (T-0-05/T-0-06)
 Files: ui/src/{workbench,chat,composer}.rs; app/src/{lib,controller,brand}.rs; apps/workbench/src/main.rs; locales and UI tests.
 Produces: runnable native workbench, virtual MessageScroller, incremental TextViewState, native Textarea, send/stop, session switching/new, permission prompt, truthful connected/loading/error states.
-- [ ] Create headless UI tests: reducer-fed stream updates, input submission/stop and permission intents, final rendered answer; observe RED.
-- [ ] Build views with Kit controls and semantic tokens; preserve scrolling and cached Markdown per message.
-- [ ] App asynchronously starts sidecar or uses explicitly configured local remote endpoint, binds workspace, bootstraps sessions and consumes events in <=16ms batches.
-- [ ] Hook quit to cancel and shutdown; no synchronous IO in render/main GPUI thread.
-- [ ] Run full native check/build, UI tests and real backend tests, inspect native screenshot if environment supports it.
-- [ ] Record timings as measurements (not benchmark success), commit and push a reviewable PR.
+- [x] Create headless UI tests: reducer-fed stream updates, input submission/stop and permission intents, final rendered answer; observe RED.
+- [x] Build views with Kit controls and semantic tokens; preserve scrolling and cached Markdown per message.
+- [x] App asynchronously starts sidecar or uses explicitly configured local remote endpoint, binds workspace, bootstraps sessions and consumes events in <=16ms batches.
+- [x] Hook quit to cancel and shutdown; no synchronous IO in render/main GPUI thread.
+- [x] Run full native check/build, UI tests and real backend tests, inspect native screenshot if environment supports it.
+- [x] Record timings as measurements (not benchmark success), commit and push a reviewable PR.
 
 ## Remaining phase-zero gates
 T-0-07 full codegen feasibility, T-0-09 macOS signing and clean-machine validation, T-0-10 broader component samples and T-0-11 report remain independent. Completing this plan does not itself pass every phase-zero gate.
