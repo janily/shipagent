@@ -7,6 +7,12 @@ repository.workspace = true
 publish = false
 
 [dependencies]
+agentkit-protocol.workspace = true
+serde_json.workspace = true
+smol.workspace = true
+async-channel.workspace = true
+uuid.workspace = true
+secrecy.workspace = true
 agentkit-client.workspace = true
 agentkit-sidecar.workspace = true
 agentkit-store.workspace = true

@@ -209,3 +209,6 @@ impl RpcClient {
         let _ = self.stop.try_send(());
     }
 }
+
+/// Typed subset used by the phase-zero native workbench.
+pub mod api;

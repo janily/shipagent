@@ -17,3 +17,6 @@ pub struct Endpoint {
     /// Per-process authentication secret.
     pub token: secrecy::SecretString,
 }
+
+/// Phase-zero handwritten boundary types; code generation follows separately.
+pub mod prototype;
