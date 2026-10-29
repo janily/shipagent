@@ -22,7 +22,7 @@ fake-llm 只发送工具调用，不读取文件。第二次请求必须包含�
 - 上游 codec 要求所有 envelope 都有非空 id；旧 seq_ack 无 id，导致连接在第 5 秒断开。新增真实 WebSocket 回归测试，确认 ack 有 id 且仍可 Pong/后续 invoke。
 - 加载时 Enter 不得进入 submitting；加载失败保留 controller 旧会话；error 后等待 complete 才解除忙碌，防止并发发送。
 - SessionEvent 序列化保留原始未知字段；有往返测试。
-- GPUI 退出回调只有 200ms，不能在其中等待 5 秒清理。正常退出先等待保留的启动任务、停止会话并回收后端，再退出；启动中关闭也等待启动任务清理。系统退出回调使用短期限兜底。
+- GPUI 退出回调只有 200ms，不能在其中等待 5 秒清理。正常退出先等待保留的启动任务、停止会话并回收后端，再退出；启动中关闭也等待启动任务清理。系统退出回调使用短期限兜底。显式设置 QuitMode::Explicit，防止 Linux 最后窗口关闭自动退出绕过等待。实际最新原生程序在窗口出现立即 Ctrl+Q、就绪后 Ctrl+Q、启动中 WM_DELETE_WINDOW 三种情况下均 exit 0，所创建的后端/Pi 进程均已回收。启动后的初始化失败也显式等待后端回收，退出等待期间禁止重新启动。
 
 ## 范围及剩余门槛
 
@@ -33,3 +33,11 @@ fake-llm 只发送工具调用，不读取文件。第二次请求必须包含�
 T-0-07 完整 DTO/codegen 可行性、T-0-08 更广的 50 token/s 故障脚本、T-0-09 macOS 签名公证与干净机、T-0-10 更广组件样板和 T-0-11 阶段报告仍未全部完成。当前不标记阶段 0 整体验收通过。
 
 Cargo.lock 为 Kit test-support 同时解析其可选 gpui-fast 依赖，将共享 taffy 固定到 0.15.0、unicode-properties 到 0.1.3；Kit=0.8.1 与实际 gpui-pre=0.3.10 未变。新增可选平台依赖也纳入依赖审计。
+
+## 原生窗口截图
+
+以下截图来自真实 Linux 原生程序和本地 fixture 回合，非 HTML 预览。窗口经 X11 调整为 1440×900；工具卡内容和最终答复来自上述真实链路。
+
+![浅色实时工具回合](images/native-agent-light.png)
+
+![深色实时工具回合](images/native-agent-dark.png)

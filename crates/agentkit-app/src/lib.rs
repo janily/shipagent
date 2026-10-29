@@ -38,6 +38,8 @@ pub fn run(brand_toml: &str) -> Result<()> {
     let runtime: controller::RuntimeSlot = Rc::new(RefCell::new(None));
     let startup: controller::StartupSlot = Rc::new(RefCell::new(None));
     gpui_kit::application()
+        // Last-window auto quit would bypass our awaited startup/shutdown task.
+        .with_quit_mode(QuitMode::Explicit)
         .with_assets(gpui_kit::assets::Assets)
         .run(move |cx| {
             gpui_kit::init(cx);

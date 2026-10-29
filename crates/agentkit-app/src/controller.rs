@@ -90,6 +90,21 @@ async fn bootstrap(brand: Brand) -> Result<Started> {
         }
         _ => anyhow::bail!("Both AGENTKIT_REMOTE_URL and AGENTKIT_REMOTE_TOKEN are required"),
     };
+    match initialize(endpoint).await {
+        Ok(mut started) => {
+            started.running.sidecar = sidecar;
+            Ok(started)
+        }
+        Err(error) => {
+            // Do not let a failed bootstrap finish before its child is reaped.
+            if let Some(sidecar) = sidecar {
+                let _ = sidecar.shutdown(Duration::from_secs(5)).await;
+            }
+            Err(error)
+        }
+    }
+}
+async fn initialize(endpoint: Endpoint) -> Result<Started> {
     let initial = WorkbenchApi::connect(endpoint.clone(), String::new());
     let workspaces = initial.workspaces().await?;
     let workspace = workspaces
@@ -119,7 +134,7 @@ async fn bootstrap(brand: Brand) -> Result<Started> {
     };
     let running = Running {
         api,
-        sidecar,
+        sidecar: None,
         session_id: Some(session.id.clone()),
     };
     Ok(Started {
@@ -177,6 +192,9 @@ impl WorkbenchController {
         this
     }
     fn start(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.quitting.get() {
+            return;
+        }
         if self
             .startup
             .borrow()
@@ -294,6 +312,9 @@ impl WorkbenchController {
             .map(|running| running.api.clone())
     }
     fn handle(&mut self, intent: WorkbenchIntent, window: &mut Window, cx: &mut Context<Self>) {
+        if self.quitting.get() {
+            return;
+        }
         self.operations.retain(|task| !task.is_ready());
         if matches!(intent, WorkbenchIntent::Reconnect) {
             self.start(window, cx);
