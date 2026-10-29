@@ -23,17 +23,17 @@ Architecture: isolated fake-model pacing and fixed Markdown fixture; optional `p
 - Disconnects/timeouts/runner errors must leave no owned app/backend/model process.
 
 ## Task 1: reproducible model workload
-- [ ] Add fixed Markdown token fixture and deadline-paced async emitter; test token reconstruction/rate accounting, disconnect, and invalid options RED→GREEN.
-- [ ] Retain existing real Read tool round. Extend fake-model stats with actual perf-stream timings, never read the fixture in the model server.
-- [ ] Commit workload and evidence contract.
+- [x] Add fixed Markdown token fixture and deadline-paced async emitter; test token reconstruction/rate accounting, disconnect, and invalid options RED→GREEN.
+- [x] Retain existing real Read tool round. Extend fake-model stats with actual perf-stream timings, never read the fixture in the model server.
+- [x] Commit workload and evidence contract.
 
 ## Task 2: optional native capture and report runner
-- [ ] Add perf feature forwarding Kit profiler; capture actual controller events and GPUI Draw/Present pairs. Test sample/percentile/invalid report semantics RED→GREEN.
-- [ ] Benchmark configuration requires isolated empty config/workdir and a loopback test endpoint; auto-configure and submit through the existing controller; bounded completion and shutdown.
-- [ ] Node runner creates fixture/data directories, launches app, validates exit/native/model evidence; outcome check unit tests including empty/slow/incomplete cases. Commit.
+- [x] Add perf feature forwarding Kit profiler; capture actual controller events and GPUI Draw/Present pairs. Test sample/percentile/invalid report semantics RED→GREEN.
+- [x] Benchmark configuration requires isolated empty config/workdir and a loopback test endpoint; auto-configure and submit through the existing controller; bounded completion and shutdown.
+- [x] Node runner creates fixture/data directories, launches app, validates exit/native/model evidence; outcome check unit tests including empty/slow/incomplete cases. Commit.
 
 ## Task 3: Linux release baseline and CI
-- [ ] Release build, 3 measured runs + controlled disconnect; inspect actual native window. Record hardware/software, complete raw reports, all metrics and limits.
-- [ ] Fix substantiated implementation issues revealed by measurement; repeat only when changed or unresolved concern warrants it.
-- [ ] Add deterministic Linux CI checks and optional manual software-renderer benchmark workflow; do not gate reference-hardware performance on shared CI.
-- [ ] Update tasks/development/report, whole-branch independent review, necessary fix pass, push reviewable PR and monitor checks.
+- [x] Release build, 3 measured runs + controlled disconnect; inspect actual native window. Record hardware/software, complete raw reports, all metrics and limits.
+- [x] Fix substantiated implementation issues revealed by measurement; repeat only when changed or unresolved concern warrants it.
+- [x] Add deterministic Linux CI checks and optional manual software-renderer benchmark workflow; do not gate reference-hardware performance on shared CI.
+- [x] Update tasks/development/report, whole-branch independent review, necessary fix pass, push reviewable PR and monitor checks.

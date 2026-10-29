@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "status": "invalid",
+  "environment": {
+    "label": "Same focused cloud/Xvfb/lavapipe environment; controlled disconnect after 50 tokens",
+    "focus": "xdotool",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "cpuCount": 3,
+    "memoryBytes": 10452471808,
+    "kernel": "6.18.55",
+    "displayBackend": "x11",
+    "vulkanDriver": "lvp_icd.json",
+    "cpuQuota": "200000 100000",
+    "memoryLimit": "8589934592"
+  },
+  "workload": {
+    "rate": 50,
+    "tokens": 600,
+    "tokenizer": "simulated whitespace-delimited word plus trailing whitespace",
+    "scenario": "disconnect"
+  },
+  "runs": [
+    {
+      "native": {
+        "schemaVersion": 1,
+        "profile": "release",
+        "optLevel": "3",
+        "outcome": "failed",
+        "events": {
+          "complete": 1,
+          "retry": 9,
+          "text_complete": 1,
+          "text_delta": 250,
+          "text_discard": 5,
+          "title_generated": 1,
+          "tool_result": 1,
+          "tool_start": 1,
+          "typed_error": 1,
+          "usage_update": 18,
+          "user_message": 1
+        },
+        "deltaBytes": 1630,
+        "firstDeltaToTerminalMs": 35262.302284,
+        "activeUpdateFraction": 1,
+        "finalAssistantBytes": 45,
+        "completionTailMs": 100,
+        "finalFramePresented": true,
+        "frameWork": {
+          "count": 115,
+          "p50_ms": 2.221886,
+          "p95_ms": 7.759219000000001,
+          "max_ms": 32.598618
+        },
+        "draw": {
+          "count": 115,
+          "p50_ms": 2.12043,
+          "p95_ms": 4.053351999999999,
+          "max_ms": 28.782905
+        },
+        "controllerUpdate": {
+          "count": 66,
+          "p50_ms": 0.110006,
+          "p95_ms": 1.2069450000000002,
+          "max_ms": 1.914668
+        },
+        "batchReceiptToPresent": {
+          "count": 66,
+          "p50_ms": 105.71161,
+          "p95_ms": 190.374808,
+          "max_ms": 208.393395
+        },
+        "unpresentedUpdates": 0,
+        "dirtyToPresent": {
+          "count": 115,
+          "p50_ms": 61.224593,
+          "p95_ms": 103.102605,
+          "max_ms": 134.211481
+        },
+        "submission": {
+          "count": 115,
+          "p50_ms": 49.992979,
+          "p95_ms": 95.960921,
+          "max_ms": 132.51582100000002
+        },
+        "animationInterval": {
+          "count": 53,
+          "p50_ms": 68.380936,
+          "p95_ms": 110.257998,
+          "max_ms": 143.045502
+        },
+        "unmeasuredFrames": 0,
+        "unpresentedFrames": 0,
+        "unpairedPresentFrames": 0
+      },
+      "model": {
+        "requests": 7,
+        "toolCalls": 1,
+        "toolResults": 5,
+        "errors": 5,
+        "perfStreams": []
+      },
+      "verdict": {
+        "valid": false,
+        "frameBudgetMet": false,
+        "reasons": [
+          "agent-round-incomplete",
+          "model-errors",
+          "one-complete-paced-stream-required",
+          "token-count-incomplete",
+          "input-rate-outside-50-plus-minus-5-percent",
+          "bursty-model-input",
+          "final-text-size-mismatch",
+          "stream-window-too-short"
+        ],
+        "referenceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "forced": false,
+        "remainingOwnedProcesses": 0,
+        "reapedOrphans": 0
+      }
+    }
+  ],
+  "binarySha256": "3e58798ad809526d46b55b74ef3e792eaddc2e05938db8486602c8fabfc91878",
+  "binaryBytes": 44974584
+}

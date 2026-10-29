@@ -1,0 +1,42 @@
+name: Linux software-renderer performance experiment
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+      - uses: astral-sh/setup-uv@v6
+      - name: Install Linux native and software rendering dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang pkg-config libfontconfig1-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libasound2-dev libvulkan-dev libxcb-shape0-dev libxcb-xfixes0-dev xvfb xauth xdotool mesa-vulkan-drivers fonts-noto-cjk
+      - run: cargo xtask backend build
+        env:
+          AGENTKIT_USE_NPMJS: '1'
+      - run: cargo build --release -p workbench --features perf --locked
+        env:
+          CARGO_BUILD_JOBS: '2'
+      - name: Measure 3 real native rounds (shared CI is not reference hardware)
+        continue-on-error: true
+        run: |
+          PERF_ICD=$(rg --files /usr/share/vulkan/icd.d | rg '/lvp[^/]*\.json$' | head -n 1)
+          PERF_RUNTIME=$(mktemp -d)
+          VK_DRIVER_FILES="$PERF_ICD" XDG_RUNTIME_DIR="$PERF_RUNTIME" xvfb-run -a -s '-screen 0 1440x960x24' node tools/perf/run.mjs --binary target/release/workbench --backend target/backend/linux-x64 --output target/perf/report.json --runs 3 --tokens 600 --focus xdotool --environment 'Shared GitHub Ubuntu + Xvfb + lavapipe'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-software-renderer-performance
+          path: target/perf/*.json
+          if-no-files-found: warn
