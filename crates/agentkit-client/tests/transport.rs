@@ -185,7 +185,42 @@ fn request_timeout_applies_while_handshake_is_stalled() {
 #[test]
 fn blocked_write_obeys_deadline_and_closes_connection() {
     use agentkit_client::ConnectionState;
-    let (url, stop, server) = handshake_server(None, true);
+    // Pin the receive window BEFORE TCP negotiation. Default socket buffering
+    // and debug serialization speed differ by host; a fixed 8 MiB payload alone
+    // does not prove that a write is blocked.
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    socket2::SockRef::from(&listener)
+        .set_recv_buffer_size(4096)
+        .unwrap();
+    let url = format!("ws://{}", listener.local_addr().unwrap());
+    listener.set_nonblocking(true).unwrap();
+    let (stop, wait) = std::sync::mpsc::channel();
+    let (started, wrote) = std::sync::mpsc::channel();
+    let server = std::thread::spawn(move || {
+        smol::block_on(async {
+            use futures::AsyncReadExt;
+            let listener = async_net::TcpListener::try_from(listener).unwrap();
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut ws = async_tungstenite::accept_async(stream).await.unwrap();
+            let _ = ws.next().await;
+            ws.send(async_tungstenite::tungstenite::Message::Text(
+            json!({"id":"h","type":"handshake_ack","clientId":"c","registeredChannels":["echo"],"maxMessageBytes":67108864}).to_string().into()
+        )).await.unwrap();
+            // Read a single frame byte, then stop consuming. This proves that
+            // serialization and handshake completed before the timeout assertion.
+            let mut byte = [0];
+            let first = smol::future::race(
+                async { ws.get_mut().read_exact(&mut byte).await.is_ok() },
+                async {
+                    smol::Timer::after(Duration::from_secs(8)).await;
+                    false
+                },
+            )
+            .await;
+            let _ = started.send(first);
+            let _ = wait.recv_timeout(Duration::from_secs(10));
+        })
+    });
     let client = client(url);
     let result = smol::block_on(smol::future::race(
         async {
@@ -194,13 +229,13 @@ fn blocked_write_obeys_deadline_and_closes_connection() {
                     .invoke_timeout::<Value>(
                         "echo",
                         vec![json!("x".repeat(8 * 1024 * 1024))],
-                        Duration::from_secs(1),
+                        Duration::from_secs(4),
                     )
                     .await,
             )
         },
         async {
-            smol::Timer::after(Duration::from_secs(2)).await;
+            smol::Timer::after(Duration::from_secs(8)).await;
             None
         },
     ));
@@ -211,6 +246,10 @@ fn blocked_write_obeys_deadline_and_closes_connection() {
     client.close();
     let _ = stop.send(());
     server.join().unwrap();
+    assert!(
+        wrote.recv_timeout(Duration::from_secs(1)).unwrap(),
+        "No frame byte was sent; this did not exercise a blocked write"
+    );
     assert!(matches!(result, Some(Err(RpcError::Timeout))));
     assert_eq!(state, ConnectionState::Disconnected);
 }
