@@ -108,3 +108,137 @@ fn timeout_does_not_wait_for_a_response_forever() {
     client.close();
     server.join().unwrap();
 }
+
+fn handshake_server(
+    reject: Option<&'static str>,
+    stall_after_ack: bool,
+) -> (
+    String,
+    std::sync::mpsc::Sender<()>,
+    std::thread::JoinHandle<()>,
+) {
+    let (port_send, port_recv) = std::sync::mpsc::channel();
+    let (stop, wait) = std::sync::mpsc::channel();
+    let task = std::thread::spawn(move || {
+        smol::block_on(async move {
+            let listener = async_net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            port_send
+                .send(format!("ws://{}", listener.local_addr().unwrap()))
+                .unwrap();
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut ws = async_tungstenite::accept_async(stream).await.unwrap();
+            let _ = ws.next().await;
+            if let Some(code) = reject {
+                ws.send(async_tungstenite::tungstenite::Message::Text(
+                    json!({"id":"h","type":"error","error":{"code":code,"message":"Rejected"}})
+                        .to_string()
+                        .into(),
+                ))
+                .await
+                .unwrap();
+            } else if stall_after_ack {
+                ws.send(async_tungstenite::tungstenite::Message::Text(json!({"id":"h","type":"handshake_ack","clientId":"c","registeredChannels":["echo"],"maxMessageBytes":67108864}).to_string().into())).await.unwrap();
+            }
+            let _ = wait.recv_timeout(Duration::from_secs(5));
+        })
+    });
+    (port_recv.recv().unwrap(), stop, task)
+}
+#[test]
+fn handshake_authentication_error_reaches_caller() {
+    let (url, stop, server) = handshake_server(Some("AUTH_FAILED"), false);
+    let client = client(url);
+    let result = smol::block_on(smol::future::race(
+        client.invoke::<Value>("echo", vec![]),
+        async {
+            smol::Timer::after(Duration::from_millis(500)).await;
+            Err(RpcError::Timeout)
+        },
+    ));
+    let _ = stop.send(());
+    server.join().unwrap();
+    assert!(matches!(result,Err(RpcError::Wire(ref e)) if e.code.as_str()=="AUTH_FAILED"));
+    client.close();
+}
+#[test]
+fn request_timeout_applies_while_handshake_is_stalled() {
+    let (url, stop, server) = handshake_server(None, false);
+    let client = client(url);
+    let result = smol::block_on(smol::future::race(
+        async {
+            Some(
+                client
+                    .invoke_timeout::<Value>("echo", vec![], Duration::from_millis(30))
+                    .await,
+            )
+        },
+        async {
+            smol::Timer::after(Duration::from_millis(300)).await;
+            None
+        },
+    ));
+    client.close();
+    let _ = stop.send(());
+    server.join().unwrap();
+    assert!(matches!(result, Some(Err(RpcError::Timeout))));
+}
+#[test]
+fn blocked_write_obeys_deadline_and_closes_connection() {
+    use agentkit_client::ConnectionState;
+    let (url, stop, server) = handshake_server(None, true);
+    let client = client(url);
+    let result = smol::block_on(smol::future::race(
+        async {
+            Some(
+                client
+                    .invoke_timeout::<Value>(
+                        "echo",
+                        vec![json!("x".repeat(8 * 1024 * 1024))],
+                        Duration::from_secs(1),
+                    )
+                    .await,
+            )
+        },
+        async {
+            smol::Timer::after(Duration::from_secs(2)).await;
+            None
+        },
+    ));
+    smol::block_on(async {
+        smol::Timer::after(Duration::from_millis(200)).await;
+    });
+    let state = client.state();
+    client.close();
+    let _ = stop.send(());
+    server.join().unwrap();
+    assert!(matches!(result, Some(Err(RpcError::Timeout))));
+    assert_eq!(state, ConnectionState::Disconnected);
+}
+
+#[test]
+fn handshake_protocol_error_is_preserved() {
+    let (url, stop, server) = handshake_server(Some("PROTOCOL_VERSION_UNSUPPORTED"), false);
+    let client = client(url);
+    let result =
+        smol::block_on(client.invoke_timeout::<Value>("echo", vec![], Duration::from_secs(1)));
+    client.close();
+    let _ = stop.send(());
+    server.join().unwrap();
+    assert!(
+        matches!(result,Err(RpcError::Wire(ref e)) if e.code.as_str()=="PROTOCOL_VERSION_UNSUPPORTED")
+    );
+}
+#[test]
+fn connection_timeout_is_observable_after_stalled_handshake() {
+    let (url, stop, server) = handshake_server(None, false);
+    let mut options = ClientOptions::local(url, "test-secret".into(), "workspace".into());
+    options.connect_timeout = Duration::from_millis(30);
+    let client = RpcClient::connect(options);
+    let result =
+        smol::block_on(client.invoke_timeout::<Value>("echo", vec![], Duration::from_secs(1)));
+    client.close();
+    let _ = stop.send(());
+    server.join().unwrap();
+    assert!(matches!(result, Err(RpcError::Timeout)));
+    assert!(matches!(client.last_error(), Some(RpcError::Timeout)));
+}

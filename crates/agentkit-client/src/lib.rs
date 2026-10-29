@@ -50,7 +50,7 @@ pub enum ConnectionState {
     Disconnected,
 }
 /// Invocation or transport failure.
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum RpcError {
     /// Structured server error.
     #[error("{0}")]
@@ -69,10 +69,15 @@ pub enum RpcError {
     TooLarge,
     /// Invalid wire payload.
     #[error("Invalid RPC payload")]
-    Decode(#[from] serde_json::Error),
+    Decode(Arc<serde_json::Error>),
     /// Failed socket establishment or I/O.
     #[error("RPC transport failed: {0}")]
     Transport(String),
+}
+impl From<serde_json::Error> for RpcError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::Decode(Arc::new(error))
+    }
 }
 type Subscribers = Arc<Mutex<HashMap<String, Vec<async_channel::Sender<Vec<Value>>>>>>;
 pub(crate) fn locked<T>(value: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
@@ -86,7 +91,6 @@ pub(crate) enum Command {
         deadline: Instant,
         result: oneshot::Sender<Result<Value, RpcError>>,
     },
-    Close,
 }
 /// Cheap cloneable handle to an independent smol IO thread.
 #[derive(Clone)]
@@ -95,11 +99,16 @@ pub struct RpcClient {
     subscribers: Subscribers,
     state: Arc<Mutex<ConnectionState>>,
     timeout: Duration,
+    stop: async_channel::Sender<()>,
+    failure: Arc<Mutex<Option<RpcError>>>,
 }
 impl RpcClient {
     /// Start connecting without blocking the calling (GUI) thread.
     pub fn connect(options: ClientOptions) -> Self {
         let (commands, receiver) = async_channel::unbounded();
+        let (stop, stopping) = async_channel::bounded(1);
+        let failure = Arc::new(Mutex::new(None));
+        let thread_failure = failure.clone();
         let subscribers = Arc::new(Mutex::new(HashMap::new()));
         let state = Arc::new(Mutex::new(ConnectionState::Connecting));
         let handle = Self {
@@ -107,14 +116,24 @@ impl RpcClient {
             subscribers: subscribers.clone(),
             state: state.clone(),
             timeout: options.request_timeout,
+            stop,
+            failure: failure.clone(),
         };
         let thread_state = state.clone();
         let result = std::thread::Builder::new()
             .name("agentkit-rpc".into())
             .spawn(move || {
-                smol::block_on(transport::run(options, receiver, subscribers, thread_state));
+                smol::block_on(transport::run(
+                    options,
+                    receiver,
+                    subscribers,
+                    thread_state,
+                    stopping,
+                    thread_failure,
+                ));
             });
         if result.is_err() {
+            *locked(&failure) = Some(RpcError::Transport("Unable to start RPC thread".into()));
             *locked(&state) = ConnectionState::Disconnected;
         }
         handle
@@ -134,6 +153,9 @@ impl RpcClient {
         args: Vec<Value>,
         timeout: Duration,
     ) -> Result<T, RpcError> {
+        if let Some(error) = self.last_error() {
+            return Err(error);
+        }
         let frame = Envelope {
             id: uuid::Uuid::new_v4().to_string(),
             kind: EnvelopeKind::Request,
@@ -149,25 +171,41 @@ impl RpcClient {
                 result: send,
             })
             .await
-            .map_err(|_| RpcError::Disconnected)?;
-        let value = receive.await.map_err(|_| RpcError::Disconnected)??;
+            .map_err(|_| self.last_error().unwrap_or(RpcError::Disconnected))?;
+        let value = smol::future::race(
+            async {
+                receive
+                    .await
+                    .map_err(|_| self.last_error().unwrap_or(RpcError::Disconnected))?
+            },
+            async {
+                smol::Timer::after(timeout).await;
+                Err(RpcError::Timeout)
+            },
+        )
+        .await?;
         Ok(serde_json::from_value(value)?)
     }
     /// Subscribe to a push channel. Each subscriber receives its own unbounded queue.
     pub fn subscribe(&self, channel: &str) -> async_channel::Receiver<Vec<Value>> {
         let (send, receive) = async_channel::unbounded();
-        locked(&self.subscribers)
-            .entry(channel.into())
-            .or_default()
-            .push(send);
+        let mut table = locked(&self.subscribers);
+        if self.state() != ConnectionState::Disconnected {
+            table.entry(channel.into()).or_default().push(send);
+        }
+
         receive
     }
     /// Current connection state.
     pub fn state(&self) -> ConnectionState {
         *locked(&self.state)
     }
+    /// Cause of the terminal failure, preserving server authentication/protocol codes.
+    pub fn last_error(&self) -> Option<RpcError> {
+        locked(&self.failure).clone()
+    }
     /// Request closure; all pending invocations finish with Disconnected.
     pub fn close(&self) {
-        let _ = self.commands.try_send(Command::Close);
+        let _ = self.stop.try_send(());
     }
 }

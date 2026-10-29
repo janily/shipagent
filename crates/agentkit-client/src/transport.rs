@@ -98,157 +98,234 @@ async fn connect(
     Err(RpcError::Disconnected)
 }
 
+async fn controlled<T>(
+    future: impl std::future::Future<Output = Result<T, RpcError>>,
+    duration: Duration,
+    stop: &async_channel::Receiver<()>,
+) -> Result<T, RpcError> {
+    smol::future::race(timed(future, duration), async {
+        let _ = stop.recv().await;
+        Err(RpcError::Disconnected)
+    })
+    .await
+}
+fn io_deadline(pending: &HashMap<String, Pending>) -> Duration {
+    pending
+        .values()
+        .map(|p| p.deadline.saturating_duration_since(Instant::now()))
+        .min()
+        .unwrap_or(Duration::from_secs(5))
+        .min(Duration::from_secs(5))
+}
+fn expire(pending: &mut HashMap<String, Pending>) {
+    let now = Instant::now();
+    let expired: Vec<_> = pending
+        .iter()
+        .filter(|(_, p)| p.deadline <= now || p.result.is_canceled())
+        .map(|(id, _)| id.clone())
+        .collect();
+    for id in expired {
+        if let Some(request) = pending.remove(&id) {
+            let _ = request.result.send(Err(RpcError::Timeout));
+        }
+    }
+}
+
 pub(super) async fn run(
     options: ClientOptions,
     commands: async_channel::Receiver<Command>,
     subscribers: Subscribers,
     state: Arc<Mutex<ConnectionState>>,
+    stop: async_channel::Receiver<()>,
+    failure: Arc<Mutex<Option<RpcError>>>,
 ) {
     let mut pending = HashMap::<String, Pending>::new();
-    if let Ok((mut socket, ack)) = timed(connect(&options, &state), options.connect_timeout).await {
-        let channels = ack.registered_channels;
-        let max_size = ack.max_message_bytes;
-        let mut last_seq = 0;
-        let mut last_ack = Instant::now();
-        enum Input {
-            Command(Result<Command, async_channel::RecvError>),
-            Frame(Option<Result<Message, async_tungstenite::tungstenite::Error>>),
-            Tick,
-        }
-        loop {
-            let input = smol::future::race(
-                smol::future::race(
-                    commands.recv().map(Input::Command),
-                    socket.next().map(Input::Frame),
-                ),
-                async {
-                    smol::Timer::after(Duration::from_millis(10)).await;
-                    Input::Tick
-                },
-            )
-            .await;
-            match input {
-                Input::Command(Ok(Command::Invoke {
-                    frame,
-                    deadline,
-                    result,
-                })) => {
-                    if deadline <= Instant::now() {
-                        let _ = result.send(Err(RpcError::Timeout));
-                        continue;
-                    }
-                    if channels
-                        .as_ref()
-                        .is_some_and(|c| !c.iter().any(|c| Some(c) == frame.channel.as_ref()))
+    let outcome = controlled(connect(&options, &state), options.connect_timeout, &stop).await;
+    let reason = match outcome {
+        Err(error) => error,
+        Ok((mut socket, ack)) => {
+            let channels = ack.registered_channels;
+            let max_size = ack.max_message_bytes;
+            let mut last_seq = 0;
+            let mut last_ack = Instant::now();
+            enum Input {
+                Command(Result<Command, async_channel::RecvError>),
+                Frame(Option<Result<Message, async_tungstenite::tungstenite::Error>>),
+                Tick,
+                Stop,
+            }
+            loop {
+                // Run maintenance before any branch can reject a locally invalid call.
+                expire(&mut pending);
+                if last_ack.elapsed() >= Duration::from_secs(5) {
+                    let ack = Envelope {
+                        kind: EnvelopeKind::SequenceAck,
+                        last_seq: Some(last_seq),
+                        ..Envelope::default()
+                    };
+                    if let Err(error) =
+                        controlled(send(&mut socket, &ack), io_deadline(&pending), &stop).await
                     {
-                        let _ = result.send(Err(RpcError::ChannelUnavailable(
-                            frame.channel.unwrap_or_default(),
-                        )));
-                        continue;
+                        break error;
                     }
-                    let encoded = match serde_json::to_string(&frame) {
-                        Ok(v) => v,
-                        Err(e) => {
-                            let _ = result.send(Err(e.into()));
+                    last_ack = Instant::now();
+                }
+                let input = smol::future::race(
+                    smol::future::race(
+                        commands.recv().map(Input::Command),
+                        socket.next().map(Input::Frame),
+                    ),
+                    smol::future::race(
+                        async {
+                            smol::Timer::after(Duration::from_millis(10)).await;
+                            Input::Tick
+                        },
+                        async {
+                            let _ = stop.recv().await;
+                            Input::Stop
+                        },
+                    ),
+                )
+                .await;
+                match input {
+                    Input::Command(Ok(Command::Invoke {
+                        frame,
+                        deadline,
+                        result,
+                    })) => {
+                        if deadline <= Instant::now() || result.is_canceled() {
+                            let _ = result.send(Err(RpcError::Timeout));
                             continue;
                         }
-                    };
-                    if max_size.is_some_and(|limit| encoded.len() as u64 > limit) {
-                        let _ = result.send(Err(RpcError::TooLarge));
-                        continue;
-                    }
-                    let id = frame.id.clone();
-                    pending.insert(id, Pending { deadline, result });
-                    if socket.send(Message::Text(encoded.into())).await.is_err() {
-                        break;
-                    }
-                }
-                Input::Command(Ok(Command::Close)) | Input::Command(Err(_)) => {
-                    let _ = socket.close(None).await;
-                    break;
-                }
-                Input::Frame(Some(Ok(Message::Text(text)))) => {
-                    let Ok(frame) = serde_json::from_str::<Envelope>(&text) else {
-                        break;
-                    };
-                    match frame.kind {
-                        EnvelopeKind::Response | EnvelopeKind::Error => {
-                            if let Some(request) = pending.remove(&frame.id) {
-                                let result = if let Some(error) = frame.error {
-                                    Err(RpcError::Wire(error))
-                                } else {
-                                    Ok(frame.result.unwrap_or(Value::Null))
-                                };
-                                let _ = request.result.send(result);
-                            }
+                        if channels
+                            .as_ref()
+                            .is_some_and(|c| !c.iter().any(|c| Some(c) == frame.channel.as_ref()))
+                        {
+                            let _ = result.send(Err(RpcError::ChannelUnavailable(
+                                frame.channel.unwrap_or_default(),
+                            )));
+                            continue;
                         }
-                        EnvelopeKind::Event => {
-                            if let Some(seq) = frame.seq {
-                                last_seq = last_seq.max(seq);
+                        let encoded = match serde_json::to_string(&frame) {
+                            Ok(v) => v,
+                            Err(e) => {
+                                let _ = result.send(Err(e.into()));
+                                continue;
                             }
-                            if let Some(channel) = frame.channel {
-                                let mut table = locked(&subscribers);
-                                if let Some(list) = table.get_mut(&channel) {
-                                    let args = frame.args.unwrap_or_default();
-                                    list.retain(|s| s.try_send(args.clone()).is_ok());
+                        };
+                        if max_size.is_some_and(|limit| encoded.len() as u64 > limit) {
+                            let _ = result.send(Err(RpcError::TooLarge));
+                            continue;
+                        }
+                        // Serialization can itself outlast a short deadline. Never send that stale write.
+                        if deadline <= Instant::now() || result.is_canceled() {
+                            let _ = result.send(Err(RpcError::Timeout));
+                            continue;
+                        }
+                        pending.insert(frame.id.clone(), Pending { deadline, result });
+                        let write = async {
+                            socket
+                                .send(Message::Text(encoded.into()))
+                                .await
+                                .map_err(|e| RpcError::Transport(e.to_string()))
+                        };
+                        if let Err(error) = controlled(write, io_deadline(&pending), &stop).await {
+                            break error;
+                        }
+                    }
+                    Input::Command(Err(_)) | Input::Stop => {
+                        let _ = timed(
+                            async {
+                                socket
+                                    .close(None)
+                                    .await
+                                    .map_err(|e| RpcError::Transport(e.to_string()))
+                            },
+                            Duration::from_millis(100),
+                        )
+                        .await;
+                        break RpcError::Disconnected;
+                    }
+                    Input::Frame(Some(Ok(Message::Text(text)))) => {
+                        let frame: Envelope = match serde_json::from_str(&text) {
+                            Ok(frame) => frame,
+                            Err(e) => break e.into(),
+                        };
+                        match frame.kind {
+                            EnvelopeKind::Response | EnvelopeKind::Error => {
+                                if let Some(request) = pending.remove(&frame.id) {
+                                    let reply = frame.error.map_or_else(
+                                        || Ok(frame.result.unwrap_or(Value::Null)),
+                                        |e| Err(RpcError::Wire(e)),
+                                    );
+                                    let _ = request.result.send(reply);
                                 }
                             }
-                        }
-                        EnvelopeKind::Request => {
-                            let reply = Envelope {
-                                id: frame.id,
-                                kind: EnvelopeKind::Error,
-                                error: Some(WireError {
-                                    code: agentkit_protocol::ErrorCode::CapabilityUnavailable,
-                                    message: "Client capability unavailable".into(),
-                                    data: None,
-                                }),
-                                ..Envelope::default()
-                            };
-                            if send(&mut socket, &reply).await.is_err() {
-                                break;
+                            EnvelopeKind::Event => {
+                                if let Some(seq) = frame.seq {
+                                    last_seq = last_seq.max(seq);
+                                }
+                                if let Some(channel) = frame.channel {
+                                    let mut table = locked(&subscribers);
+                                    if let Some(list) = table.get_mut(&channel) {
+                                        let args = frame.args.unwrap_or_default();
+                                        list.retain(|s| s.try_send(args.clone()).is_ok());
+                                    }
+                                }
                             }
+                            EnvelopeKind::Request => {
+                                let reply = Envelope {
+                                    id: frame.id,
+                                    kind: EnvelopeKind::Error,
+                                    error: Some(WireError {
+                                        code: agentkit_protocol::ErrorCode::CapabilityUnavailable,
+                                        message: "Client capability unavailable".into(),
+                                        data: None,
+                                    }),
+                                    ..Envelope::default()
+                                };
+                                if let Err(error) = controlled(
+                                    send(&mut socket, &reply),
+                                    io_deadline(&pending),
+                                    &stop,
+                                )
+                                .await
+                                {
+                                    break error;
+                                }
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
-                }
-                Input::Frame(Some(Ok(Message::Ping(_)))) => {
-                    if socket.flush().await.is_err() {
-                        break;
+                    Input::Frame(Some(Ok(Message::Ping(_)))) => {
+                        let flush = async {
+                            socket
+                                .flush()
+                                .await
+                                .map_err(|e| RpcError::Transport(e.to_string()))
+                        };
+                        if let Err(error) = controlled(flush, io_deadline(&pending), &stop).await {
+                            break error;
+                        }
                     }
+                    Input::Frame(Some(Ok(Message::Close(_)))) | Input::Frame(None) => {
+                        break RpcError::Disconnected;
+                    }
+                    Input::Frame(Some(Err(error))) => break RpcError::Transport(error.to_string()),
+                    _ => {}
                 }
-                Input::Frame(Some(Ok(Message::Close(_))))
-                | Input::Frame(None)
-                | Input::Frame(Some(Err(_))) => break,
-                _ => {}
-            }
-            let now = Instant::now();
-            let expired: Vec<_> = pending
-                .iter()
-                .filter(|(_, p)| p.deadline <= now)
-                .map(|(id, _)| id.clone())
-                .collect();
-            for id in expired {
-                if let Some(request) = pending.remove(&id) {
-                    let _ = request.result.send(Err(RpcError::Timeout));
-                }
-            }
-            if now.duration_since(last_ack) >= Duration::from_secs(5) {
-                let ack = Envelope {
-                    kind: EnvelopeKind::SequenceAck,
-                    last_seq: Some(last_seq),
-                    ..Envelope::default()
-                };
-                if send(&mut socket, &ack).await.is_err() {
-                    break;
-                }
-                last_ack = now;
             }
         }
-    }
+    };
+    *locked(&failure) = Some(reason.clone());
     *locked(&state) = ConnectionState::Disconnected;
+    commands.close();
     for (_, request) in pending {
-        let _ = request.result.send(Err(RpcError::Disconnected));
+        let _ = request.result.send(Err(reason.clone()));
+    }
+    // async-channel retains queued messages while senders live: explicitly reject them.
+    while let Ok(Command::Invoke { result, .. }) = commands.try_recv() {
+        let _ = result.send(Err(reason.clone()));
     }
     locked(&subscribers).clear();
 }
