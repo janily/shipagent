@@ -26,13 +26,15 @@ anyhow = "1"
 smol = "2"
 async-channel = "2"
 async-net = "2"
-async-tungstenite = { version = "0.32", features = ["async-std-runtime"] }
+async-tungstenite = "0.32"
 futures = "0.3"
+url = "2"
 uuid = { version = "1", features = ["v4", "serde"] }
 base64 = "0.22"
 secrecy = { version = "0.10", features = ["serde"] }
 rand = "0.9"
 toml = "0.9"
+tempfile = "3"
 tracing = "0.1"
 rust-i18n = "4.2"
 

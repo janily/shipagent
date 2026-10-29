@@ -1,0 +1,44 @@
+--- a/scripts/build-server.ts
++++ b/scripts/build-server.ts
+@@ -13,12 +13,13 @@
+     arch: { type: 'string', default: hostArch },
+     output: { type: 'string' },
+     compress: { type: 'boolean', default: false },
++    'no-webui': { type: 'boolean', default: false },
+     help: { type: 'boolean', short: 'h', default: false },
+   },
+ })
+ 
+ if (values.help) {
+-  console.log('Usage: bun run scripts/build-server.ts [--platform=darwin|linux|win32] [--arch=x64|arm64] [--output=path] [--compress]')
++  console.log('Usage: bun run scripts/build-server.ts [--platform=darwin|linux|win32] [--arch=x64|arm64] [--output=path] [--compress] [--no-webui]')
+   process.exit(0)
+ }
+ 
+@@ -36,7 +37,7 @@
+ rmSync(output, { recursive: true, force: true })
+ mkdirSync(output, { recursive: true })
+ 
+-run([process.execPath, 'run', 'webui:build'])
++if (!values['no-webui']) run([process.execPath, 'run', 'webui:build'])
+ run([process.execPath, 'run', 'scripts/copy-assets.ts'], electron)
+ run([
+   process.execPath,
+@@ -51,7 +52,7 @@
+ ])
+ 
+ cpSync(join(electron, 'dist', 'resources'), join(output, 'resources'), { recursive: true })
+-cpSync(join(root, 'apps', 'webui', 'dist'), join(output, 'webui'), { recursive: true })
++if (!values['no-webui']) cpSync(join(root, 'apps', 'webui', 'dist'), join(output, 'webui'), { recursive: true })
+ 
+ const runtimeName = process.platform === 'win32' ? 'bun.exe' : 'bun'
+ const runtime = join(output, 'vendor', 'bun', runtimeName)
+@@ -113,7 +114,7 @@
+   join(output, 'resources', 'pi-agent-server', 'index.js'),
+   runtime,
+   rgDestination,
+-  join(output, 'webui', 'index.html'),
++  ...(!values['no-webui'] ? [join(output, 'webui', 'index.html')] : []),
+ ]) {
+   if (!existsSync(path)) throw new Error(`Missing headless artifact: ${path}`)
+ }
