@@ -5,7 +5,13 @@ use gpui_kit::{
     profiler::{FrameEvent, FrameTimingCollector},
     *,
 };
-use std::{cell::Cell, fs::OpenOptions, path::PathBuf, rc::Rc};
+use std::{
+    cell::Cell,
+    fs::OpenOptions,
+    path::PathBuf,
+    rc::Rc,
+    time::{Duration, Instant},
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args_os().skip(1).collect();
@@ -36,38 +42,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let view = cx.new(|cx| ComponentSamples::new(window, cx));
                 if let Some(report) = report {
                     gpui_kit::profiler::set_trace_enabled(true);
-                    let mut frames = FrameTimingCollector::new();
-                    window.on_next_frame(move |window, _| {
-                        // Kit's callback runs BEFORE this cycle's presentation.
-                        // Force a draw, then collect only on the following cycle.
-                        window.refresh();
-                        window.on_next_frame(move |window, cx| {
-                        let size = window.viewport_size();
-                        let submitted = frames.collect_unseen().iter().filter(|frame| {
-                            matches!(frame, FrameEvent::Present(present) if present.window_id == window.window_handle().window_id())
-                        }).count();
-                        let evidence = serde_json::json!({
-                            "platform": std::env::consts::OS,
-                            "arch": std::env::consts::ARCH,
-                            "renderedFrame": true,
-                            "submittedFrames": submitted,
-                            "width": f32::from(size.width),
-                            "height": f32::from(size.height),
-                        });
-                        let written = OpenOptions::new()
-                            .write(true)
-                            .create_new(true)
-                            .open(report)
-                            .and_then(|file| {
-                                serde_json::to_writer_pretty(file, &evidence)
-                                    .map_err(std::io::Error::other)
-                            });
-                        match written {
-                            Ok(()) => completed.set(true),
-                            Err(error) => eprintln!("Native sample report failed: {error}"),
-                        }
-                        cx.quit();
-                        });
+                    let frames = FrameTimingCollector::new();
+                    window.on_next_frame(move |window, cx| {
+                        report_after_present(
+                            window,
+                            cx,
+                            frames,
+                            report,
+                            completed,
+                            Instant::now(),
+                            1,
+                        );
                     });
                 }
                 view
@@ -81,4 +66,58 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Native sample did not report a rendered frame".into());
     }
     Ok(())
+}
+
+// Frame callbacks can precede rendering on native platforms. Wait for evidence
+// instead of treating a fixed callback count as a presentation guarantee.
+fn report_after_present(
+    window: &mut Window,
+    cx: &mut App,
+    mut frames: FrameTimingCollector,
+    report: PathBuf,
+    completed: Rc<Cell<bool>>,
+    started: Instant,
+    callbacks: usize,
+) {
+    let submitted = frames.collect_unseen().iter().filter(|frame| {
+        matches!(frame, FrameEvent::Present(present) if present.window_id == window.window_handle().window_id())
+    }).count();
+    if submitted == 0 && started.elapsed() < Duration::from_secs(10) {
+        window.refresh();
+        window.on_next_frame(move |window, cx| {
+            report_after_present(
+                window,
+                cx,
+                frames,
+                report,
+                completed,
+                started,
+                callbacks + 1,
+            );
+        });
+        return;
+    }
+    let size = window.viewport_size();
+    let evidence = serde_json::json!({
+        "platform": std::env::consts::OS,
+        "arch": std::env::consts::ARCH,
+        "renderedFrame": submitted > 0,
+        "submittedFrames": submitted,
+        "frameCallbacks": callbacks,
+        "elapsedMs": started.elapsed().as_secs_f64() * 1000.,
+        "width": f32::from(size.width),
+        "height": f32::from(size.height),
+    });
+    let written = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(report)
+        .and_then(|file| {
+            serde_json::to_writer_pretty(file, &evidence).map_err(std::io::Error::other)
+        });
+    match written {
+        Ok(()) => completed.set(true),
+        Err(error) => eprintln!("Native sample report failed: {error}"),
+    }
+    cx.quit();
 }

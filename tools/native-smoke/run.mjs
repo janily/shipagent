@@ -14,7 +14,7 @@ try {
   evidence = JSON.parse(await readFile(report, 'utf8'));
   evidence = validateNativeFrame(evidence);
 } catch (error) {
-  evidence = { status: 'failed', platform: process.platform, error: error.message };
+  evidence = { status: 'failed', platform: process.platform, error: error.message, observed: evidence ?? null };
   process.exitCode = 1;
 } finally {
   await rm(scratch, { recursive: true, force: true });

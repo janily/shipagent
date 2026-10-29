@@ -21,3 +21,7 @@ test('submitted native frame stays distinct from physical desktop acceptance', (
   assert.equal(valid.submittedFrames, 1);
   assert.equal(valid.physicalDesktopAcceptance, 'not_evaluated');
 });
+test('failure names the rejected evidence field and preserves safe values', () => {
+  assert.throws(() => validateNativeFrame({ ...frame, submittedFrames: 0 }, host), /submittedFrames=0/);
+  assert.throws(() => validateNativeFrame({ ...frame, height: 580 }, host), /height=580/);
+});
