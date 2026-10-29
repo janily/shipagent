@@ -24,20 +24,20 @@
 ## Task 1: TS schema extraction
 Files: tools/codegen/{package.json,package-lock.json,tsconfig.json,input.ts,schema.mjs,schema.test.mjs}; schemas/*.json.
 Interface: node tools/codegen/schema.mjs --out DIR → stable Session/Message/SessionEvent schemas, source metadata; failure exits nonzero.
-- [ ] Write extraction contract tests and observe missing generator failure.
-- [ ] Install locked isolated generator; resolve only upstream type aliases; generate permissive-object schemas retaining required fields and discriminators.
-- [ ] Verify fields, enums, both retry shapes, deterministic output; commit.
+- [x] Write extraction contract tests and observe missing generator failure.
+- [x] Install locked isolated generator; resolve only upstream type aliases; generate permissive-object schemas retaining required fields and discriminators.
+- [x] Verify fields, enums, both retry shapes, deterministic output; commit.
 
 ## Task 2: Rust generation and drift check
 Files: xtask/src/codegen.rs, xtask dependencies/CLI; protocol/src/generated.rs and tests; overrides documentation if needed.
 Consumes Task1 schemas. Produces cargo xtask codegen [--check], public generated::{Session,Message,SessionEvent}.
-- [ ] Write CLI and Rust decoding tests and observe RED.
-- [ ] Generate all reachable DTOs with typify; narrowly adapt any unsupported cases with documented provenance.
-- [ ] Test required fields, unknown object fields, optional fields, snake-case event tags and retry phases; two generations stable; --check doesn't write; commit.
+- [x] Write CLI and Rust decoding tests and observe RED.
+- [x] Generate all reachable DTOs with typify; narrowly adapt any unsupported cases with documented provenance.
+- [x] Test required fields, unknown object fields, optional fields, snake-case event tags and retry phases; two generations stable; --check doesn't write; commit.
 
 ## Task 3: Real contract and Linux CI
 Files: sidecar/tests/agent_turn.rs, .github/workflows/ci.yml, docs/development.md/tasks.md/verification-codegen-2026-10-29.md.
 Consumes generated types from Task2, actual backend RPC values/events.
-- [ ] Decode actual Session snapshots, Message values and all observed stream/tool/terminal events with generated types, alongside existing UI reducer; cancel still works.
-- [ ] CI Linux installs generator with npm ci and checks drift; core, native and contract jobs target Linux.
-- [ ] Run fmt/core/Node/generated/native checks and audit; fresh whole-branch review; fix substantive findings, commit, push PR, monitor CI.
+- [x] Decode actual Session snapshots, Message values and all observed stream/tool/terminal events with generated types, alongside existing UI reducer; cancel still works.
+- [x] CI Linux installs generator with npm ci and checks drift; core, native and contract jobs target Linux.
+- [x] Run fmt/core/Node/generated/native checks and audit; fresh whole-branch review; fix substantive findings, commit, push PR, monitor CI.

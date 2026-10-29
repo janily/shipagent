@@ -71,6 +71,8 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             .create_session(&workspaces[0].id, temp.path().to_str())
             .await
             .unwrap();
+        let generated_snapshot = api.session_generated(&session.id).await.unwrap();
+        assert_eq!(generated_snapshot.id, session.id);
         let mut state = ChatState::new(session);
         let id = state.session.id.clone();
         state.begin_send(
@@ -87,6 +89,12 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             async {
                 loop {
                     let args = events.recv().await.unwrap();
+                    let generated_event: agentkit_protocol::DecodedSessionEvent =
+                        serde_json::from_value(args[0].clone()).unwrap();
+                    assert!(
+                        generated_event.known().is_some(),
+                        "Unexpected event tag in pinned backend"
+                    );
                     let event: SessionEvent = serde_json::from_value(args[0].clone()).unwrap();
                     if event.session_id != id {
                         continue;
@@ -131,6 +139,13 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                     .as_deref()
                     .is_some_and(|r| r.contains("SHIPAGENT_TOOL_FIXTURE"))
         }));
+        let generated_persisted = api.session_generated(&id).await.unwrap();
+        assert!(
+            generated_persisted
+                .messages
+                .iter()
+                .any(|message| message.content.contains("SHIPAGENT_TOOL_FIXTURE"))
+        );
         let persisted = api.session(&id).await.unwrap();
         assert_eq!(
             persisted
@@ -165,6 +180,9 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                 let mut requested = false;
                 loop {
                     let args = events.recv().await.unwrap();
+                    let generated_event: agentkit_protocol::DecodedSessionEvent =
+                        serde_json::from_value(args[0].clone()).unwrap();
+                    assert!(generated_event.known().is_some());
                     let event: SessionEvent = serde_json::from_value(args[0].clone()).unwrap();
                     if event.session_id != cancelled_id {
                         continue;
