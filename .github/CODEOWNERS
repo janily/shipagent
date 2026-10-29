@@ -1,0 +1,7 @@
+# Initial owner: repository administrator. Replace with the actual team when available.
+* @janily
+/crates/agentkit-protocol/ @janily
+/crates/agentkit-client/ @janily
+/crates/agentkit-sidecar/ @janily
+/backend/patches/ @janily
+# CODEOWNERS alone cannot require two approvals; branch rules must enforce review counts.
