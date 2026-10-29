@@ -1,6 +1,9 @@
 [advisories]
+# Maintenance-only notices are tracked for upstream GUI dependencies.
+# Vulnerability advisories still fail the audit for every dependency.
+unmaintained = "workspace"
 [licenses]
-allow = ["Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016", "Zlib", "BSL-1.0", "CC0-1.0", "MPL-2.0", "OpenSSL", "CDLA-Permissive-2.0", "NCSA"]
+allow = ["0BSD", "Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016", "Zlib", "BSL-1.0", "CC0-1.0", "MPL-2.0", "OpenSSL", "CDLA-Permissive-2.0", "NCSA"]
 [bans]
 multiple-versions = "allow"
 [sources]
