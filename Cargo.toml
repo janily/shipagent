@@ -1,0 +1,51 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "apps/workbench", "xtask"]
+default-members = ["crates/agentkit-protocol", "crates/agentkit-client", "crates/agentkit-sidecar", "crates/agentkit-store", "xtask"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+license = "Apache-2.0"
+repository = "https://github.com/janily/shipagent"
+
+[workspace.dependencies]
+agentkit-protocol = { path = "crates/agentkit-protocol" }
+agentkit-client = { path = "crates/agentkit-client" }
+agentkit-sidecar = { path = "crates/agentkit-sidecar" }
+agentkit-store = { path = "crates/agentkit-store" }
+agentkit-ui = { path = "crates/agentkit-ui" }
+agentkit-capabilities = { path = "crates/agentkit-capabilities" }
+agentkit-app = { path = "crates/agentkit-app" }
+gpui-kit = { version = "=0.8.1", default-features = false, features = ["component", "assets", "syntect"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+smol = "2"
+async-channel = "2"
+async-net = "2"
+async-tungstenite = { version = "0.32", features = ["async-std-runtime"] }
+futures = "0.3"
+uuid = { version = "1", features = ["v4", "serde"] }
+base64 = "0.22"
+secrecy = { version = "0.10", features = ["serde"] }
+rand = "0.9"
+toml = "0.9"
+tracing = "0.1"
+rust-i18n = "4.2"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+
+[profile.dev]
+debug = "limited"
+
+[profile.release]
+strip = "symbols"
+lto = "thin"

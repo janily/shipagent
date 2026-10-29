@@ -1,0 +1,15 @@
+[package]
+name = "agentkit-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+agentkit-store.workspace = true
+gpui-kit.workspace = true
+rust-i18n.workspace = true
+
+[lints]
+workspace = true

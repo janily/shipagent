@@ -1,0 +1,5 @@
+app_name = "Workbench"
+bundle_id = "dev.agentkit.workbench"
+data_dir_name = ".agentkit"
+url_scheme = "agentkit"
+default_theme = "light"
