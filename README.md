@@ -1,0 +1,11 @@
+# ShipAgent
+
+基于 Rust + GPUI Kit 的原生 Agent 桌面工作台，复用 mkagent 后端。
+
+**当前处于阶段 0 开发，尚无可发布应用。**
+
+- [规格索引](docs/superpowers/specs/2026-10-29-shipagent-design.md)
+- [完整开发规格](docs/spec/)
+- [任务进度](docs/tasks.md)
+
+采用 AgentKit workspace 与 Workbench 参考应用，品牌配置集中管理；macOS 首发，Windows/Linux 后续交付。第一版包含聊天、工具、审批、计划、模型连接与引导，不包含交互式浏览器。构建与运行命令随对应任务验证后补充。
