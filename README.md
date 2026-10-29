@@ -11,5 +11,6 @@
 - [首次验证记录](docs/verification-2026-10-29.md)
 - [原生对话验证](docs/verification-native-turn-2026-10-29.md)
 - [协议生成验证](docs/verification-codegen-2026-10-29.md)
+- [Linux 流式性能测量](docs/verification-linux-perf-2026-10-29.md)
 
 采用 AgentKit workspace 与 Workbench 参考应用，品牌配置集中管理；当前按 Linux 优先开发验证，macOS 与 Windows 平台验证放到最后。第一版包含聊天、工具、审批、计划、模型连接与引导，不包含交互式浏览器。构建后端后使用 `cargo run -p workbench --locked` 启动，详见开发文档。

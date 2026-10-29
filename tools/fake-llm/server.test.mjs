@@ -34,3 +34,18 @@ test('rejects a tool result without the fixture evidence', async () => {
     assert.equal(result.status, 422);
   });
 });
+
+test('performance stream reports actual paced tokens only after a complete response', async () => {
+  const fake=createFakeLlm({fixturePath:'/fixture.txt',expectedMarker:'verified-marker',perf:{tokens:64,rate:50}});
+  await new Promise(resolve=>fake.server.listen(0,'127.0.0.1',resolve));
+  try {
+    const response=await request(`http://127.0.0.1:${fake.server.address().port}`,[{role:'tool',tool_call_id:'call_fixture_read',content:'verified-marker'}]);
+    const wire=await response.text();
+    const text=wire.split('\n').filter(line=>line.startsWith('data: {')).map(line=>JSON.parse(line.slice(6)).choices[0].delta.content??'').join('');
+    assert.match(text,/```rust/);
+    assert.equal(fake.stats.perfStreams.length,1);
+    assert.equal(fake.stats.perfStreams[0].tokens,64);
+    assert.ok(fake.stats.perfStreams[0].elapsedMs>0);
+    assert.equal(fake.stats.perfStreams[0].completed,true);
+  } finally { await new Promise(resolve=>fake.server.close(resolve)); }
+});

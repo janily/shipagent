@@ -69,3 +69,14 @@ node --test tools/codegen/schema.test.mjs
 ```
 
 Node >=22。生成器只读取已初始化的固定子模块类型源，不修改 backend/mkagent；`--check` 在临时目录生成并比较，不覆盖手工修改。详细兼容规则及正式迁移边界见 [生成工具](../tools/codegen/README.md) 和 [本次验证](verification-codegen-2026-10-29.md)。
+
+## Linux 流式性能实验
+
+```sh
+cargo build --release -p workbench --features perf --locked
+node tools/perf/run.mjs --binary target/release/workbench --backend target/backend/linux-x64 --output target/perf/stream.json --runs 3 --tokens 600 --environment '实际 CPU/GPU/显示环境'
+```
+
+需要 Python 3、Linux 显示环境和 Vulkan；Xvfb 无窗口管理器时安装 xdotool 并加 `--focus xdotool`。输出文件须不存在。默认应用不启用 perf。原生工作时间、GPU提交/调度、批次延迟分别报告；不是用 SSE 间隔充当帧耗时。
+
+判定、监督机制、断流/强杀命令见 [工具说明](../tools/perf/README.md)，本次数据和未达标项见 [验证报告](verification-linux-perf-2026-10-29.md)。

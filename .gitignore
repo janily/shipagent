@@ -29,3 +29,6 @@ rustc-ice-*.txt
 
 # Isolated protocol generator dependencies
 tools/codegen/node_modules/
+
+# Python benchmark test caches
+__pycache__/

@@ -1,0 +1,317 @@
+{
+  "schemaVersion": 1,
+  "status": "measured",
+  "environment": {
+    "label": "Cloud cgroup 2 CPU / 8 GiB; Xvfb 1440x960; Mesa lavapipe; xdotool focus; 1280x820 native window",
+    "focus": "xdotool",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "cpuCount": 3,
+    "memoryBytes": 10452471808,
+    "kernel": "6.18.55",
+    "displayBackend": "x11",
+    "vulkanDriver": "lvp_icd.json",
+    "cpuQuota": "200000 100000",
+    "memoryLimit": "8589934592"
+  },
+  "workload": {
+    "rate": 50,
+    "tokens": 600,
+    "tokenizer": "simulated whitespace-delimited word plus trailing whitespace",
+    "scenario": "stream"
+  },
+  "runs": [
+    {
+      "native": {
+        "schemaVersion": 1,
+        "profile": "release",
+        "optLevel": "3",
+        "outcome": "complete",
+        "events": {
+          "complete": 1,
+          "text_complete": 2,
+          "text_delta": 605,
+          "title_generated": 1,
+          "tool_result": 1,
+          "tool_start": 1,
+          "usage_update": 7,
+          "user_message": 1
+        },
+        "deltaBytes": 6337,
+        "firstDeltaToTerminalMs": 12166.53284,
+        "activeUpdateFraction": 1,
+        "finalAssistantBytes": 6292,
+        "completionTailMs": 100,
+        "finalFramePresented": true,
+        "frameWork": {
+          "count": 248,
+          "p50_ms": 3.461703,
+          "p95_ms": 5.513909,
+          "max_ms": 29.408989
+        },
+        "draw": {
+          "count": 248,
+          "p50_ms": 3.31148,
+          "p95_ms": 4.984967,
+          "max_ms": 29.329054
+        },
+        "controllerUpdate": {
+          "count": 177,
+          "p50_ms": 0.08547,
+          "p95_ms": 1.612458,
+          "max_ms": 7.352886000000001
+        },
+        "batchReceiptToPresent": {
+          "count": 177,
+          "p50_ms": 93.038568,
+          "p95_ms": 110.41790499999999,
+          "max_ms": 139.887604
+        },
+        "unpresentedUpdates": 0,
+        "dirtyToPresent": {
+          "count": 248,
+          "p50_ms": 45.732757,
+          "p95_ms": 64.008098,
+          "max_ms": 81.564262
+        },
+        "submission": {
+          "count": 248,
+          "p50_ms": 32.863631,
+          "p95_ms": 52.557393,
+          "max_ms": 65.695115
+        },
+        "animationInterval": {
+          "count": 7,
+          "p50_ms": 45.470992,
+          "p95_ms": 62.165158,
+          "max_ms": 62.165158
+        },
+        "unmeasuredFrames": 0,
+        "unpresentedFrames": 0,
+        "unpairedPresentFrames": 0
+      },
+      "model": {
+        "requests": 3,
+        "toolCalls": 1,
+        "toolResults": 1,
+        "errors": 0,
+        "perfStreams": [
+          {
+            "tokens": 600,
+            "bytes": 6292,
+            "elapsedMs": 11979.887746,
+            "maxGapMs": 38.81679200000144,
+            "observedRate": 50.00046851023306,
+            "completed": true
+          }
+        ]
+      },
+      "verdict": {
+        "valid": true,
+        "frameBudgetMet": true,
+        "reasons": [],
+        "referenceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "forced": false,
+        "remainingOwnedProcesses": 0,
+        "reapedOrphans": 0
+      }
+    },
+    {
+      "native": {
+        "schemaVersion": 1,
+        "profile": "release",
+        "optLevel": "3",
+        "outcome": "complete",
+        "events": {
+          "complete": 1,
+          "text_complete": 2,
+          "text_delta": 605,
+          "title_generated": 1,
+          "tool_result": 1,
+          "tool_start": 1,
+          "usage_update": 7,
+          "user_message": 1
+        },
+        "deltaBytes": 6337,
+        "firstDeltaToTerminalMs": 12101.687011,
+        "activeUpdateFraction": 1,
+        "finalAssistantBytes": 6292,
+        "completionTailMs": 100,
+        "finalFramePresented": true,
+        "frameWork": {
+          "count": 220,
+          "p50_ms": 3.6814389999999997,
+          "p95_ms": 6.34897,
+          "max_ms": 23.807082
+        },
+        "draw": {
+          "count": 220,
+          "p50_ms": 3.592511,
+          "p95_ms": 6.032112,
+          "max_ms": 23.601766
+        },
+        "controllerUpdate": {
+          "count": 165,
+          "p50_ms": 0.080872,
+          "p95_ms": 1.683445,
+          "max_ms": 22.479301
+        },
+        "batchReceiptToPresent": {
+          "count": 165,
+          "p50_ms": 101.50253099999999,
+          "p95_ms": 125.64479800000001,
+          "max_ms": 160.996997
+        },
+        "unpresentedUpdates": 0,
+        "dirtyToPresent": {
+          "count": 220,
+          "p50_ms": 51.085365,
+          "p95_ms": 71.387233,
+          "max_ms": 91.082324
+        },
+        "submission": {
+          "count": 220,
+          "p50_ms": 36.730385999999996,
+          "p95_ms": 61.442713000000005,
+          "max_ms": 76.244181
+        },
+        "animationInterval": {
+          "count": 6,
+          "p50_ms": 56.662392,
+          "p95_ms": 74.88439500000001,
+          "max_ms": 74.88439500000001
+        },
+        "unmeasuredFrames": 0,
+        "unpresentedFrames": 0,
+        "unpairedPresentFrames": 0
+      },
+      "model": {
+        "requests": 3,
+        "toolCalls": 1,
+        "toolResults": 1,
+        "errors": 0,
+        "perfStreams": [
+          {
+            "tokens": 600,
+            "bytes": 6292,
+            "elapsedMs": 11976.480903,
+            "maxGapMs": 44.94502199999988,
+            "observedRate": 50.01469169879075,
+            "completed": true
+          }
+        ]
+      },
+      "verdict": {
+        "valid": true,
+        "frameBudgetMet": true,
+        "reasons": [],
+        "referenceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "forced": false,
+        "remainingOwnedProcesses": 0,
+        "reapedOrphans": 0
+      }
+    },
+    {
+      "native": {
+        "schemaVersion": 1,
+        "profile": "release",
+        "optLevel": "3",
+        "outcome": "complete",
+        "events": {
+          "complete": 1,
+          "text_complete": 2,
+          "text_delta": 605,
+          "title_generated": 1,
+          "tool_result": 1,
+          "tool_start": 1,
+          "usage_update": 7,
+          "user_message": 1
+        },
+        "deltaBytes": 6337,
+        "firstDeltaToTerminalMs": 12117.408485,
+        "activeUpdateFraction": 1,
+        "finalAssistantBytes": 6292,
+        "completionTailMs": 100,
+        "finalFramePresented": true,
+        "frameWork": {
+          "count": 232,
+          "p50_ms": 3.642621,
+          "p95_ms": 9.069932,
+          "max_ms": 25.855271
+        },
+        "draw": {
+          "count": 232,
+          "p50_ms": 3.4891789999999996,
+          "p95_ms": 6.584768,
+          "max_ms": 25.802977000000002
+        },
+        "controllerUpdate": {
+          "count": 170,
+          "p50_ms": 0.076685,
+          "p95_ms": 1.214479,
+          "max_ms": 3.6525860000000003
+        },
+        "batchReceiptToPresent": {
+          "count": 170,
+          "p50_ms": 98.863368,
+          "p95_ms": 125.064267,
+          "max_ms": 142.897971
+        },
+        "unpresentedUpdates": 0,
+        "dirtyToPresent": {
+          "count": 232,
+          "p50_ms": 50.498101,
+          "p95_ms": 69.32883700000001,
+          "max_ms": 93.532516
+        },
+        "submission": {
+          "count": 232,
+          "p50_ms": 34.896739000000004,
+          "p95_ms": 58.108214,
+          "max_ms": 84.034783
+        },
+        "animationInterval": {
+          "count": 6,
+          "p50_ms": 51.606144,
+          "p95_ms": 55.476834000000004,
+          "max_ms": 55.476834000000004
+        },
+        "unmeasuredFrames": 0,
+        "unpresentedFrames": 0,
+        "unpairedPresentFrames": 0
+      },
+      "model": {
+        "requests": 3,
+        "toolCalls": 1,
+        "toolResults": 1,
+        "errors": 0,
+        "perfStreams": [
+          {
+            "tokens": 600,
+            "bytes": 6292,
+            "elapsedMs": 11979.675645000003,
+            "maxGapMs": 44.20463500000187,
+            "observedRate": 50.00135377204529,
+            "completed": true
+          }
+        ]
+      },
+      "verdict": {
+        "valid": true,
+        "frameBudgetMet": true,
+        "reasons": [],
+        "referenceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "forced": false,
+        "remainingOwnedProcesses": 0,
+        "reapedOrphans": 0
+      }
+    }
+  ],
+  "binarySha256": "3e58798ad809526d46b55b74ef3e792eaddc2e05938db8486602c8fabfc91878",
+  "binaryBytes": 44974584
+}

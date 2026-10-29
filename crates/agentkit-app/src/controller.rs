@@ -1,3 +1,10 @@
+#[cfg(feature = "perf")]
+#[path = "perf.rs"]
+mod perf;
+#[cfg(feature = "perf")]
+pub(crate) fn validate_perf() -> Result<()> {
+    perf::Config::from_env().map(|_| ())
+}
 use crate::Brand;
 use agentkit_client::{ConnectionState, Endpoint, api::WorkbenchApi};
 use agentkit_protocol::prototype::{Session, SessionEvent, Workspace};
@@ -148,6 +155,8 @@ async fn initialize(endpoint: Endpoint) -> Result<Started> {
 }
 
 pub(crate) struct WorkbenchController {
+    #[cfg(feature = "perf")]
+    perf: Option<perf::Capture>,
     view: Entity<WorkbenchView>,
     brand: Brand,
     runtime: RuntimeSlot,
@@ -175,6 +184,11 @@ impl WorkbenchController {
             this.handle(intent.clone(), window, cx)
         });
         let mut this = Self {
+            #[cfg(feature = "perf")]
+            perf: perf::Config::from_env()
+                .ok()
+                .flatten()
+                .map(|config| perf::Capture::new(config, window.window_handle().window_id())),
             view,
             brand,
             runtime,
@@ -189,6 +203,8 @@ impl WorkbenchController {
             _subscription: subscription,
         };
         this.start(window, cx);
+        #[cfg(feature = "perf")]
+        perf::watchdog(&mut this, window, cx);
         this
     }
     fn start(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -247,9 +263,13 @@ impl WorkbenchController {
             view.set_sessions(started.sessions, cx);
             view.show_session(state, cx);
         });
+        #[cfg(feature = "perf")]
+        perf::launch(self, window, cx);
         let events = started.events;
         self.events = Some(cx.spawn_in(window, async move |weak, cx| {
             while let Ok(first) = events.recv().await {
+                #[cfg(feature = "perf")]
+                let received = std::time::Instant::now();
                 cx.background_executor()
                     .timer(Duration::from_millis(16))
                     .await;
@@ -261,12 +281,18 @@ impl WorkbenchController {
                     }
                 }
                 if weak
-                    .update_in(cx, |this, _, cx| {
+                    .update_in(cx, |this, _window, cx| {
+                        #[cfg(feature = "perf")]
+                        let update_started = std::time::Instant::now();
                         if let Some(state) = &mut this.state {
                             for args in batch {
                                 if let Some(value) = args.into_iter().next()
                                     && let Ok(event) = serde_json::from_value::<SessionEvent>(value)
                                 {
+                                    #[cfg(feature = "perf")]
+                                    if let Some(capture) = &mut this.perf {
+                                        capture.observe(&event);
+                                    }
                                     state.apply(&event);
                                 }
                             }
@@ -276,6 +302,16 @@ impl WorkbenchController {
                                     .update(cx, |view, cx| view.show_session(snapshot, cx));
                             }
                         }
+                        #[cfg(feature = "perf")]
+                        if let Some(capture) = &mut this.perf {
+                            capture.note_update(
+                                received,
+                                update_started,
+                                _window.is_window_active(),
+                            );
+                        }
+                        #[cfg(feature = "perf")]
+                        perf::finish_if_terminal(this, _window, cx);
                     })
                     .is_err()
                 {
