@@ -18,6 +18,7 @@ url.workspace = true
 workspace = true
 
 [dev-dependencies]
+agentkit-store.workspace = true
 agentkit-client.workspace = true
 tempfile.workspace = true
 serde_json.workspace = true

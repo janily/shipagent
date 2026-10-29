@@ -9,12 +9,11 @@ Rust 1.99.1（rust-toolchain.toml）、Bun >=1.3.14、Node >=18、uv。GPUI Kit 
 ```sh
 git clone --recurse-submodules https://github.com/janily/shipagent.git
 cd shipagent
-git checkout chore/T-0-01-workspace
 git submodule update --init
 cargo xtask backend build
 ```
 
-当前开发代码在功能分支，尚未合并 main。后端只从固定 commit 导出到 target 下的临时源码树中应用补丁；不会修改 backend/mkagent。构建成功且产物检查通过后才替换 target/backend/<平台>-<架构>。失败会保留上一次产物。
+原生流式对话增量在 feat/T-0-05-native-streaming；基础骨架已合并 main。后端只从固定 commit 导出到 target 下的临时源码树中应用补丁；不会修改 backend/mkagent。构建成功且产物检查通过后才替换 target/backend/<平台>-<架构>。失败会保留上一次产物。
 
 Bun 不在 PATH 时可用 AGENTKIT_BUN 指定可执行文件。上游锁文件的公开 npm 镜像无法访问时，可设 AGENTKIT_USE_NPMJS=1，在临时源码树中将下载地址换为官方 registry.npmjs.org；版本和完整性哈希不变，原锁文件不修改。ripgrep 安装脚本需要访问 GitHub release API；受限环境可把同版本官方 release 产物预放入该依赖自己的缓存，不能跳过校验或以其他版本冒充。
 
@@ -34,10 +33,28 @@ AGENTKIT_BACKEND_DIR="$PWD/target/backend/linux-x64" cargo test -p agentkit-side
 ## 当前实现边界
 
 - 协议：wire envelope、错误兼容、递归二进制包装；完整 DTO/SessionEvent 代码生成仍在后续任务。
-- client：独立 smol 线程，本地握手、invoke、订阅、超时、断线 pending 清理、5秒 ack、Pong 和发送大小检查；自动重连、完整能力分派及类型化业务门面未实现。
+- client：独立 smol 线程，本地握手、invoke、订阅、超时、断线 pending 清理、5秒 ack、Pong 和发送大小检查；已有阶段0类型化业务门面；自动重连、完整能力分派未实现。
 - sidecar：异步启动、随机内存 token、就绪验证、Unix进程组退出；自动重启、shell 环境导入、日志系统及 Windows Job Object 未实现。
-- store/ui/app 目前是 crate 骨架。workbench 尚未提供窗口；不要把 cargo run 的空入口当成应用交付。
+- store/ui/app 已提供阶段0原生窗口与完整工具回合：MessageScroller、增量 Markdown、原生 Textarea、发送/停止、显式审批、新建/打开会话、端点配置及断线提示。单活跃回合，运行时禁止切换；完整多会话和其他面板按后续任务执行。
 
 ## 依赖审计
 
 cargo deny 继续阻断所有依赖的漏洞公告及许可证违规。GPUI 固定版本的间接依赖带有若干 unmaintained 维护状态公告，无可用升级；已在首次报告记录。维护状态检查对 workspace 自身启用，间接依赖的维护风险随 GPUI 升级评估，不添加漏洞 ID 忽略项。0BSD 是本次依赖中 enum-iterator 的宽松许可证，已明确允许。
+
+## 运行原生窗口
+
+```sh
+cargo run -p workbench --locked
+```
+
+先构建后端。启动后在窗口填写 OpenAI-compatible Base URL、模型和可选 API Key，保存后发送。默认数据目录由 brand.toml 的 data_dir_name 决定；测试建议用 AGENTKIT_CONFIG_DIR 指向隔离目录，AGENTKIT_WORKING_DIR 指向允许 Agent 操作的项目。AGENTKIT_BACKEND_DIR 可覆盖后端路径。AGENTKIT_LANGUAGE=en 或 zh-CN；主题按钮即时切换。Enter 发送、Shift+Enter 换行，运行时点击停止；macOS Cmd+Q/Linux Ctrl+Q 会先清理后端再退出。
+
+无外部密钥的验证：
+
+```sh
+node --test tools/fake-llm/server.test.mjs
+cargo test -p agentkit-ui --test workbench --locked
+AGENTKIT_BACKEND_DIR="$PWD/target/backend/linux-x64" cargo test -p agentkit-sidecar --test agent_turn --locked -- --ignored
+```
+
+agent_turn 自行启动 loopback 模型服务和隔离后端，实际读取临时文件并验证工具结果及取消。Linux 原生构建需要 GPUI 的 X11/Wayland、xkbcommon、fontconfig 等开发库及可用 Vulkan；CI 的原生窗口检查在 macOS 上执行。完整边界见 [本次验证](verification-native-turn-2026-10-29.md)。
