@@ -2,6 +2,9 @@
 #![deny(missing_docs)]
 rust_i18n::i18n!("locales", fallback = "en");
 mod chat;
+/// Isolated, memory-only Kit component examples; enable with `samples`.
+#[cfg(feature = "samples")]
+pub mod samples;
 mod workbench;
 pub use workbench::{WorkbenchIntent, WorkbenchView};
 pub(crate) fn tr(key: &str) -> String {

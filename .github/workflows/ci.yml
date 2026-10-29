@@ -44,7 +44,21 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y clang pkg-config libfontconfig1-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libasound2-dev libvulkan-dev libxcb-shape0-dev libxcb-xfixes0-dev
       - run: cargo check --workspace --all-targets --all-features --locked
-      - run: cargo test -p agentkit-ui -p agentkit-app --features agentkit-app/perf --locked
+      - run: cargo test -p agentkit-ui -p agentkit-app --features agentkit-app/perf,agentkit-ui/samples --locked
+      - run: cargo build -p workbench --locked
+      - run: cargo build -p agentkit-ui --features samples --example components --locked
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Open a real native window and render a frame
+        if: runner.os != 'Linux'
+        run: node tools/native-smoke/run.mjs
+      - uses: actions/upload-artifact@v4
+        if: always() && runner.os != 'Linux'
+        with:
+          name: native-smoke-${{ matrix.os }}
+          path: target/native-smoke.json
+          if-no-files-found: warn
 
   agent-contract:
     strategy:

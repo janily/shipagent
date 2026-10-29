@@ -6,6 +6,14 @@ license.workspace = true
 repository.workspace = true
 publish = false
 
+[features]
+default = []
+samples = []
+
+[[example]]
+name = "components"
+required-features = ["samples"]
+
 [dependencies]
 agentkit-protocol.workspace = true
 serde_json.workspace = true
