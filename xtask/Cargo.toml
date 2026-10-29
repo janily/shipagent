@@ -7,9 +7,13 @@ publish = false
 
 [dependencies]
 anyhow.workspace = true
+serde_json.workspace = true
+typify = { version = "=0.6.0", default-features = false }
+schemars = "=0.8.22"
+syn = { version = "2", features = ["full", "visit-mut"] }
+prettyplease = "0.2"
+quote = "1"
+tempfile.workspace = true
 
 [lints]
 workspace = true
-
-[dev-dependencies]
-tempfile.workspace = true
