@@ -22,22 +22,24 @@
 ### Task 1: Native host verification
 Files: .github/workflows/ci.yml, docs/development.md.
 Interfaces: existing cargo check/test and xtask backend build.
-- [ ] Expand unit/native/real-backend contract matrices to ubuntu-latest, macos-14, windows-2022 with fail-fast false; Linux dependencies only on Linux; Linux-only supervisor tests conditional.
-- [ ] Commit/push, create draft PR, observe actual host results and fix reproducible portability failures.
+- [x] Expand unit/native/real-backend contract matrices to ubuntu-latest, macos-14, windows-2022 with fail-fast false; Linux dependencies only on Linux; Linux-only supervisor tests conditional.
+- [x] Commit/push, create draft PR, observe actual host results and fix reproducible portability failures.
 Expected: each matrix job succeeds, or exact failed commands/errors recorded pending fixes.
 
 ### Task 2: Interactive component sample
 Files: crates/agentkit-ui/src/samples.rs, examples/components.rs, tests/samples.rs, lib.rs.
 Produces: ComponentSamples::new(window, cx), standalone cargo run -p agentkit-ui --example components.
-- [ ] Native tests first: type Chinese and submit; blank ignored; settings round trip preserves draft; collapse shows/hides detail; clear dialog cancel preserves and confirm clears. Observe missing API failure.
-- [ ] Implement actual six Kit components, local state only, settings theme switch immediate, constrained two-pane resize.
-- [ ] Run native tests and existing suite; run example on Linux Xvfb, inspect/capture screenshot and resize.
+- [x] Native tests first: type Chinese and submit; blank ignored; settings round trip preserves draft; collapse shows/hides detail; clear dialog cancel preserves and confirm clears. Observe missing API failure.
+- [x] Implement actual six Kit components, local state only, settings theme switch immediate, constrained two-pane resize.
+- [x] Run native tests and existing suite; run example on Linux Xvfb, inspect/capture screenshot and resize.
 Expected: tests pass, sample shows actual controls at 1280x820 and 960x600.
-- [ ] Commit and push.
+- [x] Commit and push.
 
 ### Task 3: Evidence and review
 Files: docs/verification-components-platform-2026-10-29.md, docs/development.md, README.md.
-- [ ] Record actual native CI results with links, sample command and Linux screenshot, pending physical desktop/signing/performance gates.
-- [ ] fmt, core/native tests, all-features native check/clippy, codegen drift and CI.
-- [ ] Fresh whole-branch review; fix important findings, commit/push and mark PR ready when checks pass.
+- [x] Record actual native CI results with links, sample command and Linux screenshot, pending physical desktop/signing/performance gates.
+- [x] fmt, core/native tests, all-features native check/clippy, codegen drift and CI.
+- [x] Fresh whole-branch review; fix important findings, commit/push and mark PR ready when checks pass.
 Expected: reviewable PR, no phase-zero acceptance claim.
+
+Execution note: real native smoke was strengthened after review to require a profiler Present record from the matching window, after a second frame callback. Node reports reject callback-only evidence. Windows loopback buffering required splitting deterministic AsyncWrite backpressure coverage from real-TCP deadline/explicit-close coverage. CI runs on PR/main push to avoid duplicate matrices. Two sample-only minor findings remain documented in the verification report.

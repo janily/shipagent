@@ -1,0 +1,14 @@
+{
+  "platform": "macos",
+  "arch": "aarch64",
+  "renderedFrame": true,
+  "submittedFrames": 1,
+  "frameCallbacks": 3,
+  "elapsedMs": 254.350625,
+  "width": 1280,
+  "height": 820,
+  "status": "passed",
+  "physicalDesktopAcceptance": "not_evaluated",
+  "ciRun": 40966883167,
+  "commit": "d8d63bc8f54326adbb554b00d791c431077eb94a"
+}

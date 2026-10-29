@@ -99,6 +99,7 @@ jobs:
       - run: cargo xtask backend build
         env:
           AGENTKIT_USE_NPMJS: '1'
+          GITHUB_TOKEN: ${{ github.token }}
       - run: cargo test -p agentkit-sidecar --test agent_turn --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
