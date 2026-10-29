@@ -26,3 +26,6 @@ rustc-ice-*.txt
 # Local execution state
 .superpowers/
 .worktrees/
+
+# Isolated protocol generator dependencies
+tools/codegen/node_modules/

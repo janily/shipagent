@@ -34,6 +34,15 @@ impl WorkbenchApi {
             .invoke("sessions:getMessages", vec![json!(id)])
             .await
     }
+    /// Decode an actual backend snapshot with the generated T-0-07 DTO surface.
+    pub async fn session_generated(
+        &self,
+        id: &str,
+    ) -> Result<agentkit_protocol::generated::Session, RpcError> {
+        self.client
+            .invoke("sessions:getMessages", vec![json!(id)])
+            .await
+    }
     /// Create a safe session; no permission escalation is performed.
     pub async fn create_session(
         &self,

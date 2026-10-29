@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", "module": "ESNext", "moduleResolution": "bundler",
+    "strict": true, "skipLibCheck": true, "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "baseUrl": "../..",
+    "paths": {
+      "@mkagent/core": ["backend/mkagent/packages/core/src/index.ts"],
+      "@mkagent/core/*": ["backend/mkagent/packages/core/src/*"],
+      "@mkagent/shared/*": ["backend/mkagent/packages/shared/src/*"]
+    }
+  },
+  "files": ["input.ts"]
+}

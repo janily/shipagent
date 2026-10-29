@@ -2,6 +2,8 @@
 #![deny(missing_docs)]
 mod codec;
 mod envelope;
+mod event;
+pub use event::DecodedSessionEvent;
 mod error;
 pub use codec::RpcValue;
 pub use envelope::{Envelope, EnvelopeKind};
@@ -20,3 +22,7 @@ pub struct Endpoint {
 
 /// Phase-zero handwritten boundary types; code generation follows separately.
 pub mod prototype;
+
+/// Generated phase-zero DTO feasibility surface, independent of the prototype UI reducer.
+#[allow(missing_docs, clippy::derivable_impls)]
+pub mod generated;

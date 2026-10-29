@@ -32,7 +32,7 @@ AGENTKIT_BACKEND_DIR="$PWD/target/backend/linux-x64" cargo test -p agentkit-side
 
 ## 当前实现边界
 
-- 协议：wire envelope、错误兼容、递归二进制包装；完整 DTO/SessionEvent 代码生成仍在后续任务。
+- 协议：wire envelope、错误兼容、递归二进制包装；T-0-07 已生成 Message/Session/SessionEvent 并验证真实流量，现与 prototype 边界并行。完整正式生成和迁移仍归 T-1-01。
 - client：独立 smol 线程，本地握手、invoke、订阅、超时、断线 pending 清理、5秒 ack、Pong 和发送大小检查；已有阶段0类型化业务门面；自动重连、完整能力分派未实现。
 - sidecar：异步启动、随机内存 token、就绪验证、Unix进程组退出；自动重启、shell 环境导入、日志系统及 Windows Job Object 未实现。
 - store/ui/app 已提供阶段0原生窗口与完整工具回合：MessageScroller、增量 Markdown、原生 Textarea、发送/停止、显式审批、新建/打开会话、端点配置及断线提示。单活跃回合，运行时禁止切换；完整多会话和其他面板按后续任务执行。
@@ -57,4 +57,15 @@ cargo test -p agentkit-ui --test workbench --locked
 AGENTKIT_BACKEND_DIR="$PWD/target/backend/linux-x64" cargo test -p agentkit-sidecar --test agent_turn --locked -- --ignored
 ```
 
-agent_turn 自行启动 loopback 模型服务和隔离后端，实际读取临时文件并验证工具结果及取消。Linux 原生构建需要 GPUI 的 X11/Wayland、xkbcommon、fontconfig 等开发库及可用 Vulkan；CI 的原生窗口检查在 macOS 上执行。完整边界见 [本次验证](verification-native-turn-2026-10-29.md)。
+agent_turn 自行启动 loopback 模型服务和隔离后端，实际读取临时文件并验证工具结果及取消。Linux 原生构建需要 GPUI 的 X11/Wayland、xkbcommon、fontconfig 等开发库及可用 Vulkan；CI 的原生窗口检查现按用户要求在 Linux 上执行；macOS/Windows 平台验收最后进行。完整边界见 [本次验证](verification-native-turn-2026-10-29.md)。
+
+## 生成协议并检查漂移
+
+```sh
+npm ci --ignore-scripts --prefix tools/codegen
+cargo xtask codegen
+cargo xtask codegen --check
+node --test tools/codegen/schema.test.mjs
+```
+
+Node >=22。生成器只读取已初始化的固定子模块类型源，不修改 backend/mkagent；`--check` 在临时目录生成并比较，不覆盖手工修改。详细兼容规则及正式迁移边界见 [生成工具](../tools/codegen/README.md) 和 [本次验证](verification-codegen-2026-10-29.md)。

@@ -1,0 +1,8 @@
+{
+  "name": "agentkit-protocol-codegen",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": { "test": "node --test schema.test.mjs" },
+  "dependencies": { "ts-json-schema-generator": "2.9.0" }
+}
