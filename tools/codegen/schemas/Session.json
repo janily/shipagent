@@ -1,0 +1,897 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; tools/codegen/input.ts",
+  "$ref": "#/definitions/Session",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Message": {
+      "properties": {
+        "annotations": {
+          "items": {
+            "properties": {
+              "body": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "properties": {
+                        "type": {
+                          "const": "highlight",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "properties": {
+                        "format": {
+                          "enum": [
+                            "plain",
+                            "markdown"
+                          ],
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "const": "note",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "text"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "properties": {
+                        "type": {
+                          "const": "tag",
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "value"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              "createdAt": {
+                "type": "number"
+              },
+              "createdBy": {
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "user",
+                      "agent",
+                      "system"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "type": "object"
+              },
+              "deletedAt": {
+                "type": "number"
+              },
+              "id": {
+                "type": "string"
+              },
+              "intent": {
+                "enum": [
+                  "highlight",
+                  "comment",
+                  "question"
+                ],
+                "type": "string"
+              },
+              "meta": {
+                "additionalProperties": {},
+                "type": "object"
+              },
+              "schemaVersion": {
+                "const": 1,
+                "type": "number"
+              },
+              "status": {
+                "enum": [
+                  "pending",
+                  "acknowledged",
+                  "resolved",
+                  "dismissed"
+                ],
+                "type": "string"
+              },
+              "style": {
+                "properties": {
+                  "color": {
+                    "type": "string"
+                  },
+                  "opacity": {
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "target": {
+                "properties": {
+                  "selectors": {
+                    "items": {
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "exact": {
+                              "type": "string"
+                            },
+                            "prefix": {
+                              "type": "string"
+                            },
+                            "suffix": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "const": "text-quote",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "exact"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "end": {
+                              "type": "number"
+                            },
+                            "start": {
+                              "type": "number"
+                            },
+                            "textVersion": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "const": "text-position",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "start",
+                            "end"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "blockId": {
+                              "type": "string"
+                            },
+                            "blockType": {
+                              "enum": [
+                                "paragraph",
+                                "code",
+                                "latex",
+                                "mermaid",
+                                "datatable",
+                                "spreadsheet",
+                                "image-preview",
+                                "pdf-preview",
+                                "html-preview"
+                              ],
+                              "type": "string"
+                            },
+                            "path": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "const": "block",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "blockType",
+                            "path"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "h": {
+                              "type": "number"
+                            },
+                            "page": {
+                              "type": "number"
+                            },
+                            "rotation": {
+                              "type": "number"
+                            },
+                            "type": {
+                              "const": "xywh",
+                              "type": "string"
+                            },
+                            "unit": {
+                              "enum": [
+                                "pixel",
+                                "percent"
+                              ],
+                              "type": "string"
+                            },
+                            "w": {
+                              "type": "number"
+                            },
+                            "x": {
+                              "type": "number"
+                            },
+                            "y": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "unit",
+                            "x",
+                            "y",
+                            "w",
+                            "h"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "columnKey": {
+                              "type": "string"
+                            },
+                            "rowKey": {
+                              "type": [
+                                "string",
+                                "number"
+                              ]
+                            },
+                            "type": {
+                              "const": "table-cell",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "rowKey",
+                            "columnKey"
+                          ],
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "type": "array"
+                  },
+                  "source": {
+                    "properties": {
+                      "messageId": {
+                        "type": "string"
+                      },
+                      "sessionId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "sessionId",
+                      "messageId"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "source",
+                  "selectors"
+                ],
+                "type": "object"
+              },
+              "threadRef": {
+                "properties": {
+                  "sessionId": {
+                    "type": "string"
+                  },
+                  "threadId": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "updatedAt": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "schemaVersion",
+              "createdAt",
+              "body",
+              "target"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "attachments": {
+          "items": {
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "markdownPath": {
+                "type": "string"
+              },
+              "mimeType": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "originalMimeType": {
+                "type": "string"
+              },
+              "originalSize": {
+                "type": "number"
+              },
+              "resizedBase64": {
+                "type": "string"
+              },
+              "size": {
+                "type": "number"
+              },
+              "storedPath": {
+                "type": "string"
+              },
+              "thumbnailBase64": {
+                "type": "string"
+              },
+              "thumbnailPath": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "image",
+                  "text",
+                  "pdf",
+                  "office",
+                  "audio",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              "wasResized": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "name",
+              "mimeType",
+              "size",
+              "storedPath"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "badges": {
+          "items": {
+            "properties": {
+              "collapsedLabel": {
+                "type": "string"
+              },
+              "end": {
+                "type": "number"
+              },
+              "filePath": {
+                "type": "string"
+              },
+              "iconDataUrl": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "rawText": {
+                "type": "string"
+              },
+              "start": {
+                "type": "number"
+              },
+              "type": {
+                "enum": [
+                  "skill",
+                  "context",
+                  "command",
+                  "file",
+                  "folder"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "label",
+              "rawText",
+              "start",
+              "end"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "content": {
+          "type": "string"
+        },
+        "elapsedSeconds": {
+          "type": "number"
+        },
+        "errorActions": {
+          "items": {
+            "properties": {
+              "action": {
+                "enum": [
+                  "retry",
+                  "settings",
+                  "open_url"
+                ],
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "label"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "errorCanRetry": {
+          "type": "boolean"
+        },
+        "errorCode": {
+          "type": "string"
+        },
+        "errorDetails": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "errorOriginal": {
+          "type": "string"
+        },
+        "errorTitle": {
+          "type": "string"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "infoLevel": {
+          "enum": [
+            "info",
+            "warning",
+            "error",
+            "success"
+          ],
+          "type": "string"
+        },
+        "isBackground": {
+          "type": "boolean"
+        },
+        "isError": {
+          "type": "boolean"
+        },
+        "isIntermediate": {
+          "type": "boolean"
+        },
+        "isPending": {
+          "type": "boolean"
+        },
+        "isQueued": {
+          "type": "boolean"
+        },
+        "isStreaming": {
+          "type": "boolean"
+        },
+        "parentToolUseId": {
+          "type": "string"
+        },
+        "planPath": {
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "user",
+            "assistant",
+            "tool",
+            "error",
+            "status",
+            "info",
+            "warning",
+            "plan"
+          ],
+          "type": "string"
+        },
+        "shellId": {
+          "type": "string"
+        },
+        "statusType": {
+          "enum": [
+            "compacting",
+            "compaction_complete",
+            "retrying"
+          ],
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "number"
+        },
+        "toolDisplayMeta": {
+          "properties": {
+            "category": {
+              "enum": [
+                "skill",
+                "native"
+              ],
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "displayName": {
+              "type": "string"
+            },
+            "iconDataUrl": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "displayName"
+          ],
+          "type": "object"
+        },
+        "toolDisplayName": {
+          "type": "string"
+        },
+        "toolDuration": {
+          "type": "number"
+        },
+        "toolInput": {
+          "additionalProperties": {},
+          "type": "object"
+        },
+        "toolIntent": {
+          "type": "string"
+        },
+        "toolName": {
+          "type": "string"
+        },
+        "toolResult": {
+          "type": "string"
+        },
+        "toolStatus": {
+          "enum": [
+            "pending",
+            "executing",
+            "completed",
+            "error",
+            "backgrounded"
+          ],
+          "type": "string"
+        },
+        "toolUseId": {
+          "type": "string"
+        },
+        "turnId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "content",
+        "timestamp"
+      ],
+      "type": "object"
+    },
+    "Session": {
+      "properties": {
+        "archivedAt": {
+          "type": "number"
+        },
+        "boundPrs": {
+          "items": {
+            "properties": {
+              "addedAt": {
+                "type": "number"
+              },
+              "host": {
+                "type": "string"
+              },
+              "number": {
+                "type": "number"
+              },
+              "owner": {
+                "type": "string"
+              },
+              "repo": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "host",
+              "owner",
+              "repo",
+              "number",
+              "addedAt"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "codingMode": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "number"
+        },
+        "currentStatus": {
+          "properties": {
+            "message": {
+              "type": "string"
+            },
+            "statusType": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "message"
+          ],
+          "type": "object"
+        },
+        "hasUnread": {
+          "type": "boolean"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "isArchived": {
+          "type": "boolean"
+        },
+        "isAsyncOperationOngoing": {
+          "type": "boolean"
+        },
+        "isFlagged": {
+          "type": "boolean"
+        },
+        "isProcessing": {
+          "type": "boolean"
+        },
+        "isRegeneratingTitle": {
+          "type": "boolean"
+        },
+        "lastFinalMessageId": {
+          "type": "string"
+        },
+        "lastMessageAt": {
+          "type": "number"
+        },
+        "lastMessageRole": {
+          "enum": [
+            "user",
+            "assistant",
+            "plan",
+            "tool",
+            "error"
+          ],
+          "type": "string"
+        },
+        "lastReadMessageId": {
+          "type": "string"
+        },
+        "llmConnection": {
+          "type": "string"
+        },
+        "messageCount": {
+          "type": "number"
+        },
+        "messages": {
+          "items": {
+            "$ref": "#/definitions/Message"
+          },
+          "type": "array"
+        },
+        "model": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parentSessionId": {
+          "type": "string"
+        },
+        "permissionMode": {
+          "enum": [
+            "safe",
+            "ask",
+            "allow-all"
+          ],
+          "type": "string"
+        },
+        "preview": {
+          "type": "string"
+        },
+        "prMonitors": {
+          "additionalProperties": {
+            "properties": {
+              "autoFix": {
+                "type": "boolean"
+              },
+              "lastFixAt": {
+                "type": "number"
+              },
+              "lastFixSignature": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "sessionFolderPath": {
+          "type": "string"
+        },
+        "supportsBranching": {
+          "type": "boolean"
+        },
+        "thinkingLevel": {
+          "enum": [
+            "off",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "type": "string"
+        },
+        "tokenUsage": {
+          "properties": {
+            "cacheCreationTokens": {
+              "type": "number"
+            },
+            "cacheReadTokens": {
+              "type": "number"
+            },
+            "contextTokens": {
+              "type": "number"
+            },
+            "contextUsage": {
+              "properties": {
+                "canCompact": {
+                  "type": "boolean"
+                },
+                "isEstimate": {
+                  "type": "boolean"
+                },
+                "isStale": {
+                  "type": "boolean"
+                },
+                "limitKind": {
+                  "enum": [
+                    "compaction",
+                    "context"
+                  ],
+                  "type": "string"
+                },
+                "limitTokens": {
+                  "type": "number"
+                },
+                "usedTokens": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "usedTokens",
+                "limitKind",
+                "isEstimate",
+                "isStale",
+                "canCompact"
+              ],
+              "type": "object"
+            },
+            "contextWindow": {
+              "type": "number"
+            },
+            "costUsd": {
+              "type": "number"
+            },
+            "inputTokens": {
+              "type": "number"
+            },
+            "outputTokens": {
+              "type": "number"
+            },
+            "totalTokens": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "inputTokens",
+            "outputTokens",
+            "totalTokens",
+            "contextTokens",
+            "costUsd"
+          ],
+          "type": "object"
+        },
+        "workingDirectory": {
+          "type": "string"
+        },
+        "workspaceId": {
+          "type": "string"
+        },
+        "workspaceName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "workspaceId",
+        "workspaceName",
+        "lastMessageAt",
+        "messages",
+        "isProcessing"
+      ],
+      "type": "object"
+    }
+  }
+}
