@@ -58,6 +58,15 @@ fn samples_submit_chinese_preserve_draft_and_cancel_clear(cx: &mut TestAppContex
                 window.click("sample-send", cx);
                 window.render_frame(cx);
                 assert!(window.try_find("sample-empty").is_some());
+                window.click("sample-composer", cx);
+                window.input("   ", cx);
+                window.click("sample-send", cx);
+                window.render_frame(cx);
+                assert_eq!(
+                    window.within("sample-composer").find("input-state").value(),
+                    Some("   ")
+                );
+                assert!(window.try_find("sample-empty").is_some());
                 let _ = view;
             })
             .unwrap();

@@ -8,7 +8,7 @@ publish = false
 
 [features]
 default = []
-samples = []
+samples = ["gpui-kit/profiler"]
 
 [[example]]
 name = "components"

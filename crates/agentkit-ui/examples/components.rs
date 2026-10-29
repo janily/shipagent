@@ -1,6 +1,10 @@
 //! Run with cargo run -p agentkit-ui --features samples --example components.
 use agentkit_ui::samples::ComponentSamples;
-use gpui_kit::{component::TitleBar, *};
+use gpui_kit::{
+    component::TitleBar,
+    profiler::{FrameEvent, FrameTimingCollector},
+    *,
+};
 use std::{cell::Cell, fs::OpenOptions, path::PathBuf, rc::Rc};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -31,12 +35,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 window.set_window_title("ShipAgent · 组件样板");
                 let view = cx.new(|cx| ComponentSamples::new(window, cx));
                 if let Some(report) = report {
-                    window.on_next_frame(move |window, cx| {
+                    gpui_kit::profiler::set_trace_enabled(true);
+                    let mut frames = FrameTimingCollector::new();
+                    window.on_next_frame(move |window, _| {
+                        // Kit's callback runs BEFORE this cycle's presentation.
+                        // Force a draw, then collect only on the following cycle.
+                        window.refresh();
+                        window.on_next_frame(move |window, cx| {
                         let size = window.viewport_size();
+                        let submitted = frames.collect_unseen().iter().filter(|frame| {
+                            matches!(frame, FrameEvent::Present(present) if present.window_id == window.window_handle().window_id())
+                        }).count();
                         let evidence = serde_json::json!({
                             "platform": std::env::consts::OS,
                             "arch": std::env::consts::ARCH,
                             "renderedFrame": true,
+                            "submittedFrames": submitted,
                             "width": f32::from(size.width),
                             "height": f32::from(size.height),
                         });
@@ -53,6 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Err(error) => eprintln!("Native sample report failed: {error}"),
                         }
                         cx.quit();
+                        });
                     });
                 }
                 view

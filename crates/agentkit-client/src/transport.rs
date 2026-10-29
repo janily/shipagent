@@ -330,3 +330,63 @@ pub(super) async fn run(
     }
     locked(&subscribers).clear();
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn actual_blocked_socket_write_obeys_controlled_deadline() {
+        use std::io::Read;
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        socket2::SockRef::from(&listener)
+            .set_recv_buffer_size(4096)
+            .unwrap();
+        let sender = socket2::Socket::new(
+            socket2::Domain::IPV4,
+            socket2::Type::STREAM,
+            Some(socket2::Protocol::TCP),
+        )
+        .unwrap();
+        sender.set_send_buffer_size(4096).unwrap();
+        sender
+            .connect(&listener.local_addr().unwrap().into())
+            .unwrap();
+        let sender: std::net::TcpStream = sender.into();
+        sender.set_nonblocking(true).unwrap();
+        let (mut receiver, _) = listener.accept().unwrap();
+        receiver
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .unwrap();
+        smol::block_on(async {
+            let sender = async_net::TcpStream::try_from(sender).unwrap();
+            let mut socket = WebSocketStream::from_raw_socket(
+                sender,
+                async_tungstenite::tungstenite::protocol::Role::Client,
+                None,
+            )
+            .await;
+            let payload = Message::Text("x".repeat(8 * 1024 * 1024).into());
+            let (_stop, stopped) = async_channel::bounded(1);
+            let start = Instant::now();
+            let result = controlled(
+                async {
+                    socket
+                        .send(payload)
+                        .await
+                        .map_err(|e| RpcError::Transport(e.to_string()))
+                },
+                Duration::from_millis(100),
+                &stopped,
+            )
+            .await;
+            assert!(matches!(result, Err(RpcError::Timeout)));
+            assert!(start.elapsed() < Duration::from_secs(2));
+            // Actual frame bytes reached TCP. Both buffer bounds ensure the
+            // complete 8 MiB frame cannot have been accepted by the sender.
+            let mut byte = [0];
+            receiver.read_exact(&mut byte).unwrap();
+        });
+    }
+}
