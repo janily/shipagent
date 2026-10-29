@@ -242,3 +242,68 @@ fn connection_timeout_is_observable_after_stalled_handshake() {
     assert!(matches!(result, Err(RpcError::Timeout)));
     assert!(matches!(client.last_error(), Some(RpcError::Timeout)));
 }
+
+#[test]
+fn sequence_ack_has_an_id_and_connection_answers_ping() {
+    let (port_send, port_recv) = std::sync::mpsc::channel();
+    let (ready_send, ready_recv) = std::sync::mpsc::channel();
+    let server = std::thread::spawn(move || {
+        smol::block_on(async move {
+            let listener = async_net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            port_send
+                .send(format!("ws://{}", listener.local_addr().unwrap()))
+                .unwrap();
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut socket = async_tungstenite::accept_async(stream).await.unwrap();
+            let _ = socket.next().await;
+            socket.send(async_tungstenite::tungstenite::Message::Text(json!({"id":"h","type":"handshake_ack","clientId":"c","registeredChannels":["echo"]}).to_string().into())).await.unwrap();
+            socket
+                .send(async_tungstenite::tungstenite::Message::Ping(
+                    vec![1, 2, 3].into(),
+                ))
+                .await
+                .unwrap();
+            let mut pong = false;
+            while let Some(Ok(frame)) = socket.next().await {
+                if let async_tungstenite::tungstenite::Message::Pong(bytes) = &frame {
+                    assert_eq!(bytes.as_ref(), &[1, 2, 3]);
+                    pong = true;
+                }
+                if !frame.is_text() {
+                    continue;
+                }
+                let value: Value = serde_json::from_str(frame.to_text().unwrap()).unwrap();
+                if value["type"] == "sequence_ack" {
+                    assert!(
+                        value["id"].as_str().is_some_and(|id| !id.is_empty()),
+                        "Upstream rejects empty IDs even on sequence_ack"
+                    );
+                    assert!(pong);
+                    ready_send.send(()).unwrap();
+                }
+                if value["type"] == "request" {
+                    socket
+                        .send(async_tungstenite::tungstenite::Message::Text(
+                            json!({"id":value["id"],"type":"response","result":"alive"})
+                                .to_string()
+                                .into(),
+                        ))
+                        .await
+                        .unwrap();
+                    break;
+                }
+            }
+        })
+    });
+    let client = client(port_recv.recv().unwrap());
+    let ready = ready_recv.recv_timeout(Duration::from_secs(8));
+    if ready.is_ok() {
+        assert_eq!(
+            smol::block_on(client.invoke::<String>("echo", vec![])).unwrap(),
+            "alive"
+        );
+    }
+    client.close();
+    server.join().unwrap();
+    assert!(ready.is_ok());
+}

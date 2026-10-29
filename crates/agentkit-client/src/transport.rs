@@ -159,6 +159,7 @@ pub(super) async fn run(
                 expire(&mut pending);
                 if last_ack.elapsed() >= Duration::from_secs(5) {
                     let ack = Envelope {
+                        id: uuid::Uuid::new_v4().to_string(),
                         kind: EnvelopeKind::SequenceAck,
                         last_seq: Some(last_seq),
                         ..Envelope::default()
