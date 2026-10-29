@@ -1,0 +1,36 @@
+{
+  "name": "Workbench",
+  "themes": [
+    {
+      "name": "Workbench Light",
+      "mode": "light",
+      "colors": {
+        "primary.background": "#2f50df",
+        "primary.hover.background": "#2745c8",
+        "primary.active.background": "#203ab0",
+        "primary.foreground": "#ffffff",
+        "sidebar.background": "#efefec",
+        "sidebar.accent.background": "#ffffff",
+        "background": "#ffffff",
+        "foreground": "#20201e",
+        "border": "#dfdfda",
+        "ring": "#2f50df"
+      }
+    },
+    {
+      "name": "Workbench Dark",
+      "mode": "dark",
+      "colors": {
+        "primary.background": "#90a6ff",
+        "primary.hover.background": "#a5b6ff",
+        "primary.active.background": "#7e98ff",
+        "primary.foreground": "#101114",
+        "sidebar.background": "#18191c",
+        "background": "#1c1d21",
+        "foreground": "#e4e4e7",
+        "border": "#303137",
+        "ring": "#90a6ff"
+      }
+    }
+  ]
+}
