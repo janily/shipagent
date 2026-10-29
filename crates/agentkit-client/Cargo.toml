@@ -7,6 +7,17 @@ repository.workspace = true
 publish = false
 
 [dependencies]
+url.workspace = true
+smol.workspace = true
+async-net.workspace = true
+async-tungstenite.workspace = true
+async-channel.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+secrecy.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
 agentkit-protocol.workspace = true
 
 [lints]

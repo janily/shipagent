@@ -50,3 +50,13 @@ fn unknown_envelope_fields_are_compatible() {
     assert_eq!(frame.client_id.as_deref(), Some("c"));
     assert!(frame.token.is_none());
 }
+
+#[test]
+fn null_response_result_is_not_lost() {
+    let frame: Envelope =
+        serde_json::from_value(json!({"id":"r1","type":"response","result":null})).unwrap();
+    assert_eq!(
+        serde_json::to_value(frame).unwrap(),
+        json!({"id":"r1","type":"response","result":null})
+    );
+}

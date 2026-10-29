@@ -18,6 +18,7 @@ pub struct Envelope {
     pub args: Option<Vec<serde_json::Value>>,
     /// Response result.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, deserialize_with = "present_result")]
     pub result: Option<serde_json::Value>,
     /// Structured remote error.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -93,4 +94,10 @@ pub enum EnvelopeKind {
     Error,
     /// Reliable delivery acknowledgement.
     SequenceAck,
+}
+
+fn present_result<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> Result<Option<serde_json::Value>, D::Error> {
+    serde::Deserialize::deserialize(d).map(Some)
 }
