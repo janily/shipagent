@@ -11,3 +11,7 @@ agentkit-app.workspace = true
 
 [lints]
 workspace = true
+
+[features]
+default = []
+perf = ["agentkit-app/perf"]

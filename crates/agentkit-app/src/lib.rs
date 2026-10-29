@@ -34,6 +34,8 @@ pub struct Brand {
 }
 /// Run a native GPUI application. The window opens before any backend IO.
 pub fn run(brand_toml: &str) -> Result<()> {
+    #[cfg(feature = "perf")]
+    controller::validate_perf()?;
     let brand: Brand = toml::from_str(brand_toml).context("Invalid brand.toml")?;
     let runtime: controller::RuntimeSlot = Rc::new(RefCell::new(None));
     let startup: controller::StartupSlot = Rc::new(RefCell::new(None));
