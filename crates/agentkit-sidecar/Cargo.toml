@@ -7,6 +7,17 @@ repository.workspace = true
 publish = false
 
 [dependencies]
+agentkit-protocol.workspace = true
+smol.workspace = true
+rand.workspace = true
+secrecy.workspace = true
+thiserror.workspace = true
+url.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+agentkit-client.workspace = true
+tempfile.workspace = true
+serde_json.workspace = true
