@@ -1,0 +1,12 @@
+{
+  "platform": "linux",
+  "arch": "x86_64",
+  "renderedFrame": true,
+  "submittedFrames": 1,
+  "frameCallbacks": 2,
+  "elapsedMs": 54.280708,
+  "width": 1280,
+  "height": 820,
+  "status": "passed",
+  "physicalDesktopAcceptance": "not_evaluated"
+}

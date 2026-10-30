@@ -20,5 +20,8 @@ thiserror.workspace = true
 uuid.workspace = true
 agentkit-protocol.workspace = true
 
+[dev-dependencies]
+socket2.workspace = true
+
 [lints]
 workspace = true

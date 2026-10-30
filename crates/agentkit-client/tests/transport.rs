@@ -183,7 +183,7 @@ fn request_timeout_applies_while_handshake_is_stalled() {
     assert!(matches!(result, Some(Err(RpcError::Timeout))));
 }
 #[test]
-fn blocked_write_obeys_deadline_and_closes_connection() {
+fn large_request_obeys_deadline_and_explicit_close_finishes() {
     use agentkit_client::ConnectionState;
     let (url, stop, server) = handshake_server(None, true);
     let client = client(url);
@@ -194,21 +194,30 @@ fn blocked_write_obeys_deadline_and_closes_connection() {
                     .invoke_timeout::<Value>(
                         "echo",
                         vec![json!("x".repeat(8 * 1024 * 1024))],
-                        Duration::from_secs(1),
+                        Duration::from_secs(4),
                     )
                     .await,
             )
         },
         async {
-            smol::Timer::after(Duration::from_secs(2)).await;
+            smol::Timer::after(Duration::from_secs(8)).await;
             None
         },
     ));
     smol::block_on(async {
         smol::Timer::after(Duration::from_millis(200)).await;
     });
-    let state = client.state();
+    // A host may buffer the whole request, in which case a response timeout
+    // legitimately leaves the socket connected. Explicit close must finish in
+    // both the buffered-response and blocked-write paths.
     client.close();
+    smol::block_on(async {
+        let limit = std::time::Instant::now() + Duration::from_secs(2);
+        while client.state() != ConnectionState::Disconnected && std::time::Instant::now() < limit {
+            smol::Timer::after(Duration::from_millis(10)).await;
+        }
+    });
+    let state = client.state();
     let _ = stop.send(());
     server.join().unwrap();
     assert!(matches!(result, Some(Err(RpcError::Timeout))));

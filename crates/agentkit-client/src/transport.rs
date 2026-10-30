@@ -330,3 +330,150 @@ pub(super) async fn run(
     }
     locked(&subscribers).clear();
 }
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn actual_socket_send_completes_or_obeys_deadline() {
+        use std::io::Read;
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        socket2::SockRef::from(&listener)
+            .set_recv_buffer_size(4096)
+            .unwrap();
+        let sender = socket2::Socket::new(
+            socket2::Domain::IPV4,
+            socket2::Type::STREAM,
+            Some(socket2::Protocol::TCP),
+        )
+        .unwrap();
+        sender.set_send_buffer_size(4096).unwrap();
+        sender
+            .connect(&listener.local_addr().unwrap().into())
+            .unwrap();
+        let sender: std::net::TcpStream = sender.into();
+        sender.set_nonblocking(true).unwrap();
+        let (mut receiver, _) = listener.accept().unwrap();
+        receiver
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .unwrap();
+        smol::block_on(async {
+            let sender = async_net::TcpStream::try_from(sender).unwrap();
+            let mut socket = WebSocketStream::from_raw_socket(
+                sender,
+                async_tungstenite::tungstenite::protocol::Role::Client,
+                None,
+            )
+            .await;
+            let payload = Message::Text("x".repeat(8 * 1024 * 1024).into());
+            let (_stop, stopped) = async_channel::bounded(1);
+            let start = Instant::now();
+            let result = controlled(
+                async {
+                    socket
+                        .send(payload)
+                        .await
+                        .map_err(|e| RpcError::Transport(e.to_string()))
+                },
+                Duration::from_millis(100),
+                &stopped,
+            )
+            .await;
+            assert!(
+                result.is_ok() || matches!(result, Err(RpcError::Timeout)),
+                "Unexpected TCP write outcome: {result:?}"
+            );
+            assert!(start.elapsed() < Duration::from_secs(2));
+            // Actual frame bytes reached TCP. Some kernels can still accept
+            // the complete frame on loopback, even with explicit buffer bounds.
+            // The deterministic IO fixture below covers backpressure separately.
+            let mut byte = [0];
+            receiver.read_exact(&mut byte).unwrap();
+            assert_eq!(byte[0], 0x81);
+        });
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod backpressure_tests {
+    use super::*;
+    use std::{
+        pin::Pin,
+        sync::atomic::{AtomicUsize, Ordering},
+        task::{Context, Poll},
+    };
+
+    // A real AsyncWrite implementation whose capacity is exhausted after 4KiB.
+    // Kernel send buffering cannot defeat this backpressure condition.
+    struct BoundedIo {
+        capacity: usize,
+        written: Arc<AtomicUsize>,
+    }
+    impl futures::AsyncRead for BoundedIo {
+        fn poll_read(
+            self: Pin<&mut Self>,
+            _: &mut Context<'_>,
+            _: &mut [u8],
+        ) -> Poll<std::io::Result<usize>> {
+            Poll::Pending
+        }
+    }
+    impl futures::AsyncWrite for BoundedIo {
+        fn poll_write(
+            mut self: Pin<&mut Self>,
+            _: &mut Context<'_>,
+            bytes: &[u8],
+        ) -> Poll<std::io::Result<usize>> {
+            let count = bytes.len().min(self.capacity);
+            if count == 0 {
+                return Poll::Pending;
+            }
+            self.capacity -= count;
+            self.written.fetch_add(count, Ordering::SeqCst);
+            Poll::Ready(Ok(count))
+        }
+        fn poll_flush(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+            Poll::Ready(Ok(()))
+        }
+        fn poll_close(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+            Poll::Ready(Ok(()))
+        }
+    }
+
+    #[test]
+    fn partially_written_websocket_frame_times_out_under_backpressure() {
+        smol::block_on(async {
+            let written = Arc::new(AtomicUsize::new(0));
+            let stream = BoundedIo {
+                capacity: 4096,
+                written: written.clone(),
+            };
+            let mut socket = WebSocketStream::from_raw_socket(
+                stream,
+                async_tungstenite::tungstenite::protocol::Role::Client,
+                None,
+            )
+            .await;
+            let payload = Message::Text("x".repeat(8192).into());
+            let (_stop, stopped) = async_channel::bounded(1);
+            let start = Instant::now();
+            let result = controlled(
+                async {
+                    socket
+                        .send(payload)
+                        .await
+                        .map_err(|e| RpcError::Transport(e.to_string()))
+                },
+                Duration::from_millis(100),
+                &stopped,
+            )
+            .await;
+            assert!(matches!(result, Err(RpcError::Timeout)));
+            assert_eq!(written.load(Ordering::SeqCst), 4096);
+            assert!(start.elapsed() < Duration::from_secs(2));
+        });
+    }
+}

@@ -13,7 +13,7 @@ git submodule update --init
 cargo xtask backend build
 ```
 
-原生流式对话增量在 feat/T-0-05-native-streaming；基础骨架已合并 main。后端只从固定 commit 导出到 target 下的临时源码树中应用补丁；不会修改 backend/mkagent。构建成功且产物检查通过后才替换 target/backend/<平台>-<架构>。失败会保留上一次产物。
+原生流式对话、协议生成与 Linux 性能测量均已合并 main。后端只从固定 commit 导出到 target 下的临时源码树中应用补丁；不会修改 backend/mkagent。构建成功且产物检查通过后才替换 target/backend/<平台>-<架构>。失败会保留上一次产物。
 
 Bun 不在 PATH 时可用 AGENTKIT_BUN 指定可执行文件。上游锁文件的公开 npm 镜像无法访问时，可设 AGENTKIT_USE_NPMJS=1，在临时源码树中将下载地址换为官方 registry.npmjs.org；版本和完整性哈希不变，原锁文件不修改。ripgrep 安装脚本需要访问 GitHub release API；受限环境可把同版本官方 release 产物预放入该依赖自己的缓存，不能跳过校验或以其他版本冒充。
 
@@ -57,7 +57,7 @@ cargo test -p agentkit-ui --test workbench --locked
 AGENTKIT_BACKEND_DIR="$PWD/target/backend/linux-x64" cargo test -p agentkit-sidecar --test agent_turn --locked -- --ignored
 ```
 
-agent_turn 自行启动 loopback 模型服务和隔离后端，实际读取临时文件并验证工具结果及取消。Linux 原生构建需要 GPUI 的 X11/Wayland、xkbcommon、fontconfig 等开发库及可用 Vulkan；CI 的原生窗口检查现按用户要求在 Linux 上执行；macOS/Windows 平台验收最后进行。完整边界见 [本次验证](verification-native-turn-2026-10-29.md)。
+agent_turn 自行启动 loopback 模型服务和隔离后端，实际读取临时文件并验证工具结果及取消。Linux 原生构建需要 GPUI 的 X11/Wayland、xkbcommon、fontconfig 等开发库及可用 Vulkan；CI 已扩展到 Linux、macOS 14 arm64 与 Windows Server 2022 x64 的核心单测、原生编译/测试、固定后端构建与真实 Agent 回合；macOS/Windows 另运行实际窗口冒烟。物理桌面/签名/打包验收见新报告。完整边界见 [本次验证](verification-native-turn-2026-10-29.md)。
 
 ## 生成协议并检查漂移
 
@@ -80,3 +80,32 @@ node tools/perf/run.mjs --binary target/release/workbench --backend target/backe
 需要 Python 3、Linux 显示环境和 Vulkan；Xvfb 无窗口管理器时安装 xdotool 并加 `--focus xdotool`。输出文件须不存在。默认应用不启用 perf。原生工作时间、GPU提交/调度、批次延迟分别报告；不是用 SSE 间隔充当帧耗时。
 
 判定、监督机制、断流/强杀命令见 [工具说明](../tools/perf/README.md)，本次数据和未达标项见 [验证报告](verification-linux-perf-2026-10-29.md)。
+
+## 六类原生组件样板（T-0-10）
+
+```sh
+cargo run -p agentkit-ui --features samples --example components --locked
+cargo test -p agentkit-ui --features samples --test samples --locked
+```
+
+无需后端或 API Key，不访问用户配置。左侧使用 Sidebar；主区使用 Textarea 和 Collapsible；右侧使用 Resizable（主区最小 400px、右栏 200–360px）；设置按钮打开 Kit Settings，主题立即生效，仅限本进程；清空按钮打开 Dialog，取消保留草稿，确认清空样板内容。窗口最小 960×600，中文输入/发送、草稿保留、折叠、确认/取消、空白提交和分栏拖动有原生控件测试。
+
+构建后可运行 `node tools/native-smoke/run.mjs`；Windows 自动选择 `.exe`。需要真实桌面或 Linux X11/Vulkan。程序使用显式 `--smoke-report NEW.json`，在后续帧回调等待最多 10 秒，验证至少一次该窗口的 Present 记录后写报告退出；监督脚本限制 30 秒并核对主机/架构/尺寸，结果写入不存在的 `target/native-smoke.json`。重复运行须选择/移走旧报告，防止把旧成功结果当新结果。此检查验证窗口创建与原生渲染提交，不代表物理显示、IME 候选框或完整主应用端到端验收。
+
+macOS 的真实后端契约可直接运行：
+
+```sh
+export AGENTKIT_BACKEND_DIR="$PWD/target/backend/darwin-arm64"
+cargo test -p agentkit-sidecar --test agent_turn --locked -- --ignored
+```
+
+Windows PowerShell：
+
+```powershell
+$env:AGENTKIT_BACKEND_DIR = (Resolve-Path target/backend/win32-x64).Path
+cargo test -p agentkit-sidecar --test agent_turn --locked -- --ignored
+cargo build -p agentkit-ui --features samples --example components --locked
+node tools/native-smoke/run.mjs
+```
+
+CI 中 macos-14 指 Apple Silicon arm64，windows-2022 指 x64；macOS Intel、Windows arm64 暂无本轮验证证据。Linux 本轮图形证据来自 X11/Xvfb，Wayland 实机仍待验证。

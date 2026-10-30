@@ -1,0 +1,14 @@
+{
+  "platform": "windows",
+  "arch": "x86_64",
+  "renderedFrame": true,
+  "submittedFrames": 1,
+  "frameCallbacks": 2,
+  "elapsedMs": 63.690999999999995,
+  "width": 1024,
+  "height": 728,
+  "status": "passed",
+  "physicalDesktopAcceptance": "not_evaluated",
+  "ciRun": 40966883167,
+  "commit": "d8d63bc8f54326adbb554b00d791c431077eb94a"
+}
