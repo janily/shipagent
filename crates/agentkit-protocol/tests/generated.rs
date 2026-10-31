@@ -112,3 +112,39 @@ fn required_nullable_fields_accept_null_but_reject_absence() {
     assert!(decode_event(malformed.clone()).is_err());
     assert!(serde_json::from_value::<agentkit_protocol::DecodedSessionEvent>(malformed).is_err());
 }
+
+#[test]
+fn runtime_projection_rejects_malformed_known_events() {
+    use agentkit_protocol::prototype::SessionEvent as RuntimeEvent;
+    for malformed in [
+        json!({"type":"text_delta","sessionId":"s"}),
+        json!({"type":"retry","sessionId":"s","phase":"backoff"}),
+        json!({"type":"user_message","sessionId":"s","message":{"id":"m","role":"user","content":"hi","timestamp":1.5}}),
+    ] {
+        assert!(serde_json::from_value::<RuntimeEvent>(malformed).is_err());
+    }
+}
+
+#[test]
+fn generated_event_variants_have_semantic_names() {
+    let event = decode_event(json!({"type":"text_delta","sessionId":"s","delta":"hi"})).unwrap();
+    match event {
+        SessionEvent::TextDeltaEvent(delta) => assert_eq!(delta.delta, "hi"),
+        _ => panic!("text_delta must decode to TextDeltaEvent"),
+    }
+}
+
+#[test]
+fn reviewed_integer_domains_preserve_epochs_and_reject_fractional_or_negative_counts() {
+    let mut wire =
+        json!({"id":"m","role":"user","content":"hi","timestamp":-1,"elapsedSeconds":0.125});
+    let parsed: Message = serde_json::from_value(wire.clone()).unwrap();
+    assert_eq!(parsed.timestamp, -1_i64);
+    assert_eq!(parsed.elapsed_seconds, Some(0.125));
+    wire["timestamp"] = json!(1.5);
+    assert!(serde_json::from_value::<Message>(wire).is_err());
+    for count in [json!(-1), json!(1.5), json!(4294967296_u64)] {
+        let wire = json!({"id":"s","workspaceId":"w","workspaceName":"workspace","lastMessageAt":0,"messages":[],"isProcessing":false,"messageCount":count});
+        assert!(serde_json::from_value::<Session>(wire).is_err());
+    }
+}

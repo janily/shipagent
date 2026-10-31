@@ -1,5 +1,6 @@
 //! Handwritten phase-zero DTO subset, ported from mkagent v0.2.6 protocol/dto.ts.
-//! This is explicitly not the final generated protocol surface (T-0-07/T-1-01).
+//! UI/domain projections remain transitional until T-1-03/T-1-06. Events validate
+//! against the generated wire schema before entering the prototype reducer.
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 /// Phase-zero Workspace fields; unknown upstream fields remain compatible.
@@ -123,7 +124,8 @@ pub struct SessionEvent {
 }
 impl<'de> Deserialize<'de> for SessionEvent {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-        let payload = Value::deserialize(d)?;
+        let validated = crate::DecodedSessionEvent::deserialize(d)?;
+        let payload = validated.raw().clone();
         let session_id = payload
             .get("sessionId")
             .and_then(Value::as_str)
