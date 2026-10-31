@@ -24,7 +24,7 @@
 - bundled backend + Pi + 本地 SSE 模型显式真实 Agent 契约通过：Read、文本流、最终持久化、取消，全部事件和会话快照通过生成类型。
 - 全功能 workspace clippy `-D warnings`、fmt、codegen --check、diff 检查通过；原生 UI/App 10 项测试通过。
 
-三平台结果与本分支提交对应的 GitHub CI 链接补于合并前；不得借用 PR #6 或旧提交的成功状态作为本分支结果。当前没有新增物理桌面、性能或正式签名验收结论。
+初次 [CI #30](https://github.com/janily/shipagent/actions/runs/41252148749) 的三个 macOS 作业在启动前被 GitHub macos-14 runner 计划停机取消（[官方退役公告](https://github.com/actions/runner-images/issues/13518)，2026-11-02 退役）。当前 CI 矩阵迁到 macos-15，重新验证实际平台；旧报告的 macos-14 结果仍只属于旧提交。最终三平台 CI 链接补于合并前；不得借用 PR #6 或旧提交的成功状态作为本分支结果。当前没有新增物理桌面、性能或正式签名验收结论。
 
 ## 后续
 
