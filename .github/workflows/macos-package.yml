@@ -38,6 +38,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
       - name: Verify mounted payload and actual native Agent round
         run: node tools/package/verify-mounted.mjs target/packages/macos-arm64
+      - name: Report public package and entitlement evidence
+        run: node tools/package/summarize.mjs target/packages/macos-arm64
       - uses: actions/upload-artifact@v4
         if: always()
         with:

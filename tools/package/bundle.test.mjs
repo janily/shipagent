@@ -23,7 +23,8 @@ test('bundle layout, branding, licenses and extensionless Mach-O inventory',asyn
  assert.match(plist,/<string>dev.agentkit.workbench<\/string>/);
  assert.equal(await readFile(join(f.output,'Contents/Resources/backend/server.js'),'utf8'),'server');
  assert.equal(await readFile(join(f.output,'Contents/Resources/LICENSE'),'utf8'),'application license');
- assert.equal((await stat(join(f.output,'Contents/MacOS/workbench'))).mode&0o111,0o111);
+ // POSIX executable bits are verified on Linux/macOS; Windows has no such bits.
+ if(process.platform!=='win32')assert.equal((await stat(join(f.output,'Contents/MacOS/workbench'))).mode&0o111,0o111);
  assert.deepEqual((await nativeFiles(f.output)).map(x=>x.replaceAll('\\','/')).sort(),[
  'Contents/MacOS/workbench','Contents/Resources/backend/node_modules/@vscode/ripgrep/bin/rg','Contents/Resources/backend/resources/bin/darwin-arm64/uv','Contents/Resources/backend/vendor/bun/bun'].sort());
  const plan=signPlan(await nativeFiles(f.output));

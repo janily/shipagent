@@ -9,6 +9,7 @@ import { createReadStream } from 'node:fs';
 import { createFakeLlm } from '../fake-llm/server.mjs';
 import { nativeFiles } from './bundle.mjs';
 import { verifyRound } from './verify-round.mjs';
+import { runProbeProcess } from './run-process.mjs';
 const exec=promisify(execFile);
 if(process.platform!=='darwin'||process.env.GITHUB_ACTIONS!=='true')throw new Error('Mounted automatic verification runs only in the macOS Actions trial workflow');
 const output=resolve(process.argv[2]??'target/packages/macos-arm64');
@@ -39,7 +40,7 @@ try {
  const env={...process.env};
  for(const key of Object.keys(env))if(/TOKEN|API_KEY|PASSWORD|SECRET/.test(key)||/^(APPLE_|OPENAI_|ANTHROPIC_|AWS_|AGENTKIT_REMOTE_|AGENTKIT_PERF_)/.test(key)||key==='AGENTKIT_BACKEND_DIR')delete env[key];
  Object.assign(env,{AGENTKIT_PERF_ROOT:root,AGENTKIT_PERF_MODEL_URL:`http://127.0.0.1:${model.server.address().port}/v1`,AGENTKIT_CONFIG_DIR:join(root,'data'),AGENTKIT_WORKING_DIR:join(root,'fixture')});
- await exec(join(app,'Contents/MacOS/workbench'),[],{cwd:join(root,'fixture'),env,timeout:65_000,maxBuffer:1024*1024});
+ await runProbeProcess(join(app,'Contents/MacOS/workbench'),[],{cwd:join(root,'fixture'),env,timeout:65_000,maxBuffer:1024*1024});
  const report=JSON.parse(await readFile(join(root,'native.json'),'utf8'));
  verifyRound(report,model.stats);
  evidence.native=report;evidence.model=structuredClone(model.stats);evidence.sourceBackendUnavailable=true;evidence.backendOverrideUsed=false;
