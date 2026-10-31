@@ -2,7 +2,7 @@
 
 ## 工具链
 
-Rust 1.99.1（rust-toolchain.toml）、Bun >=1.3.14、Node >=18、uv。GPUI Kit v0.8.1 上游 CI 使用 stable；本次安装当日 stable 为 1.99.1，已精确锁定。所有 Rust 依赖由 Cargo.lock 固定。
+Rust 1.99.1（rust-toolchain.toml）、Bun >=1.3.14、Node >=22（codegen与打包）、uv。GPUI Kit v0.8.1 上游 CI 使用 stable；本次安装当日 stable 为 1.99.1，已精确锁定。所有 Rust 依赖由 Cargo.lock 固定。
 
 ## 取得源码与构建后端
 
@@ -109,3 +109,15 @@ node tools/native-smoke/run.mjs
 ```
 
 CI 中 macos-14 指 Apple Silicon arm64，windows-2022 指 x64；macOS Intel、Windows arm64 暂无本轮验证证据。Linux 本轮图形证据来自 X11/Xvfb，Wayland 实机仍待验证。
+
+## macOS 应用包与 DMG 试跑
+
+```sh
+cargo xtask package --target macos-arm64 --sign ad-hoc
+```
+
+需原生 macOS 与 Xcode 命令行工具；版本源为根 Cargo.toml，品牌源为 apps/workbench/brand.toml。输出 target/packages/macos-arm64 中的 .app、DMG、签名与体积报告、SHA256SUMS；已存在输出不会被覆盖。应用从自身 Contents/Resources/backend 读取后端，缺失时不退回构建机源码路径。
+
+PR 的 macOS package trial 工作流显式增加 --probe，以工程包运行隔离的原生工具回合；默认打包不启用探针。工作流挂载DMG并移走源码后端，检查签名/哈希、真实Read和最终帧，以及挂载后端的持久化/取消契约。自动挂载探针只在Actions运行，不作为普通本地启动器。
+
+Developer ID与公证命令、凭据前提及完整限制见 [打包工具](../tools/package/README.md)；结果见 [T-0-09验证](verification-macos-package-2026-10-31.md)。当前ad-hoc工程包不等同于签名公证发行包，阶段0门槛仍未通过。

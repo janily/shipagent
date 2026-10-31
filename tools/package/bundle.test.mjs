@@ -54,3 +54,9 @@ test('Java bytecode sharing FAT magic is not treated as Mach-O',async t=>{
  await writeFile(join(f.output,'Example.class'),Buffer.from('cafebabe00000034001007000201000454657374','hex'));
  assert.deepEqual(await nativeFiles(f.output),[]);
 });
+test('hardened-runtime evidence must come from CodeDirectory flags',async()=>{
+ const { requireRuntimeFlags }=await import('./bundle.mjs');
+ assert.equal(requireRuntimeFlags('CodeDirectory v=20500 size=1 flags=0x10002(adhoc,runtime)'),0x10002);
+ assert.throws(()=>requireRuntimeFlags('CodeDirectory v=20500 size=1 flags=0x2(adhoc)'));
+ assert.throws(()=>requireRuntimeFlags('Executable=/tmp/flags=0x10000\nCodeDirectory v=20500 flags=0x0(none)'));
+});

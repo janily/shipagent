@@ -5,7 +5,7 @@ import { createReadStream } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stageBundle, nativeFiles, signPlan, validateOptions, parseJitTrial } from './bundle.mjs';
+import { stageBundle, nativeFiles, signPlan, validateOptions, parseJitTrial, requireRuntimeFlags } from './bundle.mjs';
 const exec=promisify(execFile);
 const repo=resolve(fileURLToPath(new URL('../..',import.meta.url)));
 const values={};
@@ -27,6 +27,7 @@ async function run(program,args,extra={}) {
  try{return await exec(program,args,{timeout:120_000,maxBuffer:4*1024*1024,...extra});}
  catch(error){throw new Error(`${program} failed (${error.code??error.signal??'unknown'}): ${(error.stderr??'').slice(-1600)}`);}
 }
+async function entitlementKeys(path){const result=await run('/usr/bin/codesign',['-d','--entitlements',':-',path]);return [...result.stdout.matchAll(/<key>([^<]+)<\/key>/g)].map(x=>x[1]).sort();}
 async function hash(path){const digest=createHash('sha256');for await(const part of createReadStream(path))digest.update(part);return digest.digest('hex');}
 async function bytes(path){const info=await stat(path);if(!info.isDirectory())return info.size;let total=0;for(const name of await readdir(path))total+=await bytes(join(path,name));return total;}
 
@@ -42,8 +43,11 @@ try {
   const ent=join(scratch,`trial-${name}.plist`);
   await writeFile(ent,`<?xml version="1.0"?><plist version="1.0"><dict>${keys.map(key=>`<key>com.apple.security.cs.${key}</key><true/>`).join('')}</dict></plist>`);
   await run('/usr/bin/codesign',['--force','--options','runtime','--timestamp=none','--sign','-','--entitlements',ent,binary]);
-  try {const result=await exec(binary,[join(repo,'tools/package/jit-probe.mjs')],{timeout:15_000,maxBuffer:16384});trials.push({policy:name,...parseJitTrial(result.stdout)});}
-  catch(error){trials.push({policy:name,passed:false,exitCode:error.code??null,signal:error.signal??null});}
+  const runtimeFlags=requireRuntimeFlags((await run('/usr/bin/codesign',['-d','--verbose=4',binary])).stderr);
+  const actualKeys=await entitlementKeys(binary);
+  if(JSON.stringify(actualKeys)!==JSON.stringify(keys.map(key=>`com.apple.security.cs.${key}`).sort()))throw new Error('Trial entitlement mismatch');
+  try {const result=await exec(binary,[join(repo,'tools/package/jit-probe.mjs')],{timeout:15_000,maxBuffer:16384});trials.push({policy:name,codeDirectoryFlags:runtimeFlags,entitlementKeys:actualKeys,...parseJitTrial(result.stdout)});}
+  catch(error){trials.push({policy:name,codeDirectoryFlags:runtimeFlags,entitlementKeys:actualKeys,passed:false,exitCode:error.code??null,signal:error.signal??null});}
  }
  if(!trials.find(x=>x.policy==='jit-unsigned')?.passed)throw new Error('Baseline Bun executable-memory trial failed');
  const signed=[];
@@ -67,8 +71,8 @@ try {
  }
  for(const item of signed){
   const path=join(bundle,item.path);item.sha256=await hash(path);
-  const displayed=await run('/usr/bin/codesign',['-d','--entitlements',':-',path]);
-  item.entitlementKeys=[...displayed.stdout.matchAll(/<key>([^<]+)<\/key>/g)].map(x=>x[1]).sort();
+  item.entitlementKeys=await entitlementKeys(path);
+  item.codeDirectoryFlags=requireRuntimeFlags((await run('/usr/bin/codesign',['-d','--verbose=4',path])).stderr);
   const expected=item.bun?['com.apple.security.cs.allow-jit','com.apple.security.cs.allow-unsigned-executable-memory']:[];
   if(JSON.stringify(item.entitlementKeys)!==JSON.stringify(expected))throw new Error('Unexpected signed executable entitlements');
  }

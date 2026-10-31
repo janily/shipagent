@@ -23,17 +23,19 @@
 - DMG verification must use the mounted payload and no backend environment override; failed native rounds never pass from successful process exit alone.
 
 ### Task1: Runtime bundle discovery
-- [ ] Test packaged path with spaces and missing backend; development exe is not falsely classified.
-- [ ] Implement helper in sidecar, app uses it after explicit backend override; core/native checks.
-- [ ] Commit.
+- [x] Test packaged path with spaces and missing backend; development exe is not falsely classified.
+- [x] Implement helper in sidecar, app uses it after explicit backend override; core/native checks.
+- [x] Commit.
 
 ### Task2: Bundle/sign/DMG commands
-- [ ] Node tests first: layout/plist, all Mach-O inventory, unsafe brands/external symlinks/missing artifacts/existing output refusal.
-- [ ] Implement stage/sign pipeline, explicit sign modes, Bun JIT trials, DMG creation/checksum, optional Developer ID notary submit/staple; xtask CLI validates arguments/branding/version and orchestrates builds.
-- [ ] Run Node/core suites; commit/push draft PR to start macOS release packaging CI.
+- [x] Node tests first: layout/plist, all Mach-O inventory, unsafe brands/external symlinks/missing artifacts/existing output refusal.
+- [x] Implement stage/sign pipeline, explicit sign modes, Bun JIT trials, DMG creation/checksum, optional Developer ID notary submit/staple; xtask CLI validates arguments/branding/version and orchestrates builds.
+- [x] Run Node/core suites; commit/push draft PR to start macOS release packaging CI.
 
 ### Task3: Mounted package validation
-- [ ] Verify DMG readonly mount, codesign each native file/app, launch mounted probe build from isolated CWD with source backend moved aside and no BACKEND_DIR override, actual fake model/Read/final frame evidence; detach mount even on failure.
-- [ ] Run normal packaged backend real RPC/Read/cancel tests against mounted resources.
-- [ ] Record actual entitlement trial results/DMG size/limits, CI results; independent whole-branch review and fixes.
-- [ ] Mark PR ready when relevant checks pass. T-0-09 stays partial until actual Developer ID/notary and clean-machine evidence.
+- [x] Verify DMG readonly mount, codesign each native file/app, launch mounted probe build from isolated CWD with source backend moved aside and no BACKEND_DIR override, actual fake model/Read/final frame evidence; detach mount even on failure.
+- [x] Run normal packaged backend real RPC/Read/cancel tests against mounted resources.
+- [x] Record actual entitlement trial results/DMG size/limits, CI results; independent whole-branch review and fixes.
+- [x] Mark PR ready when relevant checks pass. T-0-09 stays partial until actual Developer ID/notary and clean-machine evidence.
+
+Execution result: engineering ad-hoc package and mounted native Read/final-frame plus mounted persistence/cancel passed. DeveloperID/notary/Gatekeeper/clean-machine acceptance remains explicitly outstanding; T-0-09 is partial. Source/native path tests and signature inventory audits passed. Independent review timeout reliability finding was regraded/fixed with a real ignored-SIGTERM regression; internal-only Node CLI strictness minor deferred. Baseline JIT rights retained because all3 ad-hoc candidates passed on CI and cannot determine release minimum.

@@ -67,3 +67,9 @@ export function parseJitTrial(stdout) {
  if(result.marker!=='SHIPAGENT_JIT_OK'||!Number.isSafeInteger(result.dfgCompiles)||result.dfgCompiles<1||result.wasmResult!==7)throw new Error('No JIT/Wasm evidence');
  return {passed:true,dfgCompiles:result.dfgCompiles,wasmResult:result.wasmResult};
 }
+export function requireRuntimeFlags(display) {
+ const match=display.match(/^CodeDirectory\b[^\r\n]*\bflags=0x([0-9a-f]+)/mi);
+ const flags=match?Number.parseInt(match[1],16):0;
+ if((flags&0x10000)===0)throw new Error('Signed code lacks hardened-runtime flag');
+ return flags;
+}
