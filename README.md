@@ -13,5 +13,6 @@
 - [协议生成验证](docs/verification-codegen-2026-10-29.md)
 - [Linux 流式性能测量](docs/verification-linux-perf-2026-10-29.md)
 - [组件样板与三平台验证](docs/verification-components-platform-2026-10-29.md)
+- [macOS 应用包与 DMG 试跑](docs/verification-macos-package-2026-10-31.md)
 
 采用 AgentKit workspace 与 Workbench 参考应用，品牌配置集中管理；已纳入 Linux、macOS 与 Windows 原生 CI，实机交互和发布验收单独记录。第一版包含聊天、工具、审批、计划、模型连接与引导，不包含交互式浏览器。构建后端后使用 `cargo run -p workbench --locked` 启动，详见开发文档。

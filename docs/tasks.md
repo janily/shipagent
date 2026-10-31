@@ -15,7 +15,7 @@
 | T-0-06 | Linux 真实链路通过 | 原生流式窗口、Read 工具回合、最终持久化及取消 |
 | T-0-07 | Linux 可行性验证通过 | TS→JSON Schema→Rust 生成 SessionEvent/Message/Session，真实后端解码；codegen --check 不写入防漂移；正式类型迁移归 T-1-01 |
 | T-0-08 | 最小版及 Linux 固定负载/故障脚本完成 | 50 个明确定义的测试 token/s、真实 Read、断流及原生强杀；更广夹具归 T-1-09 |
-| T-0-09 | 未完成 | 仍需签名与公证凭据、DMG 体积实测和干净机验收 |
+| T-0-09 | 工程包与挂载回合试跑通过；正式签名公证待验 | app/DMG、全部Mach-O逐一签署、Bun DFG/Wasm权限探针；实际DMG约68MB，源码后端移走后原生Read/最终帧/持久化取消通过；仍需Developer ID/公证和干净机 |
 | T-0-10 | 完成，三平台原生验证通过 | 六类 Kit 组件、中文输入/草稿/确认/折叠/拖动测试；三平台链接与原生窗口提交证据；见新报告 |
 | T-0-11 | 未完成 | 全部验证后才能产出阶段0通过报告 |
 | 阶段 1–4 | 未开始 | 按第06页依赖与阶段门槛执行 |
@@ -27,3 +27,5 @@
 本轮性能范围与未达标项见 [Linux 流式测量](verification-linux-perf-2026-10-29.md)。
 
 本轮组件与三平台结果见 [T-0-10 验证](verification-components-platform-2026-10-29.md)。
+
+本轮打包与剩余签名门槛见 [macOS 工程包试跑](verification-macos-package-2026-10-31.md)。

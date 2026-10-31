@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "ciRun": "41192716141",
+  "sourceCommit": "a39447fb3a37cf7710251d24670c46645430d5cc",
+  "version": "0.1.0",
+  "target": "macos-arm64",
+  "signMode": "ad-hoc",
+  "hardenedRuntime": true,
+  "probeBuild": true,
+  "notarization": "not_evaluated",
+  "gatekeeperAcceptance": "not_evaluated",
+  "cleanMachineAcceptance": "not_evaluated",
+  "appLogicalBytes": 163068243,
+  "dmg": {
+    "file": "Workbench-0.1.0-macos-arm64-engineering.dmg",
+    "bytes": 68024869,
+    "sha256": "4c4b41ada0e5facdcdf9840a994ee82511fb7df9d6a6821203bd258e9c91d781",
+    "budgetBytes": 220000000,
+    "budgetMet": true
+  },
+  "bunPolicy": "jit-unsigned",
+  "bunTrials": [
+    {
+      "policy": "none",
+      "passed": true,
+      "dfgCompiles": 1,
+      "wasmResult": 7
+    },
+    {
+      "policy": "jit",
+      "passed": true,
+      "dfgCompiles": 1,
+      "wasmResult": 7
+    },
+    {
+      "policy": "jit-unsigned",
+      "passed": true,
+      "dfgCompiles": 1,
+      "wasmResult": 7
+    }
+  ],
+  "signedNativeFiles": 4,
+  "bunEntitlements": [
+    "com.apple.security.cs.allow-jit",
+    "com.apple.security.cs.allow-unsigned-executable-memory"
+  ],
+  "nonBunEntitlementsEmpty": true,
+  "mounted": {
+    "status": "passed",
+    "sourceBackendUnavailable": true,
+    "backendOverrideUsed": false,
+    "backendContract": "passed",
+    "sourceBackendRestored": true,
+    "dmgDetached": true,
+    "native": {
+      "profile": "release",
+      "optLevel": "3",
+      "outcome": "complete",
+      "events": {
+        "complete": 1,
+        "text_complete": 2,
+        "text_delta": 29,
+        "title_generated": 1,
+        "tool_result": 1,
+        "tool_start": 1,
+        "usage_update": 7,
+        "user_message": 1
+      },
+      "finalAssistantBytes": 140,
+      "finalFramePresented": true
+    }
+  }
+}

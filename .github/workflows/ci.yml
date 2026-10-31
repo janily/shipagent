@@ -93,7 +93,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: false
-      - run: node --test tools/fake-llm/server.test.mjs tools/perf/*.test.mjs tools/native-smoke/*.test.mjs
+      - run: node --test tools/fake-llm/server.test.mjs tools/perf/*.test.mjs tools/native-smoke/*.test.mjs tools/package/*.test.mjs
       - if: runner.os == 'Linux'
         run: python3 -m unittest discover -s tools/perf -p 'test_*.py'
       - run: cargo xtask backend build
