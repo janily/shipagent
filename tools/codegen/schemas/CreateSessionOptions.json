@@ -1,0 +1,70 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/CreateSessionOptions",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "CreateSessionOptions": {
+      "properties": {
+        "branchFromMessageId": {
+          "type": "string"
+        },
+        "branchFromSessionId": {
+          "type": "string"
+        },
+        "codingMode": {
+          "type": "boolean"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "isFlagged": {
+          "type": "boolean"
+        },
+        "llmConnection": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parentSessionId": {
+          "type": "string"
+        },
+        "permissionMode": {
+          "$ref": "#/definitions/PermissionMode"
+        },
+        "systemPromptPreset": {
+          "type": "string"
+        },
+        "thinkingLevel": {
+          "$ref": "#/definitions/ThinkingLevel"
+        },
+        "workingDirectory": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "PermissionMode": {
+      "enum": [
+        "safe",
+        "ask",
+        "allow-all"
+      ],
+      "type": "string"
+    },
+    "ThinkingLevel": {
+      "enum": [
+        "off",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "type": "string"
+    }
+  }
+}

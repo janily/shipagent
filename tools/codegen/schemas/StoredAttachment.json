@@ -1,0 +1,71 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/StoredAttachment",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "StoredAttachment": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "markdownPath": {
+          "type": "string"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "originalMimeType": {
+          "type": "string"
+        },
+        "originalSize": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resizedBase64": {
+          "type": "string"
+        },
+        "size": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "storedPath": {
+          "type": "string"
+        },
+        "thumbnailBase64": {
+          "type": "string"
+        },
+        "thumbnailPath": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "image",
+            "text",
+            "pdf",
+            "office",
+            "audio",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "wasResized": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name",
+        "mimeType",
+        "size",
+        "storedPath"
+      ],
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,1024 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/SessionCommand",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "PermissionMode": {
+      "enum": [
+        "safe",
+        "ask",
+        "allow-all"
+      ],
+      "type": "string"
+    },
+    "SessionCommand": {
+      "anyOf": [
+        {
+          "properties": {
+            "type": {
+              "const": "flag",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "unflag",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "archive",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "unarchive",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "rename",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "markRead",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "markUnread",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "setActiveViewing",
+              "type": "string"
+            },
+            "workspaceId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "workspaceId"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "mode": {
+              "$ref": "#/definitions/PermissionMode"
+            },
+            "type": {
+              "const": "setPermissionMode",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "mode"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "level": {
+              "$ref": "#/definitions/ThinkingLevel"
+            },
+            "type": {
+              "const": "setThinkingLevel",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "level"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "type": {
+              "const": "setCodingMode",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "enabled"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "codingMode": {
+              "type": "boolean"
+            },
+            "type": {
+              "const": "continueInNewSession",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "codingMode"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "dir": {
+              "type": "string"
+            },
+            "type": {
+              "const": "updateWorkingDirectory",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "dir"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "showInFinder",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "copyPath",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "refreshTitle",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "connectionSlug": {
+              "type": "string"
+            },
+            "type": {
+              "const": "setConnection",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "connectionSlug"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "draftInputSnapshot": {
+              "type": "string"
+            },
+            "planPath": {
+              "type": "string"
+            },
+            "type": {
+              "const": "setPendingPlanExecution",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "planPath"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "markCompactionComplete",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "markPendingPlanExecutionDispatched",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "clearPendingPlanExecution",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "annotation": {
+              "properties": {
+                "body": {
+                  "items": {
+                    "anyOf": [
+                      {
+                        "properties": {
+                          "type": {
+                            "const": "highlight",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "format": {
+                            "enum": [
+                              "plain",
+                              "markdown"
+                            ],
+                            "type": "string"
+                          },
+                          "text": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "const": "note",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "text"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "type": {
+                            "const": "tag",
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "value"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "type": "array"
+                },
+                "createdAt": {
+                  "type": "number"
+                },
+                "createdBy": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "enum": [
+                        "user",
+                        "agent",
+                        "system"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "type": "object"
+                },
+                "deletedAt": {
+                  "type": "number"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "intent": {
+                  "enum": [
+                    "highlight",
+                    "comment",
+                    "question"
+                  ],
+                  "type": "string"
+                },
+                "meta": {
+                  "additionalProperties": {},
+                  "type": "object"
+                },
+                "schemaVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "status": {
+                  "enum": [
+                    "pending",
+                    "acknowledged",
+                    "resolved",
+                    "dismissed"
+                  ],
+                  "type": "string"
+                },
+                "style": {
+                  "properties": {
+                    "color": {
+                      "type": "string"
+                    },
+                    "opacity": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "target": {
+                  "properties": {
+                    "selectors": {
+                      "items": {
+                        "anyOf": [
+                          {
+                            "properties": {
+                              "exact": {
+                                "type": "string"
+                              },
+                              "prefix": {
+                                "type": "string"
+                              },
+                              "suffix": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "text-quote",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "exact"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "end": {
+                                "type": "number"
+                              },
+                              "start": {
+                                "type": "number"
+                              },
+                              "textVersion": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "text-position",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "start",
+                              "end"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "blockId": {
+                                "type": "string"
+                              },
+                              "blockType": {
+                                "enum": [
+                                  "paragraph",
+                                  "code",
+                                  "latex",
+                                  "mermaid",
+                                  "datatable",
+                                  "spreadsheet",
+                                  "image-preview",
+                                  "pdf-preview",
+                                  "html-preview"
+                                ],
+                                "type": "string"
+                              },
+                              "path": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "block",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "blockType",
+                              "path"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "h": {
+                                "type": "number"
+                              },
+                              "page": {
+                                "type": "number"
+                              },
+                              "rotation": {
+                                "type": "number"
+                              },
+                              "type": {
+                                "const": "xywh",
+                                "type": "string"
+                              },
+                              "unit": {
+                                "enum": [
+                                  "pixel",
+                                  "percent"
+                                ],
+                                "type": "string"
+                              },
+                              "w": {
+                                "type": "number"
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "unit",
+                              "x",
+                              "y",
+                              "w",
+                              "h"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "columnKey": {
+                                "type": "string"
+                              },
+                              "rowKey": {
+                                "type": [
+                                  "string",
+                                  "number"
+                                ]
+                              },
+                              "type": {
+                                "const": "table-cell",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "rowKey",
+                              "columnKey"
+                            ],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "type": "array"
+                    },
+                    "source": {
+                      "properties": {
+                        "messageId": {
+                          "type": "string"
+                        },
+                        "sessionId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "sessionId",
+                        "messageId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "selectors"
+                  ],
+                  "type": "object"
+                },
+                "threadRef": {
+                  "properties": {
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "threadId": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "updatedAt": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "schemaVersion",
+                "createdAt",
+                "body",
+                "target"
+              ],
+              "type": "object"
+            },
+            "messageId": {
+              "type": "string"
+            },
+            "type": {
+              "const": "addAnnotation",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "messageId",
+            "annotation"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "annotationId": {
+              "type": "string"
+            },
+            "messageId": {
+              "type": "string"
+            },
+            "type": {
+              "const": "removeAnnotation",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "messageId",
+            "annotationId"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "annotationId": {
+              "type": "string"
+            },
+            "messageId": {
+              "type": "string"
+            },
+            "patch": {
+              "properties": {
+                "body": {
+                  "items": {
+                    "anyOf": [
+                      {
+                        "properties": {
+                          "type": {
+                            "const": "highlight",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "format": {
+                            "enum": [
+                              "plain",
+                              "markdown"
+                            ],
+                            "type": "string"
+                          },
+                          "text": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "const": "note",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "text"
+                        ],
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "type": {
+                            "const": "tag",
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "value"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "type": "array"
+                },
+                "createdAt": {
+                  "type": "number"
+                },
+                "createdBy": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "enum": [
+                        "user",
+                        "agent",
+                        "system"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "type": "object"
+                },
+                "deletedAt": {
+                  "type": "number"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "intent": {
+                  "enum": [
+                    "highlight",
+                    "comment",
+                    "question"
+                  ],
+                  "type": "string"
+                },
+                "meta": {
+                  "additionalProperties": {},
+                  "type": "object"
+                },
+                "schemaVersion": {
+                  "const": 1,
+                  "type": "number"
+                },
+                "status": {
+                  "enum": [
+                    "pending",
+                    "acknowledged",
+                    "resolved",
+                    "dismissed"
+                  ],
+                  "type": "string"
+                },
+                "style": {
+                  "properties": {
+                    "color": {
+                      "type": "string"
+                    },
+                    "opacity": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "target": {
+                  "properties": {
+                    "selectors": {
+                      "items": {
+                        "anyOf": [
+                          {
+                            "properties": {
+                              "exact": {
+                                "type": "string"
+                              },
+                              "prefix": {
+                                "type": "string"
+                              },
+                              "suffix": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "text-quote",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "exact"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "end": {
+                                "type": "number"
+                              },
+                              "start": {
+                                "type": "number"
+                              },
+                              "textVersion": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "text-position",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "start",
+                              "end"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "blockId": {
+                                "type": "string"
+                              },
+                              "blockType": {
+                                "enum": [
+                                  "paragraph",
+                                  "code",
+                                  "latex",
+                                  "mermaid",
+                                  "datatable",
+                                  "spreadsheet",
+                                  "image-preview",
+                                  "pdf-preview",
+                                  "html-preview"
+                                ],
+                                "type": "string"
+                              },
+                              "path": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "const": "block",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "blockType",
+                              "path"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "h": {
+                                "type": "number"
+                              },
+                              "page": {
+                                "type": "number"
+                              },
+                              "rotation": {
+                                "type": "number"
+                              },
+                              "type": {
+                                "const": "xywh",
+                                "type": "string"
+                              },
+                              "unit": {
+                                "enum": [
+                                  "pixel",
+                                  "percent"
+                                ],
+                                "type": "string"
+                              },
+                              "w": {
+                                "type": "number"
+                              },
+                              "x": {
+                                "type": "number"
+                              },
+                              "y": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "unit",
+                              "x",
+                              "y",
+                              "w",
+                              "h"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "properties": {
+                              "columnKey": {
+                                "type": "string"
+                              },
+                              "rowKey": {
+                                "type": [
+                                  "string",
+                                  "number"
+                                ]
+                              },
+                              "type": {
+                                "const": "table-cell",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "rowKey",
+                              "columnKey"
+                            ],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "type": "array"
+                    },
+                    "source": {
+                      "properties": {
+                        "messageId": {
+                          "type": "string"
+                        },
+                        "sessionId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "sessionId",
+                        "messageId"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "selectors"
+                  ],
+                  "type": "object"
+                },
+                "threadRef": {
+                  "properties": {
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "threadId": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "updatedAt": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": {
+              "const": "updateAnnotation",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "messageId",
+            "annotationId",
+            "patch"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ThinkingLevel": {
+      "enum": [
+        "off",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "type": "string"
+    }
+  }
+}

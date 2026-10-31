@@ -118,5 +118,5 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts --prefix tools/codegen
-      - run: node --test tools/codegen/schema.test.mjs
+      - run: node --test tools/codegen/*.test.mjs
       - run: cargo xtask codegen --check
