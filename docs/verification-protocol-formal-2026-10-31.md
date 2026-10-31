@@ -24,7 +24,11 @@
 - bundled backend + Pi + 本地 SSE 模型显式真实 Agent 契约通过：Read、文本流、最终持久化、取消，全部事件和会话快照通过生成类型。
 - 全功能 workspace clippy `-D warnings`、fmt、codegen --check、diff 检查通过；原生 UI/App 10 项测试通过。
 
-初次 [CI #30](https://github.com/janily/shipagent/actions/runs/41252148749) 的三个 macOS 作业在启动前被 GitHub macos-14 runner 计划停机取消（[官方退役公告](https://github.com/actions/runner-images/issues/13518)，2026-11-02 退役）。当前 CI 矩阵迁到 macos-15，重新验证实际平台；旧报告的 macos-14 结果仍只属于旧提交。最终三平台 CI 链接补于合并前；不得借用 PR #6 或旧提交的成功状态作为本分支结果。当前没有新增物理桌面、性能或正式签名验收结论。
+初次 [CI #30](https://github.com/janily/shipagent/actions/runs/41252148749) 的三个 macOS 作业在启动前被 GitHub macos-14 runner 计划停机取消（[官方退役公告](https://github.com/actions/runner-images/issues/13518)，2026-11-02 退役）。当前 CI 矩阵迁到 macos-15，重新验证实际平台；旧报告的 macos-14 结果仍只属于旧提交。三平台最新结果以 [PR #7 的提交检查](https://github.com/janily/shipagent/pull/7/checks) 为准；不得借用 PR #6 或旧提交的成功状态作为本分支结果。当前没有新增物理桌面、性能或正式签名验收结论。
+
+## 独立审查
+
+对 ad5083a..989313b 的一次独立整分支审查未发现 Critical / Important / Minor 问题；另独立重跑 Node 5 项、生成 DTO 9 项和 diff 检查通过。随后 CI runner 迁移仅修改验证环境及说明，由最终提交 CI 验证。审查不代替仓库要求的人工审批和阶段验收。
 
 ## 后续
 
