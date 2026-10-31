@@ -5,7 +5,7 @@ import { createReadStream } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stageBundle, nativeFiles, signPlan, validateOptions } from './bundle.mjs';
+import { stageBundle, nativeFiles, signPlan, validateOptions, parseJitTrial } from './bundle.mjs';
 const exec=promisify(execFile);
 const repo=resolve(fileURLToPath(new URL('../..',import.meta.url)));
 const values={};
@@ -29,28 +29,30 @@ async function run(program,args,extra={}) {
 }
 async function hash(path){const digest=createHash('sha256');for await(const part of createReadStream(path))digest.update(part);return digest.digest('hex');}
 async function bytes(path){const info=await stat(path);if(!info.isDirectory())return info.size;let total=0;for(const name of await readdir(path))total+=await bytes(join(path,name));return total;}
-const jitScript=`const add=new Function('a','b','return a+b');let sum=0;for(let i=0;i<100000;i++)sum=add(sum,i);if(sum!==4999950000)throw Error('JS result');const wasm=new Uint8Array([0,97,115,109,1,0,0,0,1,7,1,96,2,127,127,1,127,3,2,1,0,7,7,1,3,97,100,100,0,0,10,9,1,7,0,32,0,32,1,106,11]);const {instance}=await WebAssembly.instantiate(wasm);if(instance.exports.add(3,4)!==7)throw Error('Wasm result');console.log('SHIPAGENT_JIT_OK');`;
+
 try {
  const bundle=join(scratch,`${config.brand.app_name}.app`);
  await stageBundle({...options,output:bundle});
  const native=await nativeFiles(bundle);const bun=join(bundle,'Contents/Resources/backend/vendor/bun/bun');
  const expectedArch=process.arch==='arm64'?'arm64':'x86_64';
- for(const path of ['Contents/MacOS/workbench','Contents/Resources/backend/vendor/bun/bun','Contents/Resources/backend/node_modules/@vscode/ripgrep/bin/rg',`Contents/Resources/backend/resources/bin/darwin-${process.arch==='arm64'?'arm64':'x64'}/uv`]) await run('/usr/bin/lipo',['-verify_arch',expectedArch,join(bundle,path)]);
+ for(const path of ['Contents/MacOS/workbench','Contents/Resources/backend/vendor/bun/bun','Contents/Resources/backend/node_modules/@vscode/ripgrep/bin/rg',`Contents/Resources/backend/resources/bin/darwin-${process.arch==='arm64'?'arm64':'x64'}/uv`]) await run('/usr/bin/lipo',[join(bundle,path),'-verify_arch',expectedArch]);
  const trials=[];
  for(const [name,keys] of [['none',[]],['jit',['allow-jit']],['jit-unsigned',['allow-jit','allow-unsigned-executable-memory']]]) {
   const binary=join(scratch,`bun-${name}`);await cp(bun,binary);
   const ent=join(scratch,`trial-${name}.plist`);
   await writeFile(ent,`<?xml version="1.0"?><plist version="1.0"><dict>${keys.map(key=>`<key>com.apple.security.cs.${key}</key><true/>`).join('')}</dict></plist>`);
   await run('/usr/bin/codesign',['--force','--options','runtime','--timestamp=none','--sign','-','--entitlements',ent,binary]);
-  try {const result=await exec(binary,['-e',jitScript],{timeout:15_000,maxBuffer:16384});trials.push({policy:name,passed:result.stdout.trim()==='SHIPAGENT_JIT_OK'});}
+  try {const result=await exec(binary,[join(repo,'tools/package/jit-probe.mjs')],{timeout:15_000,maxBuffer:16384});trials.push({policy:name,...parseJitTrial(result.stdout)});}
   catch(error){trials.push({policy:name,passed:false,exitCode:error.code??null,signal:error.signal??null});}
  }
  if(!trials.find(x=>x.policy==='jit-unsigned')?.passed)throw new Error('Baseline Bun executable-memory trial failed');
  const signed=[];
+ const emptyEntitlements=join(scratch,'no-entitlements.plist');
+ await writeFile(emptyEntitlements,'<?xml version="1.0"?><plist version="1.0"><dict/></plist>');
  for(const item of signPlan(native)) {
   const path=join(bundle,item.path);
   const args=['--force','--options','runtime',options.sign==='ad-hoc'?'--timestamp=none':'--timestamp','--sign',identity];
-  if(item.bun)args.push('--entitlements',join(repo,'packaging/macos/bun-jit.plist'));
+  args.push('--entitlements',item.bun?join(repo,'packaging/macos/bun-jit.plist'):emptyEntitlements);
   await run('/usr/bin/codesign',[...args,path]);
   await run('/usr/bin/codesign',['--verify','--strict',path]);
   if(!item.app)signed.push({path:item.path,bun:item.bun});
@@ -63,7 +65,14 @@ try {
   const result=JSON.parse(submitted.stdout);if(result.status!=='Accepted')throw new Error('Apple notarization did not accept the app');
   await run('/usr/bin/xcrun',['stapler','staple',bundle]);await run('/usr/bin/xcrun',['stapler','validate',bundle]);
  }
- for(const item of signed)item.sha256=await hash(join(bundle,item.path));
+ for(const item of signed){
+  const path=join(bundle,item.path);item.sha256=await hash(path);
+  const displayed=await run('/usr/bin/codesign',['-d','--entitlements',':-',path]);
+  item.entitlementKeys=[...displayed.stdout.matchAll(/<key>([^<]+)<\/key>/g)].map(x=>x[1]).sort();
+  const expected=item.bun?['com.apple.security.cs.allow-jit','com.apple.security.cs.allow-unsigned-executable-memory']:[];
+  if(JSON.stringify(item.entitlementKeys)!==JSON.stringify(expected))throw new Error('Unexpected signed executable entitlements');
+ }
+
  const imageSource=join(scratch,'image');await mkdir(imageSource);await run('/usr/bin/ditto',[bundle,join(imageSource,`${config.brand.app_name}.app`)]);await symlink('/Applications',join(imageSource,'Applications'));
  const result=join(scratch,'result');await mkdir(result);
  const imageName=`${config.brand.app_name}-${config.version}-${options.target}${options.probe?'-engineering':''}.dmg`;

@@ -42,3 +42,14 @@ test('existing output is preserved; missing backend, WebUI and escaping links re
  await rm(join(f.backend,'webui'),{recursive:true});await symlink(f.license,join(f.backend,'external-license'));await assert.rejects(stageBundle(f),/symlink/);
  await rm(join(f.backend,'external-license'));await rm(join(f.backend,'server.js'));await assert.rejects(stageBundle(f),/server.js/);
 });
+test('JIT success requires observed compilation, not just JS output', async()=>{
+ const { parseJitTrial }=await import('./bundle.mjs');
+ assert.deepEqual(parseJitTrial('{"marker":"SHIPAGENT_JIT_OK","dfgCompiles":2,"wasmResult":7}'),{passed:true,dfgCompiles:2,wasmResult:7});
+ assert.throws(()=>parseJitTrial('{"marker":"SHIPAGENT_JIT_OK","dfgCompiles":0,"wasmResult":7}'));
+ assert.throws(()=>parseJitTrial('SHIPAGENT_JIT_OK'));
+});
+test('Java bytecode sharing FAT magic is not treated as Mach-O',async t=>{
+ const f=await fixture(t);await mkdir(f.output);
+ await writeFile(join(f.output,'Example.class'),Buffer.from('cafebabe00000034001007000201000454657374','hex'));
+ assert.deepEqual(await nativeFiles(f.output),[]);
+});

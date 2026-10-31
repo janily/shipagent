@@ -17,6 +17,8 @@ if(!packaged.probeBuild)throw new Error('Native automatic round requires explici
 const root=await realpath(await mkdtemp(join(tmpdir(),'shipagent-dmg-')));
 const mount=join(root,'mount');await mkdir(mount);
 let mounted=false,hidden=false,model;let failed=false;
+const reportPath=join(output,'mounted-verification.json');
+await writeFile(reportPath,JSON.stringify({status:'running'})+'\n',{flag:'wx'});
 const source=resolve(`target/backend/darwin-${process.arch==='arm64'?'arm64':'x64'}`);
 const backup=`${source}.package-verification`;
 const evidence={status:'running',probeBuild:true,signMode:packaged.signMode,notarization:packaged.notarization,cleanMachineAcceptance:'not_evaluated',performanceAcceptance:'not_evaluated'};
@@ -48,10 +50,10 @@ try {
 } catch(error){failed=true;evidence.status='failed';evidence.error={message:error.message.split('\n')[0],code:error.code??null,signal:error.signal??null};evidence.failureProcessCleanup='not_verified';}
 finally {
  if(model){model.server.closeAllConnections();await new Promise(resolve=>model.server.close(resolve));}
- if(hidden)await rename(backup,source);
+ if(hidden){try{await rename(backup,source);evidence.sourceBackendRestored=true;}catch{failed=true;evidence.status='failed';evidence.sourceBackendRestored=false;}}
  if(mounted){try{await exec('/usr/bin/hdiutil',['detach',mount],{timeout:30_000});evidence.dmgDetached=true;}catch{failed=true;evidence.status='failed';evidence.dmgDetached=false;}}
  if(!failed)await rm(root,{recursive:true,force:true});
- await writeFile(join(output,'mounted-verification.json'),JSON.stringify(evidence,null,2)+'\n',{flag:'wx'});
+ await writeFile(reportPath,JSON.stringify(evidence,null,2)+'\n');
 }
 console.log(JSON.stringify({status:evidence.status,dmgDetached:evidence.dmgDetached,backendContract:evidence.backendContract,sourceBackendUnavailable:evidence.sourceBackendUnavailable,error:evidence.error}));
 if(failed)process.exitCode=1;

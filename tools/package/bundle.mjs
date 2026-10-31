@@ -42,12 +42,28 @@ export async function nativeFiles(root) {
   if(info.isSymbolicLink())throw new Error('Unexpected bundle symlink');
   if(info.isDirectory()){for(const name of await readdir(path))await visit(join(path,name));return;}
   if(!info.isFile()||info.size<4)return;
-  const handle=await open(path,'r');const bytes=Buffer.alloc(4);
-  try{await handle.read(bytes,0,4,0);}finally{await handle.close();}
-  if(['feedface','feedfacf','cefaedfe','cffaedfe','cafebabe','bebafeca','cafebabf','bfbafeca'].includes(bytes.toString('hex')))result.push(relative(root,path));
+  const handle=await open(path,'r');const bytes=Buffer.alloc(32);
+  try{await handle.read(bytes,0,32,0);}finally{await handle.close();}
+  const magic=bytes.subarray(0,4).toString('hex');
+  const thin=['feedface','feedfacf','cefaedfe','cffaedfe'].includes(magic);
+  let fat=false;
+  if(['cafebabe','bebafeca','cafebabf','bfbafeca'].includes(magic)){
+   const little=['bebafeca','bfbafeca'].includes(magic);
+   const count=little?bytes.readUInt32LE(4):bytes.readUInt32BE(4);
+   const cpu=little?bytes.readUInt32LE(8):bytes.readUInt32BE(8);
+   const entryBytes=['cafebabf','bfbafeca'].includes(magic)?32:20;
+   fat=count>0&&count<=64&&info.size>=8+count*entryBytes&&[7,12,18,0x01000007,0x0100000c,0x01000012].includes(cpu);
+  }
+  if(thin||fat)result.push(relative(root,path));
  }
  await visit(root);return result.sort();
 }
 export function signPlan(files) {
  return [...files].sort((a,b)=>b.split(sep).length-a.split(sep).length||a.localeCompare(b)).map(path=>({path,bun:path.split(sep).join('/')==='Contents/Resources/backend/vendor/bun/bun'})).concat([{path:'.',app:true,bun:false}]);
+}
+
+export function parseJitTrial(stdout) {
+ const result=JSON.parse(stdout);
+ if(result.marker!=='SHIPAGENT_JIT_OK'||!Number.isSafeInteger(result.dfgCompiles)||result.dfgCompiles<1||result.wasmResult!==7)throw new Error('No JIT/Wasm evidence');
+ return {passed:true,dfgCompiles:result.dfgCompiles,wasmResult:result.wasmResult};
 }
