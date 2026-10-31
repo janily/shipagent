@@ -15,6 +15,23 @@ use std::{
     time::{Duration, Instant},
 };
 
+/// Resolve a macOS app's embedded backend from its executable, including when
+/// resources are missing. Installed apps must fail locally rather than falling
+/// back to a developer checkout. Other layouts return `None`.
+pub fn bundled_backend_directory(executable: &std::path::Path) -> Option<PathBuf> {
+    let macos = executable.parent()?;
+    let contents = macos.parent()?;
+    let app = contents.parent()?;
+    if macos.file_name()? == "MacOS"
+        && contents.file_name()? == "Contents"
+        && app.extension()? == "app"
+    {
+        Some(contents.join("Resources/backend"))
+    } else {
+        None
+    }
+}
+
 /// Headless backend launch configuration.
 #[derive(Clone, Debug)]
 pub struct SidecarConfig {

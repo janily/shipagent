@@ -82,6 +82,11 @@ async fn bootstrap(brand: Brand) -> Result<Started> {
             };
             let backend = std::env::var_os("AGENTKIT_BACKEND_DIR")
                 .map(PathBuf::from)
+                .or_else(|| {
+                    std::env::current_exe()
+                        .ok()
+                        .and_then(|exe| agentkit_sidecar::bundled_backend_directory(&exe))
+                })
                 .unwrap_or_else(|| root.join(format!("target/backend/{platform}-{arch}")));
             let config = if let Some(path) = std::env::var_os("AGENTKIT_CONFIG_DIR") {
                 PathBuf::from(path)
