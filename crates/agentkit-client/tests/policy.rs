@@ -15,7 +15,14 @@ fn explicitly_idempotent_reads_retry_timeout_once_but_writes_never_retry() {
             let (tcp, _) = listener.accept().await.unwrap();
             let mut ws = async_tungstenite::accept_async(tcp).await.unwrap();
             let _ = frame(&mut ws).await;
-            send(&mut ws,json!({"type":"handshake_ack","clientId":"client","registeredChannels":["read","write"]})).await;
+            send(&mut ws,json!({"type":"handshake_ack","clientId":"client","registeredChannels":["ready","read","write"]})).await;
+            let ready = frame(&mut ws).await;
+            assert_eq!(ready["channel"], "ready");
+            send(
+                &mut ws,
+                json!({"type":"response","id":ready["id"],"result":true}),
+            )
+            .await;
             let first = frame(&mut ws).await;
             assert_eq!(first["channel"], "read");
             let second = frame(&mut ws).await;
@@ -46,9 +53,15 @@ fn explicitly_idempotent_reads_retry_timeout_once_but_writes_never_retry() {
     });
     let mut options =
         ClientOptions::local(recv.recv().unwrap(), "secret".into(), "workspace".into());
-    options.request_timeout = Duration::from_millis(100);
+    options.request_timeout = Duration::from_millis(250);
     let client = RpcClient::connect(options);
     smol::block_on(async {
+        assert!(
+            client
+                .invoke_timeout::<bool>("ready", vec![], Duration::from_secs(4))
+                .await
+                .unwrap()
+        );
         assert_eq!(client.invoke_read::<u64>("read", vec![]).await.unwrap(), 7);
         let error = client.invoke::<Value>("write", vec![]).await.unwrap_err();
         assert_eq!(error.protocol_code(), "CLIENT_REQUEST_TIMEOUT");

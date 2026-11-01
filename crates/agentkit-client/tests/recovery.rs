@@ -379,6 +379,7 @@ fn workspace_binding_changes_only_after_successful_switch_response() {
 #[test]
 fn deferred_bound_write_cannot_migrate_to_another_connection() {
     let (urls, recv) = std::sync::mpsc::channel();
+    let (resume, waiting) = async_channel::bounded::<()>(1);
     let server = std::thread::spawn(move || {
         smol::block_on(async move {
             let listener = async_net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -399,6 +400,7 @@ fn deferred_bound_write_cannot_migrate_to_another_connection() {
             let (tcp, _) = bounded(listener.accept()).await.unwrap().unwrap();
             let mut ws = async_tungstenite::accept_async(tcp).await.unwrap();
             let _ = frame(&mut ws).await;
+            bounded(waiting.recv()).await.unwrap().unwrap();
             send(&mut ws,json!({"type":"handshake_ack","clientId":"new","stale":true,"registeredChannels":["echo","write"]})).await;
             let req = frame(&mut ws).await;
             let old_was_sent = req["channel"] == "write";
@@ -423,6 +425,7 @@ fn deferred_bound_write_cannot_migrate_to_another_connection() {
         matches!(client.bind_connection(), Err(RpcError::Disconnected)),
         "lost socket cannot issue a new binding"
     );
+    resume.try_send(()).unwrap();
     smol::block_on(bounded(recovery.recv())).unwrap().unwrap();
     let late = smol::block_on(deferred);
     let good = if late.is_err() {
