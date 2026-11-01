@@ -15,10 +15,11 @@
 | T-0-06 | Linux 真实链路通过 | 原生流式窗口、Read 工具回合、最终持久化及取消 |
 | T-0-07 | Linux 可行性验证通过 | TS→JSON Schema→Rust 生成 SessionEvent/Message/Session，真实后端解码；codegen --check 不写入防漂移；正式类型迁移归 T-1-01 |
 | T-0-08 | 最小版及 Linux 固定负载/故障脚本完成 | 50 个明确定义的测试 token/s、真实 Read、断流及原生强杀；更广夹具归 T-1-09 |
-| T-0-09 | 未完成 | 仍需签名与公证凭据、DMG 体积实测和干净机验收 |
+| T-0-09 | 工程包完成于未合并 PR #6；发布验收暂缓 | ad-hoc DMG、体积/JIT/挂载 Agent 回合已有证据；用户确认暂无 Secrets，真实 Developer ID/公证/干净机待补 |
 | T-0-10 | 完成，三平台原生验证通过 | 六类 Kit 组件、中文输入/草稿/确认/折叠/拖动测试；三平台链接与原生窗口提交证据；见新报告 |
-| T-0-11 | 未完成 | 全部验证后才能产出阶段0通过报告 |
-| 阶段 1–4 | 未开始 | 按第06页依赖与阶段门槛执行 |
+| T-0-11 | 中期风险报告已出；通过报告待补 | 见 [风险与重估](phase-zero-risk-report-2026-10-31.md)，明确未达门槛及关闭条件 |
+| T-1-01 | 正式生成链已实现，验证结果见本轮报告 | 14 类核心根类型、审查 overrides、语义事件、频道常量、来源锁与漂移检查；完整 API/reducer 迁移仍归 T-1-03/06 |
+| 阶段 1 其余 / 2–4 | 未开始 | 用户要求继续，先行开发 T-1-01；阶段 0 验收与发布门槛不豁免 |
 
 开发命令见 [development.md](development.md)，实测和限制见 [首次验证](verification-2026-10-29.md) 与 [原生对话验证](verification-native-turn-2026-10-29.md)。当前不标记阶段0通过，不发布空界面应用。
 
@@ -27,3 +28,5 @@
 本轮性能范围与未达标项见 [Linux 流式测量](verification-linux-perf-2026-10-29.md)。
 
 本轮组件与三平台结果见 [T-0-10 验证](verification-components-platform-2026-10-29.md)。
+
+2026-10-31 用户调整：真实签名/公证暂缓，保留 PR #6 工程包；独立推进 T-1-01。详见 [本轮计划](plans/protocol-formal.md) 与 [正式生成验证](verification-protocol-formal-2026-10-31.md)。

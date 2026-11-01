@@ -17,7 +17,7 @@ fn streaming_replaces_optimistic_user_and_corrects_final_text() {
     assert!(s.begin_send("hi".into(), "optimistic".into()));
     apply(
         &mut s,
-        json!({"type":"user_message","sessionId":"s","optimisticMessageId":"optimistic","status":"accepted","message":{"id":"u1","role":"user","content":"hi"}}),
+        json!({"type":"user_message","sessionId":"s","optimisticMessageId":"optimistic","status":"accepted","message":{"id":"u1","role":"user","content":"hi","timestamp":1}}),
     );
     apply(
         &mut s,

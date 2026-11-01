@@ -1,23 +1,30 @@
-# Protocol generation (T-0-07)
+# Protocol generation (T-1-01)
 
 ```sh
 npm ci --ignore-scripts --prefix tools/codegen
 cargo xtask codegen
 cargo xtask codegen --check
-node --test tools/codegen/schema.test.mjs
+node --test tools/codegen/*.test.mjs
 ```
 
-Requires Node >=22 and the pinned Rust toolchain including rustfmt. `--check` generates in a temporary directory, compares all three schemas and Rust output, and never rewrites tracked artifacts. CI must check out submodules. No backend application code is executed by extraction, and the backend working tree is not modified.
+Requires Node >=22 and the pinned Rust toolchain including rustfmt. CI checks out submodules and runs `codegen-drift`. Extraction reads TypeScript declarations and literal AST nodes; it never imports or executes upstream application modules. `skipTypeCheck` omits unrelated application diagnostics, not reachable type-resolution errors.
 
-The upstream public type barrels are the input. We disable unrelated application TypeScript diagnostics (`skipTypeCheck`), but unresolved reachable types and unsupported schemas still fail generation. TypeScript runtime typechecking is not claimed. `expose:none` avoids the public/core PermissionRequest name collision by inlining reachable shapes; structurally identical Message objects become references to the generated Message definition.
+`sources.json` explicitly lists 14 core wire roots and the reviewed upstream commit. Generation requires the submodule HEAD and staged gitlink to match that commit and rejects dirty/untracked (non-ignored) backend files. Upgrade the gitlink and manifest together in a dedicated reviewed upgrade. This is a source guard, not a claim to typecheck the upstream application.
 
-Three compatibility adaptations are mechanical and tested:
+The roots cover Message, Session, SessionEvent, Workspace, permissions, session creation/commands/send options, attachments, modes and role/status enums. Identical nested shapes reference their canonical root, so one override affects every occurrence. Credential-bearing setup/OAuth DTOs are deliberately excluded pending secret-aware API wrappers; this is not the entire upstream exported type graph.
 
-- ts-json-schema-generator emits draft-07 `const`; typify currently treats those as unconstrained strings in some unions. Convert each literal to its semantically identical singleton `enum` before invoking typify. The checked-in schemas remain the original extraction.
-- typify maps absent optional collections to empty Vec/Map. A Rust AST pass wraps those optional fields in Option and skips only None, preserving absent versus explicit empty values. Required collections remain required.
+`overrides/schema.json` contains exact JSON pointers, expected original schemas, replacement schemas and reasons. Missing paths, changed original shapes and duplicates fail before artifacts are published. Signed epoch timestamps use i64; attachment byte counts use u64; messageCount uses u32. Durations, elapsed seconds, costs, token usage and other unreviewed TS numbers retain f64; do not infer that every numeric field is an integer. Upstream source declarations take precedence over illustrative spec snippets (for example required workspaceName/messages and canAlwaysAllow).
 
-- Required nullable properties also use Option in Rust, but receive a deserialize_with hook so a missing key is rejected while explicit null remains valid. Optional properties intentionally use Serde Option semantics (explicit null is accepted as None).
+Checked-in schemas are **effective schemas after overrides**. `schemas/manifest.json` records source/config/tool input hashes and the extracted schema/constants artifact hashes; the constants digest matches the formatted `src/constants.rs`. Rust DTO generation is additionally checked byte for byte by `--check`. The manifest has no machine paths or timestamps. Typify and Rust dependencies are fixed by Cargo.lock; TypeScript/extractor dependencies by package-lock.json.
 
-`generated::{Message,Session,SessionEvent}` is a feasibility surface. Event variant names are typify's unstable `VariantN` where duplicate `retry` tags prevent a simple tagged union; use the validated `DecodedSessionEvent` boundary rather than relying on variant indices. That boundary retains complete raw data, accepts future event types and rejects malformed known types. The supported tag list is generated from the schema, not maintained by hand.
+`SessionEvent` variants use discriminator-based names (`TextDeltaEvent`, `RetryBackoffEvent`, `RetryStateEvent`), independent of upstream union order. New conflicting event shapes fail closed. `DecodedSessionEvent` validates known tags against these generated types and retains complete raw payloads, including future fields/tags. The running prototype event entry now uses this validator too. The prototype Message/Session structs remain temporary UI/domain projections; complete API/reducer migration belongs to T-1-03/T-1-06.
 
-TS `number` becomes f64 because the source does not specify an integer domain. Integer-only timestamps/counts and final ergonomic naming need reviewed schema/type overrides during T-1-01; the generated DTOs currently validate alongside the existing prototype UI boundary. Full channel/constants generation and replacement of every handwritten DTO are outside T-0-07.
+The generated `constants::{channels,limits,PROTOCOL_VERSION}` comes from upstream channels.ts/types.ts/message-limits.ts. The static parser permits strings, object literals, integer literals/references and multiplication only; unknown expressions fail rather than executing. Namespace keys become snake_case Rust modules; wire strings remain unchanged. Current WorkbenchApi uses generated channel constants. Generated support does not mean every channel is implemented by the client.
+
+Mechanical Rust adaptations preserve wire semantics:
+
+- Convert draft-07 const to singleton enum before typify, retaining precise discriminators.
+- Wrap optional collections in Option, preserving absent versus explicit empty arrays/maps.
+- Required nullable fields use a deserialize hook to reject absence but accept explicit null. Optional fields use Serde Option semantics (null becomes None).
+
+`--check` extracts/generates in a temporary directory and reports changed, missing or obsolete artifacts without writing the worktree. Normal generation removes obsolete JSON schemas in the owned schemas directory. Extraction/override/type-generation failures publish nothing. The backend checkout is never modified.

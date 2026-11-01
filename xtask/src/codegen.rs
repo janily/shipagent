@@ -1,8 +1,6 @@
 use anyhow::{Context, Result, bail};
 use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
-const NAMES: [&str; 3] = ["Message", "Session", "SessionEvent"];
-
 pub(crate) fn run(check: bool) -> Result<()> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -20,7 +18,13 @@ pub(crate) fn run(check: bool) -> Result<()> {
     let mut outputs = Vec::new();
     let mut definitions = BTreeMap::new();
     let mut event_types = std::collections::BTreeSet::new();
-    for name in NAMES {
+    let manifest_bytes = fs::read(temp.path().join("manifest.json"))?;
+    let manifest: serde_json::Value = serde_json::from_slice(&manifest_bytes)?;
+    let names = manifest["roots"]
+        .as_array()
+        .context("Expected codegen roots")?;
+    for name in names {
+        let name = name.as_str().context("Expected root name")?;
         let bytes = fs::read(temp.path().join(format!("{name}.json")))?;
         let mut normalized: serde_json::Value = serde_json::from_slice(&bytes)?;
         if name == "SessionEvent" {
@@ -29,7 +33,10 @@ pub(crate) fn run(check: bool) -> Result<()> {
                 .context("SessionEvent union must use anyOf")?;
             for variant in variants {
                 event_types.insert(
-                    variant["properties"]["type"]["const"]
+                    normalized["definitions"][variant["$ref"]
+                        .as_str()
+                        .and_then(|v| v.strip_prefix("#/definitions/"))
+                        .context("Expected named event ref")?]["properties"]["type"]["const"]
                         .as_str()
                         .context("SessionEvent must have a literal type discriminator")?
                         .to_owned(),
@@ -47,6 +54,13 @@ pub(crate) fn run(check: bool) -> Result<()> {
         }
         outputs.push((format!("tools/codegen/schemas/{name}.json"), bytes));
     }
+    outputs.push(("tools/codegen/schemas/manifest.json".into(), manifest_bytes));
+    let constants_path = temp.path().join("constants.rs");
+    format_rust(&constants_path)?;
+    outputs.push((
+        "crates/agentkit-protocol/src/constants.rs".into(),
+        fs::read(constants_path)?,
+    ));
     let mut settings = typify::TypeSpaceSettings::default();
     settings
         .with_struct_builder(false)
@@ -79,23 +93,29 @@ pub(crate) fn run(check: bool) -> Result<()> {
     );
     let rust_path = temp.path().join("generated.rs");
     fs::write(&rust_path, rust)?;
-    let status = Command::new("rustfmt")
-        .args(["--edition", "2024"])
-        .arg(&rust_path)
-        .status()
-        .context("rustfmt is required for reproducible generated Rust")?;
-    if !status.success() {
-        bail!("Formatting generated Rust failed");
-    }
+    format_rust(&rust_path)?;
     outputs.push((
         "crates/agentkit-protocol/src/generated.rs".into(),
         fs::read(rust_path)?,
     ));
     publish(root, outputs, check)?;
     println!(
-        "Protocol codegen {}: Message, Session, SessionEvent",
-        if check { "verified" } else { "updated" }
+        "Protocol codegen {}: {} roots and upstream constants",
+        if check { "verified" } else { "updated" },
+        names.len()
     );
+    Ok(())
+}
+
+fn format_rust(path: &Path) -> Result<()> {
+    let status = Command::new("rustfmt")
+        .args(["--edition", "2024"])
+        .arg(path)
+        .status()
+        .context("rustfmt is required for reproducible generated Rust")?;
+    if !status.success() {
+        bail!("Formatting generated Rust failed");
+    }
     Ok(())
 }
 
@@ -177,6 +197,22 @@ fn normalize_literals(value: &mut serde_json::Value) {
 }
 
 fn publish(root: &Path, outputs: Vec<(String, Vec<u8>)>, check: bool) -> Result<()> {
+    let schema_directory = root.join("tools/codegen/schemas");
+    let mut obsolete = Vec::new();
+    if schema_directory.is_dir() {
+        for entry in fs::read_dir(&schema_directory)? {
+            let path = entry?.path();
+            if path.extension().is_some_and(|ext| ext == "json")
+                && !outputs.iter().any(|(name, _)| root.join(name) == path)
+            {
+                obsolete.push(path);
+            }
+        }
+    }
+    obsolete.sort();
+    if check && !obsolete.is_empty() {
+        bail!("Obsolete generated schemas: {obsolete:?}. Run cargo xtask codegen.");
+    }
     let changed: Vec<_> = outputs
         .iter()
         .filter(|(path, bytes)| fs::read(root.join(path)).ok().as_ref() != Some(bytes))
@@ -191,6 +227,9 @@ fn publish(root: &Path, outputs: Vec<(String, Vec<u8>)>, check: bool) -> Result<
                 .join(", ")
         );
     }
+    for path in obsolete {
+        fs::remove_file(path)?;
+    }
     for (path, bytes) in changed {
         let path = root.join(path);
         if let Some(parent) = path.parent() {
@@ -204,6 +243,18 @@ fn publish(root: &Path, outputs: Vec<(String, Vec<u8>)>, check: bool) -> Result<
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn removed_schema_roots_cannot_leave_stale_artifacts() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let stale = root.path().join("tools/codegen/schemas/Removed.json");
+        fs::create_dir_all(stale.parent().context("parent")?)?;
+        fs::write(&stale, "obsolete")?;
+        assert!(publish(root.path(), vec![], true).is_err());
+        assert_eq!(fs::read_to_string(&stale)?, "obsolete");
+        publish(root.path(), vec![], false)?;
+        assert!(!stale.exists());
+        Ok(())
+    }
     #[test]
     fn drift_check_never_rewrites_changed_or_missing_artifacts() -> Result<()> {
         let root = tempfile::tempdir()?;

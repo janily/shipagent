@@ -6,10 +6,10 @@ mod event;
 pub use event::DecodedSessionEvent;
 mod error;
 pub use codec::RpcValue;
+/// Supported upstream protocol version.
+pub use constants::PROTOCOL_VERSION;
 pub use envelope::{Envelope, EnvelopeKind};
 pub use error::{ErrorCode, WireError};
-/// Supported upstream protocol version.
-pub const PROTOCOL_VERSION: &str = "1.0";
 
 /// Credentials for a local backend; Debug never exposes the token.
 #[derive(Clone, Debug)]
@@ -20,9 +20,13 @@ pub struct Endpoint {
     pub token: secrecy::SecretString,
 }
 
-/// Phase-zero handwritten boundary types; code generation follows separately.
+/// Transitional UI/domain projections, with generated validation for events.
 pub mod prototype;
 
-/// Generated phase-zero DTO feasibility surface, independent of the prototype UI reducer.
+/// Generated core wire DTOs, including reviewed integer overrides and named events.
 #[allow(missing_docs, clippy::derivable_impls)]
 pub mod generated;
+
+/// Generated upstream RPC channels, version and message-size constants.
+#[allow(missing_docs)]
+pub mod constants;

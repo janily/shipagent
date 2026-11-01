@@ -69,11 +69,193 @@ pub mod error {
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct CreateSessionOptions {
+    #[serde(
+        rename = "branchFromMessageId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub branch_from_message_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "branchFromSessionId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub branch_from_session_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "codingMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub coding_mode: ::std::option::Option<bool>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub hidden: ::std::option::Option<bool>,
+    #[serde(
+        rename = "isFlagged",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_flagged: ::std::option::Option<bool>,
+    #[serde(
+        rename = "llmConnection",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub llm_connection: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub model: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "parentSessionId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub parent_session_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "permissionMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub permission_mode: ::std::option::Option<PermissionMode>,
+    #[serde(
+        rename = "systemPromptPreset",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub system_prompt_preset: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "thinkingLevel",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thinking_level: ::std::option::Option<ThinkingLevel>,
+    #[serde(
+        rename = "workingDirectory",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub working_directory: ::std::option::Option<::std::string::String>,
+}
+impl ::std::default::Default for CreateSessionOptions {
+    fn default() -> Self {
+        Self {
+            branch_from_message_id: Default::default(),
+            branch_from_session_id: Default::default(),
+            coding_mode: Default::default(),
+            hidden: Default::default(),
+            is_flagged: Default::default(),
+            llm_connection: Default::default(),
+            model: Default::default(),
+            name: Default::default(),
+            parent_session_id: Default::default(),
+            permission_mode: Default::default(),
+            system_prompt_preset: Default::default(),
+            thinking_level: Default::default(),
+            working_directory: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct FileAttachment {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub base64: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "mimeType")]
+    pub mime_type: ::std::string::String,
+    pub name: ::std::string::String,
+    pub path: ::std::string::String,
+    pub size: u64,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub text: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "thumbnailBase64",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thumbnail_base64: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: FileAttachmentType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum FileAttachmentType {
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "pdf")]
+    Pdf,
+    #[serde(rename = "office")]
+    Office,
+    #[serde(rename = "audio")]
+    Audio,
+    #[serde(rename = "unknown")]
+    Unknown,
+}
+impl ::std::fmt::Display for FileAttachmentType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Image => f.write_str("image"),
+            Self::Text => f.write_str("text"),
+            Self::Pdf => f.write_str("pdf"),
+            Self::Office => f.write_str("office"),
+            Self::Audio => f.write_str("audio"),
+            Self::Unknown => f.write_str("unknown"),
+        }
+    }
+}
+impl ::std::str::FromStr for FileAttachmentType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "image" => Ok(Self::Image),
+            "text" => Ok(Self::Text),
+            "pdf" => Ok(Self::Pdf),
+            "office" => Ok(Self::Office),
+            "audio" => Ok(Self::Audio),
+            "unknown" => Ok(Self::Unknown),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for FileAttachmentType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for FileAttachmentType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for FileAttachmentType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct Message {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub annotations: ::std::option::Option<::std::vec::Vec<MessageAnnotationsItem>>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub attachments: ::std::option::Option<::std::vec::Vec<MessageAttachmentsItem>>,
+    pub attachments: ::std::option::Option<::std::vec::Vec<StoredAttachment>>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub badges: ::std::option::Option<::std::vec::Vec<MessageBadgesItem>>,
     pub content: ::std::string::String,
@@ -195,7 +377,7 @@ pub struct Message {
         skip_serializing_if = "::std::option::Option::is_none"
     )]
     pub task_id: ::std::option::Option<::std::string::String>,
-    pub timestamp: f64,
+    pub timestamp: i64,
     #[serde(
         rename = "toolDisplayMeta",
         default,
@@ -244,7 +426,7 @@ pub struct Message {
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub tool_status: ::std::option::Option<MessageToolStatus>,
+    pub tool_status: ::std::option::Option<ToolStatus>,
     #[serde(
         rename = "toolUseId",
         default,
@@ -883,134 +1065,6 @@ impl ::std::default::Default for MessageAnnotationsItemThreadRef {
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct MessageAttachmentsItem {
-    pub id: ::std::string::String,
-    #[serde(
-        rename = "markdownPath",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub markdown_path: ::std::option::Option<::std::string::String>,
-    #[serde(rename = "mimeType")]
-    pub mime_type: ::std::string::String,
-    pub name: ::std::string::String,
-    #[serde(
-        rename = "originalMimeType",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub original_mime_type: ::std::option::Option<::std::string::String>,
-    #[serde(
-        rename = "originalSize",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub original_size: ::std::option::Option<f64>,
-    #[serde(
-        rename = "resizedBase64",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub resized_base64: ::std::option::Option<::std::string::String>,
-    pub size: f64,
-    #[serde(rename = "storedPath")]
-    pub stored_path: ::std::string::String,
-    #[serde(
-        rename = "thumbnailBase64",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub thumbnail_base64: ::std::option::Option<::std::string::String>,
-    #[serde(
-        rename = "thumbnailPath",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub thumbnail_path: ::std::option::Option<::std::string::String>,
-    #[serde(rename = "type")]
-    pub type_: MessageAttachmentsItemType,
-    #[serde(
-        rename = "wasResized",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub was_resized: ::std::option::Option<bool>,
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum MessageAttachmentsItemType {
-    #[serde(rename = "image")]
-    Image,
-    #[serde(rename = "text")]
-    Text,
-    #[serde(rename = "pdf")]
-    Pdf,
-    #[serde(rename = "office")]
-    Office,
-    #[serde(rename = "audio")]
-    Audio,
-    #[serde(rename = "unknown")]
-    Unknown,
-}
-impl ::std::fmt::Display for MessageAttachmentsItemType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Image => f.write_str("image"),
-            Self::Text => f.write_str("text"),
-            Self::Pdf => f.write_str("pdf"),
-            Self::Office => f.write_str("office"),
-            Self::Audio => f.write_str("audio"),
-            Self::Unknown => f.write_str("unknown"),
-        }
-    }
-}
-impl ::std::str::FromStr for MessageAttachmentsItemType {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "image" => Ok(Self::Image),
-            "text" => Ok(Self::Text),
-            "pdf" => Ok(Self::Pdf),
-            "office" => Ok(Self::Office),
-            "audio" => Ok(Self::Audio),
-            "unknown" => Ok(Self::Unknown),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for MessageAttachmentsItemType {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for MessageAttachmentsItemType {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for MessageAttachmentsItemType {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct MessageBadgesItem {
     #[serde(
         rename = "collapsedLabel",
@@ -1474,49 +1528,41 @@ impl ::std::convert::TryFrom<::std::string::String> for MessageToolDisplayMetaCa
     PartialEq,
     PartialOrd,
 )]
-pub enum MessageToolStatus {
-    #[serde(rename = "pending")]
-    Pending,
-    #[serde(rename = "executing")]
-    Executing,
-    #[serde(rename = "completed")]
-    Completed,
-    #[serde(rename = "error")]
-    Error,
-    #[serde(rename = "backgrounded")]
-    Backgrounded,
+pub enum PermissionMode {
+    #[serde(rename = "safe")]
+    Safe,
+    #[serde(rename = "ask")]
+    Ask,
+    #[serde(rename = "allow-all")]
+    AllowAll,
 }
-impl ::std::fmt::Display for MessageToolStatus {
+impl ::std::fmt::Display for PermissionMode {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Pending => f.write_str("pending"),
-            Self::Executing => f.write_str("executing"),
-            Self::Completed => f.write_str("completed"),
-            Self::Error => f.write_str("error"),
-            Self::Backgrounded => f.write_str("backgrounded"),
+            Self::Safe => f.write_str("safe"),
+            Self::Ask => f.write_str("ask"),
+            Self::AllowAll => f.write_str("allow-all"),
         }
     }
 }
-impl ::std::str::FromStr for MessageToolStatus {
+impl ::std::str::FromStr for PermissionMode {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "pending" => Ok(Self::Pending),
-            "executing" => Ok(Self::Executing),
-            "completed" => Ok(Self::Completed),
-            "error" => Ok(Self::Error),
-            "backgrounded" => Ok(Self::Backgrounded),
+            "safe" => Ok(Self::Safe),
+            "ask" => Ok(Self::Ask),
+            "allow-all" => Ok(Self::AllowAll),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for MessageToolStatus {
+impl ::std::convert::TryFrom<&str> for PermissionMode {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for MessageToolStatus {
+impl ::std::convert::TryFrom<&::std::string::String> for PermissionMode {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -1524,7 +1570,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for MessageToolStatus {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for MessageToolStatus {
+impl ::std::convert::TryFrom<::std::string::String> for PermissionMode {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -1533,1570 +1579,7 @@ impl ::std::convert::TryFrom<::std::string::String> for MessageToolStatus {
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct Session {
-    #[serde(
-        rename = "archivedAt",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub archived_at: ::std::option::Option<f64>,
-    #[serde(
-        rename = "boundPrs",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub bound_prs: ::std::option::Option<::std::vec::Vec<SessionBoundPrsItem>>,
-    #[serde(
-        rename = "codingMode",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub coding_mode: ::std::option::Option<bool>,
-    #[serde(
-        rename = "createdAt",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub created_at: ::std::option::Option<f64>,
-    #[serde(
-        rename = "currentStatus",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub current_status: ::std::option::Option<SessionCurrentStatus>,
-    #[serde(
-        rename = "hasUnread",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub has_unread: ::std::option::Option<bool>,
-    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub hidden: ::std::option::Option<bool>,
-    pub id: ::std::string::String,
-    #[serde(
-        rename = "isArchived",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub is_archived: ::std::option::Option<bool>,
-    #[serde(
-        rename = "isAsyncOperationOngoing",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub is_async_operation_ongoing: ::std::option::Option<bool>,
-    #[serde(
-        rename = "isFlagged",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub is_flagged: ::std::option::Option<bool>,
-    #[serde(rename = "isProcessing")]
-    pub is_processing: bool,
-    #[serde(
-        rename = "isRegeneratingTitle",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub is_regenerating_title: ::std::option::Option<bool>,
-    #[serde(
-        rename = "lastFinalMessageId",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub last_final_message_id: ::std::option::Option<::std::string::String>,
-    #[serde(rename = "lastMessageAt")]
-    pub last_message_at: f64,
-    #[serde(
-        rename = "lastMessageRole",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub last_message_role: ::std::option::Option<SessionLastMessageRole>,
-    #[serde(
-        rename = "lastReadMessageId",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub last_read_message_id: ::std::option::Option<::std::string::String>,
-    #[serde(
-        rename = "llmConnection",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub llm_connection: ::std::option::Option<::std::string::String>,
-    #[serde(
-        rename = "messageCount",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub message_count: ::std::option::Option<f64>,
-    pub messages: ::std::vec::Vec<Message>,
-    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub model: ::std::option::Option<::std::string::String>,
-    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub name: ::std::option::Option<::std::string::String>,
-    #[serde(
-        rename = "parentSessionId",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub parent_session_id: ::std::option::Option<::std::string::String>,
-    #[serde(
-        rename = "permissionMode",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub permission_mode: ::std::option::Option<SessionPermissionMode>,
-    #[serde(
-        rename = "prMonitors",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub pr_monitors: ::std::option::Option<
-        ::std::collections::BTreeMap<::std::string::String, SessionPrMonitorsValue>,
-    >,
-    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub preview: ::std::option::Option<::std::string::String>,
-    #[serde(
-        rename = "sessionFolderPath",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub session_folder_path: ::std::option::Option<::std::string::String>,
-    #[serde(
-        rename = "supportsBranching",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub supports_branching: ::std::option::Option<bool>,
-    #[serde(
-        rename = "thinkingLevel",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub thinking_level: ::std::option::Option<SessionThinkingLevel>,
-    #[serde(
-        rename = "tokenUsage",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub token_usage: ::std::option::Option<SessionTokenUsage>,
-    #[serde(
-        rename = "workingDirectory",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub working_directory: ::std::option::Option<::std::string::String>,
-    #[serde(rename = "workspaceId")]
-    pub workspace_id: ::std::string::String,
-    #[serde(rename = "workspaceName")]
-    pub workspace_name: ::std::string::String,
-}
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionBoundPrsItem {
-    #[serde(rename = "addedAt")]
-    pub added_at: f64,
-    pub host: ::std::string::String,
-    pub number: f64,
-    pub owner: ::std::string::String,
-    pub repo: ::std::string::String,
-}
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionCurrentStatus {
-    pub message: ::std::string::String,
-    #[serde(
-        rename = "statusType",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub status_type: ::std::option::Option<::std::string::String>,
-}
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-#[serde(untagged)]
-pub enum SessionEvent {
-    Variant0 {
-        #[serde(rename = "codingMode")]
-        coding_mode: bool,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant0Type,
-    },
-    Variant1 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "turnId")]
-        turn_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant1Type,
-    },
-    Variant2 {
-        message: ::std::string::String,
-        phase: SessionEventVariant2Phase,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant2Type,
-    },
-    Variant3 {
-        phase: SessionEventVariant3Phase,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant3Type,
-    },
-    Variant4 {
-        delta: ::std::string::String,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant4Type,
-    },
-    Variant5 {
-        #[serde(
-            rename = "isIntermediate",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        is_intermediate: ::std::option::Option<bool>,
-        #[serde(
-            rename = "messageId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        message_id: ::std::option::Option<::std::string::String>,
-        #[serde(
-            rename = "parentToolUseId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        parent_tool_use_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        text: ::std::string::String,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        timestamp: ::std::option::Option<f64>,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant5Type,
-    },
-    Variant6 {
-        #[serde(
-            rename = "parentToolUseId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        parent_tool_use_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        timestamp: ::std::option::Option<f64>,
-        #[serde(
-            rename = "toolDisplayMeta",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        tool_display_meta: ::std::option::Option<SessionEventVariant6ToolDisplayMeta>,
-        #[serde(
-            rename = "toolDisplayName",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        tool_display_name: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "toolInput")]
-        tool_input: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
-        #[serde(
-            rename = "toolIntent",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        tool_intent: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "toolName")]
-        tool_name: ::std::string::String,
-        #[serde(rename = "toolUseId")]
-        tool_use_id: ::std::string::String,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant6Type,
-    },
-    Variant7 {
-        #[serde(
-            rename = "isError",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        is_error: ::std::option::Option<bool>,
-        #[serde(
-            rename = "parentToolUseId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        parent_tool_use_id: ::std::option::Option<::std::string::String>,
-        result: ::std::string::String,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        timestamp: ::std::option::Option<f64>,
-        #[serde(
-            rename = "toolInput",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        tool_input:
-            ::std::option::Option<::serde_json::Map<::std::string::String, ::serde_json::Value>>,
-        #[serde(rename = "toolName")]
-        tool_name: ::std::string::String,
-        #[serde(rename = "toolUseId")]
-        tool_use_id: ::std::string::String,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant7Type,
-    },
-    Variant8 {
-        #[serde(
-            rename = "backgroundTasksAlive",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        background_tasks_alive: ::std::option::Option<bool>,
-        error: ::std::string::String,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        timestamp: ::std::option::Option<f64>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant8Type,
-    },
-    Variant9 {
-        error: SessionEventVariant9Error,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        timestamp: ::std::option::Option<f64>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant9Type,
-    },
-    Variant10 {
-        #[serde(
-            rename = "backgroundTasksAlive",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        background_tasks_alive: ::std::option::Option<bool>,
-        #[serde(
-            rename = "hasUnread",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        has_unread: ::std::option::Option<bool>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(
-            rename = "tokenUsage",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        token_usage: ::std::option::Option<SessionEventVariant10TokenUsage>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant10Type,
-    },
-    Variant11 {
-        #[serde(
-            rename = "backgroundTasksAlive",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        background_tasks_alive: ::std::option::Option<bool>,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        message: ::std::option::Option<Message>,
-        #[serde(
-            rename = "queuedMessages",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        queued_messages: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant11Type,
-    },
-    Variant12 {
-        message: ::std::string::String,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(
-            rename = "statusType",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        status_type: ::std::option::Option<SessionEventVariant12StatusType>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant12Type,
-    },
-    Variant13 {
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        level: ::std::option::Option<SessionEventVariant13Level>,
-        message: ::std::string::String,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(
-            rename = "statusType",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        status_type: ::std::option::Option<SessionEventVariant13StatusType>,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        timestamp: ::std::option::Option<f64>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant13Type,
-    },
-    Variant14 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        title: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant14Type,
-    },
-    Variant15 {
-        #[serde(rename = "isRegenerating")]
-        is_regenerating: bool,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant15Type,
-    },
-    Variant16 {
-        #[serde(rename = "isOngoing")]
-        is_ongoing: bool,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant16Type,
-    },
-    Variant17 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant17Type,
-        #[serde(rename = "workingDirectory")]
-        working_directory: ::std::string::String,
-    },
-    Variant18 {
-        request: SessionEventVariant18Request,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant18Type,
-    },
-    Variant19 {
-        #[serde(
-            rename = "changedAt",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        changed_at: ::std::option::Option<::std::string::String>,
-        #[serde(
-            rename = "changedBy",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        changed_by: ::std::option::Option<SessionEventVariant19ChangedBy>,
-        #[serde(
-            rename = "modeVersion",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        mode_version: ::std::option::Option<f64>,
-        #[serde(rename = "permissionMode")]
-        permission_mode: SessionEventVariant19PermissionMode,
-        #[serde(
-            rename = "previousPermissionMode",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        previous_permission_mode:
-            ::std::option::Option<SessionEventVariant19PreviousPermissionMode>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(
-            rename = "transitionDisplay",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        transition_display: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant19Type,
-    },
-    Variant20 {
-        message: Message,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant20Type,
-    },
-    Variant21 {
-        #[serde(rename = "connectionSlug")]
-        connection_slug: ::std::string::String,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(
-            rename = "supportsBranching",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        supports_branching: ::std::option::Option<bool>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant21Type,
-    },
-    Variant22 {
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        intent: ::std::option::Option<::std::string::String>,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        kind: ::std::option::Option<SessionEventVariant22Kind>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "taskId")]
-        task_id: ::std::string::String,
-        #[serde(rename = "toolUseId")]
-        tool_use_id: ::std::string::String,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant22Type,
-        #[serde(
-            rename = "workflowId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        workflow_id: ::std::option::Option<::std::string::String>,
-    },
-    Variant23 {
-        #[serde(rename = "agentId")]
-        agent_id: ::std::string::String,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant23Type,
-        #[serde(rename = "workflowId")]
-        workflow_id: ::std::string::String,
-    },
-    Variant24 {
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        command: ::std::option::Option<::std::string::String>,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        intent: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "shellId")]
-        shell_id: ::std::string::String,
-        #[serde(rename = "toolUseId")]
-        tool_use_id: ::std::string::String,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant24Type,
-    },
-    Variant25 {
-        #[serde(rename = "elapsedSeconds")]
-        elapsed_seconds: f64,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "toolUseId")]
-        tool_use_id: ::std::string::String,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant25Type,
-    },
-    Variant26 {
-        #[serde(
-            rename = "lastToolName",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        last_tool_name: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        summary: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "taskId")]
-        task_id: ::std::string::String,
-        #[serde(
-            rename = "toolUseId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        tool_use_id: ::std::option::Option<::std::string::String>,
-        #[serde(
-            rename = "toolUses",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        tool_uses: ::std::option::Option<f64>,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant26Type,
-    },
-    Variant27 {
-        #[serde(
-            rename = "launchedHere",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        launched_here: ::std::option::Option<bool>,
-        #[serde(
-            rename = "outputFile",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        output_file: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        status: SessionEventVariant27Status,
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        summary: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "taskId")]
-        task_id: ::std::string::String,
-        #[serde(
-            rename = "toolUseId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        tool_use_id: ::std::option::Option<::std::string::String>,
-        #[serde(
-            rename = "turnId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        turn_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant27Type,
-    },
-    Variant28 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "shellId")]
-        shell_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant28Type,
-    },
-    Variant29 {
-        message: Message,
-        #[serde(
-            rename = "optimisticMessageId",
-            default,
-            skip_serializing_if = "::std::option::Option::is_none"
-        )]
-        optimistic_message_id: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        status: SessionEventVariant29Status,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant29Type,
-    },
-    Variant30 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant30Type,
-    },
-    Variant31 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant31Type,
-    },
-    Variant32 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant32Type,
-    },
-    Variant33 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant33Type,
-    },
-    Variant34 {
-        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        name: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant34Type,
-    },
-    Variant35 {
-        #[serde(deserialize_with = "required_option")]
-        model: ::std::option::Option<::std::string::String>,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant35Type,
-    },
-    Variant36 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant36Type,
-    },
-    Variant37 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant37Type,
-    },
-    Variant38 {
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "tokenUsage")]
-        token_usage: SessionEventVariant38TokenUsage,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant38Type,
-    },
-    Variant39 {
-        annotations: ::std::vec::Vec<SessionEventVariant39AnnotationsItem>,
-        #[serde(rename = "messageId")]
-        message_id: ::std::string::String,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant39Type,
-    },
-    Variant40 {
-        error: ::std::string::String,
-        #[serde(rename = "sessionId")]
-        session_id: ::std::string::String,
-        #[serde(rename = "type")]
-        type_: SessionEventVariant40Type,
-    },
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant0Type {
-    #[serde(rename = "coding_mode_changed")]
-    CodingModeChanged,
-}
-impl ::std::fmt::Display for SessionEventVariant0Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::CodingModeChanged => f.write_str("coding_mode_changed"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant0Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "coding_mode_changed" => Ok(Self::CodingModeChanged),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant0Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant0Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant0Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant10TokenUsage {
-    #[serde(
-        rename = "cacheCreationTokens",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub cache_creation_tokens: ::std::option::Option<f64>,
-    #[serde(
-        rename = "cacheReadTokens",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub cache_read_tokens: ::std::option::Option<f64>,
-    #[serde(rename = "contextTokens")]
-    pub context_tokens: f64,
-    #[serde(
-        rename = "contextUsage",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub context_usage: ::std::option::Option<SessionEventVariant10TokenUsageContextUsage>,
-    #[serde(
-        rename = "contextWindow",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub context_window: ::std::option::Option<f64>,
-    #[serde(rename = "costUsd")]
-    pub cost_usd: f64,
-    #[serde(rename = "inputTokens")]
-    pub input_tokens: f64,
-    #[serde(rename = "outputTokens")]
-    pub output_tokens: f64,
-    #[serde(rename = "totalTokens")]
-    pub total_tokens: f64,
-}
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant10TokenUsageContextUsage {
-    #[serde(rename = "canCompact")]
-    pub can_compact: bool,
-    #[serde(rename = "isEstimate")]
-    pub is_estimate: bool,
-    #[serde(rename = "isStale")]
-    pub is_stale: bool,
-    #[serde(rename = "limitKind")]
-    pub limit_kind: SessionEventVariant10TokenUsageContextUsageLimitKind,
-    #[serde(
-        rename = "limitTokens",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub limit_tokens: ::std::option::Option<f64>,
-    #[serde(rename = "usedTokens")]
-    #[serde(deserialize_with = "required_option")]
-    pub used_tokens: ::std::option::Option<f64>,
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant10TokenUsageContextUsageLimitKind {
-    #[serde(rename = "compaction")]
-    Compaction,
-    #[serde(rename = "context")]
-    Context,
-}
-impl ::std::fmt::Display for SessionEventVariant10TokenUsageContextUsageLimitKind {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Compaction => f.write_str("compaction"),
-            Self::Context => f.write_str("context"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant10TokenUsageContextUsageLimitKind {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "compaction" => Ok(Self::Compaction),
-            "context" => Ok(Self::Context),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant10TokenUsageContextUsageLimitKind {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant10TokenUsageContextUsageLimitKind
-{
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String>
-    for SessionEventVariant10TokenUsageContextUsageLimitKind
-{
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant10Type {
-    #[serde(rename = "complete")]
-    Complete,
-}
-impl ::std::fmt::Display for SessionEventVariant10Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Complete => f.write_str("complete"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant10Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "complete" => Ok(Self::Complete),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant10Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant10Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant10Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant11Type {
-    #[serde(rename = "interrupted")]
-    Interrupted,
-}
-impl ::std::fmt::Display for SessionEventVariant11Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Interrupted => f.write_str("interrupted"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant11Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "interrupted" => Ok(Self::Interrupted),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant11Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant11Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant11Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant12StatusType {
-    #[serde(rename = "compacting")]
-    Compacting,
-}
-impl ::std::fmt::Display for SessionEventVariant12StatusType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Compacting => f.write_str("compacting"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant12StatusType {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "compacting" => Ok(Self::Compacting),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant12StatusType {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant12StatusType {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant12StatusType {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant12Type {
-    #[serde(rename = "status")]
-    Status,
-}
-impl ::std::fmt::Display for SessionEventVariant12Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Status => f.write_str("status"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant12Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "status" => Ok(Self::Status),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant12Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant12Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant12Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant13Level {
-    #[serde(rename = "info")]
-    Info,
-    #[serde(rename = "warning")]
-    Warning,
-    #[serde(rename = "error")]
-    Error,
-    #[serde(rename = "success")]
-    Success,
-}
-impl ::std::fmt::Display for SessionEventVariant13Level {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Info => f.write_str("info"),
-            Self::Warning => f.write_str("warning"),
-            Self::Error => f.write_str("error"),
-            Self::Success => f.write_str("success"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant13Level {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "info" => Ok(Self::Info),
-            "warning" => Ok(Self::Warning),
-            "error" => Ok(Self::Error),
-            "success" => Ok(Self::Success),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant13Level {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant13Level {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant13Level {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant13StatusType {
-    #[serde(rename = "compaction_complete")]
-    CompactionComplete,
-}
-impl ::std::fmt::Display for SessionEventVariant13StatusType {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::CompactionComplete => f.write_str("compaction_complete"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant13StatusType {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "compaction_complete" => Ok(Self::CompactionComplete),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant13StatusType {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant13StatusType {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant13StatusType {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant13Type {
-    #[serde(rename = "info")]
-    Info,
-}
-impl ::std::fmt::Display for SessionEventVariant13Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Info => f.write_str("info"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant13Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "info" => Ok(Self::Info),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant13Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant13Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant13Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant14Type {
-    #[serde(rename = "title_generated")]
-    TitleGenerated,
-}
-impl ::std::fmt::Display for SessionEventVariant14Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TitleGenerated => f.write_str("title_generated"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant14Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "title_generated" => Ok(Self::TitleGenerated),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant14Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant14Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant14Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant15Type {
-    #[serde(rename = "title_regenerating")]
-    TitleRegenerating,
-}
-impl ::std::fmt::Display for SessionEventVariant15Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TitleRegenerating => f.write_str("title_regenerating"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant15Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "title_regenerating" => Ok(Self::TitleRegenerating),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant15Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant15Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant15Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant16Type {
-    #[serde(rename = "async_operation")]
-    AsyncOperation,
-}
-impl ::std::fmt::Display for SessionEventVariant16Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::AsyncOperation => f.write_str("async_operation"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant16Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "async_operation" => Ok(Self::AsyncOperation),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant16Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant16Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant16Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant17Type {
-    #[serde(rename = "working_directory_changed")]
-    WorkingDirectoryChanged,
-}
-impl ::std::fmt::Display for SessionEventVariant17Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::WorkingDirectoryChanged => f.write_str("working_directory_changed"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant17Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "working_directory_changed" => Ok(Self::WorkingDirectoryChanged),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant17Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant17Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant17Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant18Request {
+pub struct PermissionRequest {
     #[serde(
         rename = "appName",
         default,
@@ -3151,7 +1634,7 @@ pub struct SessionEventVariant18Request {
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub type_: ::std::option::Option<SessionEventVariant18RequestType>,
+    pub type_: ::std::option::Option<PermissionRequestType>,
 }
 #[derive(
     ::serde::Deserialize,
@@ -3165,7 +1648,7 @@ pub struct SessionEventVariant18Request {
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant18RequestType {
+pub enum PermissionRequestType {
     #[serde(rename = "bash")]
     Bash,
     #[serde(rename = "file_write")]
@@ -3177,7 +1660,7 @@ pub enum SessionEventVariant18RequestType {
     #[serde(rename = "admin_approval")]
     AdminApproval,
 }
-impl ::std::fmt::Display for SessionEventVariant18RequestType {
+impl ::std::fmt::Display for PermissionRequestType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Bash => f.write_str("bash"),
@@ -3188,7 +1671,7 @@ impl ::std::fmt::Display for SessionEventVariant18RequestType {
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant18RequestType {
+impl ::std::str::FromStr for PermissionRequestType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
@@ -3201,13 +1684,13 @@ impl ::std::str::FromStr for SessionEventVariant18RequestType {
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant18RequestType {
+impl ::std::convert::TryFrom<&str> for PermissionRequestType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant18RequestType {
+impl ::std::convert::TryFrom<&::std::string::String> for PermissionRequestType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -3215,1621 +1698,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant18Re
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant18RequestType {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant18Type {
-    #[serde(rename = "permission_request")]
-    PermissionRequest,
-}
-impl ::std::fmt::Display for SessionEventVariant18Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::PermissionRequest => f.write_str("permission_request"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant18Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "permission_request" => Ok(Self::PermissionRequest),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant18Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant18Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant18Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant19ChangedBy {
-    #[serde(rename = "user")]
-    User,
-    #[serde(rename = "system")]
-    System,
-    #[serde(rename = "restore")]
-    Restore,
-    #[serde(rename = "unknown")]
-    Unknown,
-}
-impl ::std::fmt::Display for SessionEventVariant19ChangedBy {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::User => f.write_str("user"),
-            Self::System => f.write_str("system"),
-            Self::Restore => f.write_str("restore"),
-            Self::Unknown => f.write_str("unknown"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant19ChangedBy {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "user" => Ok(Self::User),
-            "system" => Ok(Self::System),
-            "restore" => Ok(Self::Restore),
-            "unknown" => Ok(Self::Unknown),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant19ChangedBy {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant19ChangedBy {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant19ChangedBy {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant19PermissionMode {
-    #[serde(rename = "safe")]
-    Safe,
-    #[serde(rename = "ask")]
-    Ask,
-    #[serde(rename = "allow-all")]
-    AllowAll,
-}
-impl ::std::fmt::Display for SessionEventVariant19PermissionMode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Safe => f.write_str("safe"),
-            Self::Ask => f.write_str("ask"),
-            Self::AllowAll => f.write_str("allow-all"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant19PermissionMode {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "safe" => Ok(Self::Safe),
-            "ask" => Ok(Self::Ask),
-            "allow-all" => Ok(Self::AllowAll),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant19PermissionMode {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant19PermissionMode {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant19PermissionMode {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant19PreviousPermissionMode {
-    #[serde(rename = "safe")]
-    Safe,
-    #[serde(rename = "ask")]
-    Ask,
-    #[serde(rename = "allow-all")]
-    AllowAll,
-}
-impl ::std::fmt::Display for SessionEventVariant19PreviousPermissionMode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Safe => f.write_str("safe"),
-            Self::Ask => f.write_str("ask"),
-            Self::AllowAll => f.write_str("allow-all"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant19PreviousPermissionMode {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "safe" => Ok(Self::Safe),
-            "ask" => Ok(Self::Ask),
-            "allow-all" => Ok(Self::AllowAll),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant19PreviousPermissionMode {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant19PreviousPermissionMode
-{
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String>
-    for SessionEventVariant19PreviousPermissionMode
-{
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant19Type {
-    #[serde(rename = "permission_mode_changed")]
-    PermissionModeChanged,
-}
-impl ::std::fmt::Display for SessionEventVariant19Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::PermissionModeChanged => f.write_str("permission_mode_changed"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant19Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "permission_mode_changed" => Ok(Self::PermissionModeChanged),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant19Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant19Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant19Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant1Type {
-    #[serde(rename = "text_discard")]
-    TextDiscard,
-}
-impl ::std::fmt::Display for SessionEventVariant1Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TextDiscard => f.write_str("text_discard"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant1Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "text_discard" => Ok(Self::TextDiscard),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant1Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant1Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant1Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant20Type {
-    #[serde(rename = "plan_submitted")]
-    PlanSubmitted,
-}
-impl ::std::fmt::Display for SessionEventVariant20Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::PlanSubmitted => f.write_str("plan_submitted"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant20Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "plan_submitted" => Ok(Self::PlanSubmitted),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant20Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant20Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant20Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant21Type {
-    #[serde(rename = "connection_changed")]
-    ConnectionChanged,
-}
-impl ::std::fmt::Display for SessionEventVariant21Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::ConnectionChanged => f.write_str("connection_changed"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant21Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "connection_changed" => Ok(Self::ConnectionChanged),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant21Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant21Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant21Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant22Kind {
-    #[serde(rename = "workflow")]
-    Workflow,
-}
-impl ::std::fmt::Display for SessionEventVariant22Kind {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Workflow => f.write_str("workflow"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant22Kind {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "workflow" => Ok(Self::Workflow),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant22Kind {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant22Kind {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant22Kind {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant22Type {
-    #[serde(rename = "task_backgrounded")]
-    TaskBackgrounded,
-}
-impl ::std::fmt::Display for SessionEventVariant22Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TaskBackgrounded => f.write_str("task_backgrounded"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant22Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "task_backgrounded" => Ok(Self::TaskBackgrounded),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant22Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant22Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant22Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant23Type {
-    #[serde(rename = "workflow_agent_completed")]
-    WorkflowAgentCompleted,
-}
-impl ::std::fmt::Display for SessionEventVariant23Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::WorkflowAgentCompleted => f.write_str("workflow_agent_completed"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant23Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "workflow_agent_completed" => Ok(Self::WorkflowAgentCompleted),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant23Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant23Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant23Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant24Type {
-    #[serde(rename = "shell_backgrounded")]
-    ShellBackgrounded,
-}
-impl ::std::fmt::Display for SessionEventVariant24Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::ShellBackgrounded => f.write_str("shell_backgrounded"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant24Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "shell_backgrounded" => Ok(Self::ShellBackgrounded),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant24Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant24Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant24Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant25Type {
-    #[serde(rename = "task_progress")]
-    TaskProgress,
-}
-impl ::std::fmt::Display for SessionEventVariant25Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TaskProgress => f.write_str("task_progress"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant25Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "task_progress" => Ok(Self::TaskProgress),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant25Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant25Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant25Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant26Type {
-    #[serde(rename = "task_activity")]
-    TaskActivity,
-}
-impl ::std::fmt::Display for SessionEventVariant26Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TaskActivity => f.write_str("task_activity"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant26Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "task_activity" => Ok(Self::TaskActivity),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant26Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant26Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant26Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant27Status {
-    #[serde(rename = "completed")]
-    Completed,
-    #[serde(rename = "failed")]
-    Failed,
-    #[serde(rename = "stopped")]
-    Stopped,
-}
-impl ::std::fmt::Display for SessionEventVariant27Status {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Completed => f.write_str("completed"),
-            Self::Failed => f.write_str("failed"),
-            Self::Stopped => f.write_str("stopped"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant27Status {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "completed" => Ok(Self::Completed),
-            "failed" => Ok(Self::Failed),
-            "stopped" => Ok(Self::Stopped),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant27Status {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant27Status {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant27Status {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant27Type {
-    #[serde(rename = "task_completed")]
-    TaskCompleted,
-}
-impl ::std::fmt::Display for SessionEventVariant27Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TaskCompleted => f.write_str("task_completed"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant27Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "task_completed" => Ok(Self::TaskCompleted),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant27Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant27Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant27Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant28Type {
-    #[serde(rename = "shell_killed")]
-    ShellKilled,
-}
-impl ::std::fmt::Display for SessionEventVariant28Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::ShellKilled => f.write_str("shell_killed"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant28Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "shell_killed" => Ok(Self::ShellKilled),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant28Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant28Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant28Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant29Status {
-    #[serde(rename = "accepted")]
-    Accepted,
-    #[serde(rename = "queued")]
-    Queued,
-    #[serde(rename = "processing")]
-    Processing,
-}
-impl ::std::fmt::Display for SessionEventVariant29Status {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Accepted => f.write_str("accepted"),
-            Self::Queued => f.write_str("queued"),
-            Self::Processing => f.write_str("processing"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant29Status {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "accepted" => Ok(Self::Accepted),
-            "queued" => Ok(Self::Queued),
-            "processing" => Ok(Self::Processing),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant29Status {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant29Status {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant29Status {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant29Type {
-    #[serde(rename = "user_message")]
-    UserMessage,
-}
-impl ::std::fmt::Display for SessionEventVariant29Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::UserMessage => f.write_str("user_message"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant29Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "user_message" => Ok(Self::UserMessage),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant29Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant29Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant29Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant2Phase {
-    #[serde(rename = "backoff")]
-    Backoff,
-}
-impl ::std::fmt::Display for SessionEventVariant2Phase {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Backoff => f.write_str("backoff"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant2Phase {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "backoff" => Ok(Self::Backoff),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant2Phase {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant2Phase {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant2Phase {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant2Type {
-    #[serde(rename = "retry")]
-    Retry,
-}
-impl ::std::fmt::Display for SessionEventVariant2Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Retry => f.write_str("retry"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant2Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "retry" => Ok(Self::Retry),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant2Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant2Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant2Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant30Type {
-    #[serde(rename = "session_flagged")]
-    SessionFlagged,
-}
-impl ::std::fmt::Display for SessionEventVariant30Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::SessionFlagged => f.write_str("session_flagged"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant30Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "session_flagged" => Ok(Self::SessionFlagged),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant30Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant30Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant30Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant31Type {
-    #[serde(rename = "session_unflagged")]
-    SessionUnflagged,
-}
-impl ::std::fmt::Display for SessionEventVariant31Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::SessionUnflagged => f.write_str("session_unflagged"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant31Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "session_unflagged" => Ok(Self::SessionUnflagged),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant31Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant31Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant31Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant32Type {
-    #[serde(rename = "session_archived")]
-    SessionArchived,
-}
-impl ::std::fmt::Display for SessionEventVariant32Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::SessionArchived => f.write_str("session_archived"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant32Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "session_archived" => Ok(Self::SessionArchived),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant32Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant32Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant32Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant33Type {
-    #[serde(rename = "session_unarchived")]
-    SessionUnarchived,
-}
-impl ::std::fmt::Display for SessionEventVariant33Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::SessionUnarchived => f.write_str("session_unarchived"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant33Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "session_unarchived" => Ok(Self::SessionUnarchived),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant33Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant33Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant33Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant34Type {
-    #[serde(rename = "name_changed")]
-    NameChanged,
-}
-impl ::std::fmt::Display for SessionEventVariant34Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::NameChanged => f.write_str("name_changed"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant34Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "name_changed" => Ok(Self::NameChanged),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant34Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant34Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant34Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant35Type {
-    #[serde(rename = "session_model_changed")]
-    SessionModelChanged,
-}
-impl ::std::fmt::Display for SessionEventVariant35Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::SessionModelChanged => f.write_str("session_model_changed"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant35Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "session_model_changed" => Ok(Self::SessionModelChanged),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant35Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant35Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant35Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant36Type {
-    #[serde(rename = "session_deleted")]
-    SessionDeleted,
-}
-impl ::std::fmt::Display for SessionEventVariant36Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::SessionDeleted => f.write_str("session_deleted"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant36Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "session_deleted" => Ok(Self::SessionDeleted),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant36Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant36Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant36Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant37Type {
-    #[serde(rename = "session_created")]
-    SessionCreated,
-}
-impl ::std::fmt::Display for SessionEventVariant37Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::SessionCreated => f.write_str("session_created"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant37Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "session_created" => Ok(Self::SessionCreated),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant37Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant37Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant37Type {
+impl ::std::convert::TryFrom<::std::string::String> for PermissionRequestType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -4838,41 +1707,61 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant37Typ
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant38TokenUsage {
+pub struct SendMessageOptions {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub badges: ::std::option::Option<::std::vec::Vec<SendMessageOptionsBadgesItem>>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub hidden: ::std::option::Option<bool>,
     #[serde(
-        rename = "contextUsage",
+        rename = "optimisticMessageId",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub context_usage: ::std::option::Option<SessionEventVariant38TokenUsageContextUsage>,
+    pub optimistic_message_id: ::std::option::Option<::std::string::String>,
     #[serde(
-        rename = "contextWindow",
+        rename = "skillSlugs",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub context_window: ::std::option::Option<f64>,
-    #[serde(rename = "inputTokens")]
-    pub input_tokens: f64,
+    pub skill_slugs: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+}
+impl ::std::default::Default for SendMessageOptions {
+    fn default() -> Self {
+        Self {
+            badges: Default::default(),
+            hidden: Default::default(),
+            optimistic_message_id: Default::default(),
+            skill_slugs: Default::default(),
+        }
+    }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant38TokenUsageContextUsage {
-    #[serde(rename = "canCompact")]
-    pub can_compact: bool,
-    #[serde(rename = "isEstimate")]
-    pub is_estimate: bool,
-    #[serde(rename = "isStale")]
-    pub is_stale: bool,
-    #[serde(rename = "limitKind")]
-    pub limit_kind: SessionEventVariant38TokenUsageContextUsageLimitKind,
+pub struct SendMessageOptionsBadgesItem {
     #[serde(
-        rename = "limitTokens",
+        rename = "collapsedLabel",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub limit_tokens: ::std::option::Option<f64>,
-    #[serde(rename = "usedTokens")]
-    #[serde(deserialize_with = "required_option")]
-    pub used_tokens: ::std::option::Option<f64>,
+    pub collapsed_label: ::std::option::Option<::std::string::String>,
+    pub end: f64,
+    #[serde(
+        rename = "filePath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub file_path: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "iconDataUrl",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub icon_data_url: ::std::option::Option<::std::string::String>,
+    pub label: ::std::string::String,
+    #[serde(rename = "rawText")]
+    pub raw_text: ::std::string::String,
+    pub start: f64,
+    #[serde(rename = "type")]
+    pub type_: SendMessageOptionsBadgesItemType,
 }
 #[derive(
     ::serde::Deserialize,
@@ -4886,39 +1775,49 @@ pub struct SessionEventVariant38TokenUsageContextUsage {
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant38TokenUsageContextUsageLimitKind {
-    #[serde(rename = "compaction")]
-    Compaction,
+pub enum SendMessageOptionsBadgesItemType {
+    #[serde(rename = "skill")]
+    Skill,
     #[serde(rename = "context")]
     Context,
+    #[serde(rename = "command")]
+    Command,
+    #[serde(rename = "file")]
+    File,
+    #[serde(rename = "folder")]
+    Folder,
 }
-impl ::std::fmt::Display for SessionEventVariant38TokenUsageContextUsageLimitKind {
+impl ::std::fmt::Display for SendMessageOptionsBadgesItemType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Compaction => f.write_str("compaction"),
+            Self::Skill => f.write_str("skill"),
             Self::Context => f.write_str("context"),
+            Self::Command => f.write_str("command"),
+            Self::File => f.write_str("file"),
+            Self::Folder => f.write_str("folder"),
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant38TokenUsageContextUsageLimitKind {
+impl ::std::str::FromStr for SendMessageOptionsBadgesItemType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "compaction" => Ok(Self::Compaction),
+            "skill" => Ok(Self::Skill),
             "context" => Ok(Self::Context),
+            "command" => Ok(Self::Command),
+            "file" => Ok(Self::File),
+            "folder" => Ok(Self::Folder),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant38TokenUsageContextUsageLimitKind {
+impl ::std::convert::TryFrom<&str> for SendMessageOptionsBadgesItemType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant38TokenUsageContextUsageLimitKind
-{
+impl ::std::convert::TryFrom<&::std::string::String> for SendMessageOptionsBadgesItemType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -4926,15 +1825,183 @@ impl ::std::convert::TryFrom<&::std::string::String>
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String>
-    for SessionEventVariant38TokenUsageContextUsageLimitKind
-{
+impl ::std::convert::TryFrom<::std::string::String> for SendMessageOptionsBadgesItemType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct Session {
+    #[serde(
+        rename = "archivedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub archived_at: ::std::option::Option<i64>,
+    #[serde(
+        rename = "boundPrs",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub bound_prs: ::std::option::Option<::std::vec::Vec<SessionBoundPrsItem>>,
+    #[serde(
+        rename = "codingMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub coding_mode: ::std::option::Option<bool>,
+    #[serde(
+        rename = "createdAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub created_at: ::std::option::Option<i64>,
+    #[serde(
+        rename = "currentStatus",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub current_status: ::std::option::Option<SessionCurrentStatus>,
+    #[serde(
+        rename = "hasUnread",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub has_unread: ::std::option::Option<bool>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub hidden: ::std::option::Option<bool>,
+    pub id: ::std::string::String,
+    #[serde(
+        rename = "isArchived",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_archived: ::std::option::Option<bool>,
+    #[serde(
+        rename = "isAsyncOperationOngoing",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_async_operation_ongoing: ::std::option::Option<bool>,
+    #[serde(
+        rename = "isFlagged",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_flagged: ::std::option::Option<bool>,
+    #[serde(rename = "isProcessing")]
+    pub is_processing: bool,
+    #[serde(
+        rename = "isRegeneratingTitle",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_regenerating_title: ::std::option::Option<bool>,
+    #[serde(
+        rename = "lastFinalMessageId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_final_message_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "lastMessageAt")]
+    pub last_message_at: i64,
+    #[serde(
+        rename = "lastMessageRole",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_message_role: ::std::option::Option<SessionLastMessageRole>,
+    #[serde(
+        rename = "lastReadMessageId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_read_message_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "llmConnection",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub llm_connection: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "messageCount",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub message_count: ::std::option::Option<u32>,
+    pub messages: ::std::vec::Vec<Message>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub model: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "parentSessionId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub parent_session_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "permissionMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub permission_mode: ::std::option::Option<PermissionMode>,
+    #[serde(
+        rename = "prMonitors",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pr_monitors: ::std::option::Option<
+        ::std::collections::BTreeMap<::std::string::String, SessionPrMonitorsValue>,
+    >,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub preview: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "sessionFolderPath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub session_folder_path: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "supportsBranching",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub supports_branching: ::std::option::Option<bool>,
+    #[serde(
+        rename = "thinkingLevel",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thinking_level: ::std::option::Option<ThinkingLevel>,
+    #[serde(
+        rename = "tokenUsage",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub token_usage: ::std::option::Option<SessionTokenUsage>,
+    #[serde(
+        rename = "workingDirectory",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub working_directory: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: ::std::string::String,
+    #[serde(rename = "workspaceName")]
+    pub workspace_name: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionAsyncOperationEvent {
+    #[serde(rename = "isOngoing")]
+    pub is_ongoing: bool,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionAsyncOperationEventType,
 }
 #[derive(
     ::serde::Deserialize,
@@ -4948,33 +2015,33 @@ impl ::std::convert::TryFrom<::std::string::String>
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant38Type {
-    #[serde(rename = "usage_update")]
-    UsageUpdate,
+pub enum SessionAsyncOperationEventType {
+    #[serde(rename = "async_operation")]
+    AsyncOperation,
 }
-impl ::std::fmt::Display for SessionEventVariant38Type {
+impl ::std::fmt::Display for SessionAsyncOperationEventType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::UsageUpdate => f.write_str("usage_update"),
+            Self::AsyncOperation => f.write_str("async_operation"),
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant38Type {
+impl ::std::str::FromStr for SessionAsyncOperationEventType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "usage_update" => Ok(Self::UsageUpdate),
+            "async_operation" => Ok(Self::AsyncOperation),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant38Type {
+impl ::std::convert::TryFrom<&str> for SessionAsyncOperationEventType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant38Type {
+impl ::std::convert::TryFrom<&::std::string::String> for SessionAsyncOperationEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -4982,7 +2049,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant38Ty
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant38Type {
+impl ::std::convert::TryFrom<::std::string::String> for SessionAsyncOperationEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -4991,8 +2058,165 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant38Typ
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant39AnnotationsItem {
-    pub body: ::std::vec::Vec<SessionEventVariant39AnnotationsItemBodyItem>,
+pub struct SessionBoundPrsItem {
+    #[serde(rename = "addedAt")]
+    pub added_at: f64,
+    pub host: ::std::string::String,
+    pub number: f64,
+    pub owner: ::std::string::String,
+    pub repo: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCodingModeChangedEvent {
+    #[serde(rename = "codingMode")]
+    pub coding_mode: bool,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionCodingModeChangedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionCodingModeChangedEventType {
+    #[serde(rename = "coding_mode_changed")]
+    CodingModeChanged,
+}
+impl ::std::fmt::Display for SessionCodingModeChangedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::CodingModeChanged => f.write_str("coding_mode_changed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionCodingModeChangedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "coding_mode_changed" => Ok(Self::CodingModeChanged),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionCodingModeChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCodingModeChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionCodingModeChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "type")]
+pub enum SessionCommand {
+    #[serde(rename = "flag")]
+    Flag,
+    #[serde(rename = "unflag")]
+    Unflag,
+    #[serde(rename = "archive")]
+    Archive,
+    #[serde(rename = "unarchive")]
+    Unarchive,
+    #[serde(rename = "rename")]
+    Rename { name: ::std::string::String },
+    #[serde(rename = "markRead")]
+    MarkRead,
+    #[serde(rename = "markUnread")]
+    MarkUnread,
+    #[serde(rename = "setActiveViewing")]
+    SetActiveViewing {
+        #[serde(rename = "workspaceId")]
+        workspace_id: ::std::string::String,
+    },
+    #[serde(rename = "setPermissionMode")]
+    SetPermissionMode { mode: PermissionMode },
+    #[serde(rename = "setThinkingLevel")]
+    SetThinkingLevel { level: ThinkingLevel },
+    #[serde(rename = "setCodingMode")]
+    SetCodingMode { enabled: bool },
+    #[serde(rename = "continueInNewSession")]
+    ContinueInNewSession {
+        #[serde(rename = "codingMode")]
+        coding_mode: bool,
+    },
+    #[serde(rename = "updateWorkingDirectory")]
+    UpdateWorkingDirectory { dir: ::std::string::String },
+    #[serde(rename = "showInFinder")]
+    ShowInFinder,
+    #[serde(rename = "copyPath")]
+    CopyPath,
+    #[serde(rename = "refreshTitle")]
+    RefreshTitle,
+    #[serde(rename = "setConnection")]
+    SetConnection {
+        #[serde(rename = "connectionSlug")]
+        connection_slug: ::std::string::String,
+    },
+    #[serde(rename = "setPendingPlanExecution")]
+    SetPendingPlanExecution {
+        #[serde(
+            rename = "draftInputSnapshot",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        draft_input_snapshot: ::std::option::Option<::std::string::String>,
+        #[serde(rename = "planPath")]
+        plan_path: ::std::string::String,
+    },
+    #[serde(rename = "markCompactionComplete")]
+    MarkCompactionComplete,
+    #[serde(rename = "markPendingPlanExecutionDispatched")]
+    MarkPendingPlanExecutionDispatched,
+    #[serde(rename = "clearPendingPlanExecution")]
+    ClearPendingPlanExecution,
+    #[serde(rename = "addAnnotation")]
+    AddAnnotation {
+        annotation: SessionCommandAnnotation,
+        #[serde(rename = "messageId")]
+        message_id: ::std::string::String,
+    },
+    #[serde(rename = "removeAnnotation")]
+    RemoveAnnotation {
+        #[serde(rename = "annotationId")]
+        annotation_id: ::std::string::String,
+        #[serde(rename = "messageId")]
+        message_id: ::std::string::String,
+    },
+    #[serde(rename = "updateAnnotation")]
+    UpdateAnnotation {
+        #[serde(rename = "annotationId")]
+        annotation_id: ::std::string::String,
+        #[serde(rename = "messageId")]
+        message_id: ::std::string::String,
+        patch: SessionCommandPatch,
+    },
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCommandAnnotation {
+    pub body: ::std::vec::Vec<SessionCommandAnnotationBodyItem>,
     #[serde(rename = "createdAt")]
     pub created_at: f64,
     #[serde(
@@ -5000,7 +2224,7 @@ pub struct SessionEventVariant39AnnotationsItem {
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub created_by: ::std::option::Option<SessionEventVariant39AnnotationsItemCreatedBy>,
+    pub created_by: ::std::option::Option<SessionCommandAnnotationCreatedBy>,
     #[serde(
         rename = "deletedAt",
         default,
@@ -5009,22 +2233,22 @@ pub struct SessionEventVariant39AnnotationsItem {
     pub deleted_at: ::std::option::Option<f64>,
     pub id: ::std::string::String,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub intent: ::std::option::Option<SessionEventVariant39AnnotationsItemIntent>,
+    pub intent: ::std::option::Option<SessionCommandAnnotationIntent>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub meta: ::std::option::Option<::serde_json::Map<::std::string::String, ::serde_json::Value>>,
     #[serde(rename = "schemaVersion")]
-    pub schema_version: SessionEventVariant39AnnotationsItemSchemaVersion,
+    pub schema_version: SessionCommandAnnotationSchemaVersion,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub status: ::std::option::Option<SessionEventVariant39AnnotationsItemStatus>,
+    pub status: ::std::option::Option<SessionCommandAnnotationStatus>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub style: ::std::option::Option<SessionEventVariant39AnnotationsItemStyle>,
-    pub target: SessionEventVariant39AnnotationsItemTarget,
+    pub style: ::std::option::Option<SessionCommandAnnotationStyle>,
+    pub target: SessionCommandAnnotationTarget,
     #[serde(
         rename = "threadRef",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub thread_ref: ::std::option::Option<SessionEventVariant39AnnotationsItemThreadRef>,
+    pub thread_ref: ::std::option::Option<SessionCommandAnnotationThreadRef>,
     #[serde(
         rename = "updatedAt",
         default,
@@ -5034,13 +2258,13 @@ pub struct SessionEventVariant39AnnotationsItem {
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(tag = "type")]
-pub enum SessionEventVariant39AnnotationsItemBodyItem {
+pub enum SessionCommandAnnotationBodyItem {
     #[serde(rename = "highlight")]
     Highlight,
     #[serde(rename = "note")]
     Note {
         #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-        format: ::std::option::Option<SessionEventVariant39AnnotationsItemBodyItemFormat>,
+        format: ::std::option::Option<SessionCommandAnnotationBodyItemFormat>,
         text: ::std::string::String,
     },
     #[serde(rename = "tag")]
@@ -5058,13 +2282,13 @@ pub enum SessionEventVariant39AnnotationsItemBodyItem {
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant39AnnotationsItemBodyItemFormat {
+pub enum SessionCommandAnnotationBodyItemFormat {
     #[serde(rename = "plain")]
     Plain,
     #[serde(rename = "markdown")]
     Markdown,
 }
-impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemBodyItemFormat {
+impl ::std::fmt::Display for SessionCommandAnnotationBodyItemFormat {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Plain => f.write_str("plain"),
@@ -5072,7 +2296,7 @@ impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemBodyItemFormat 
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemBodyItemFormat {
+impl ::std::str::FromStr for SessionCommandAnnotationBodyItemFormat {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
@@ -5082,15 +2306,13 @@ impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemBodyItemFormat 
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant39AnnotationsItemBodyItemFormat {
+impl ::std::convert::TryFrom<&str> for SessionCommandAnnotationBodyItemFormat {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant39AnnotationsItemBodyItemFormat
-{
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCommandAnnotationBodyItemFormat {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -5098,9 +2320,7 @@ impl ::std::convert::TryFrom<&::std::string::String>
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String>
-    for SessionEventVariant39AnnotationsItemBodyItemFormat
-{
+impl ::std::convert::TryFrom<::std::string::String> for SessionCommandAnnotationBodyItemFormat {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -5109,7 +2329,7 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant39AnnotationsItemCreatedBy {
+pub struct SessionCommandAnnotationCreatedBy {
     pub id: ::std::string::String,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub name: ::std::option::Option<::std::string::String>,
@@ -5118,7 +2338,7 @@ pub struct SessionEventVariant39AnnotationsItemCreatedBy {
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub type_: ::std::option::Option<SessionEventVariant39AnnotationsItemCreatedByType>,
+    pub type_: ::std::option::Option<SessionCommandAnnotationCreatedByType>,
 }
 #[derive(
     ::serde::Deserialize,
@@ -5132,7 +2352,7 @@ pub struct SessionEventVariant39AnnotationsItemCreatedBy {
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant39AnnotationsItemCreatedByType {
+pub enum SessionCommandAnnotationCreatedByType {
     #[serde(rename = "user")]
     User,
     #[serde(rename = "agent")]
@@ -5140,7 +2360,7 @@ pub enum SessionEventVariant39AnnotationsItemCreatedByType {
     #[serde(rename = "system")]
     System,
 }
-impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemCreatedByType {
+impl ::std::fmt::Display for SessionCommandAnnotationCreatedByType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::User => f.write_str("user"),
@@ -5149,7 +2369,7 @@ impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemCreatedByType {
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemCreatedByType {
+impl ::std::str::FromStr for SessionCommandAnnotationCreatedByType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
@@ -5160,15 +2380,13 @@ impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemCreatedByType {
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant39AnnotationsItemCreatedByType {
+impl ::std::convert::TryFrom<&str> for SessionCommandAnnotationCreatedByType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant39AnnotationsItemCreatedByType
-{
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCommandAnnotationCreatedByType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -5176,9 +2394,7 @@ impl ::std::convert::TryFrom<&::std::string::String>
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String>
-    for SessionEventVariant39AnnotationsItemCreatedByType
-{
+impl ::std::convert::TryFrom<::std::string::String> for SessionCommandAnnotationCreatedByType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -5198,7 +2414,7 @@ impl ::std::convert::TryFrom<::std::string::String>
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant39AnnotationsItemIntent {
+pub enum SessionCommandAnnotationIntent {
     #[serde(rename = "highlight")]
     Highlight,
     #[serde(rename = "comment")]
@@ -5206,7 +2422,7 @@ pub enum SessionEventVariant39AnnotationsItemIntent {
     #[serde(rename = "question")]
     Question,
 }
-impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemIntent {
+impl ::std::fmt::Display for SessionCommandAnnotationIntent {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Highlight => f.write_str("highlight"),
@@ -5215,7 +2431,7 @@ impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemIntent {
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemIntent {
+impl ::std::str::FromStr for SessionCommandAnnotationIntent {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
@@ -5226,15 +2442,13 @@ impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemIntent {
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant39AnnotationsItemIntent {
+impl ::std::convert::TryFrom<&str> for SessionCommandAnnotationIntent {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant39AnnotationsItemIntent
-{
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCommandAnnotationIntent {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -5242,7 +2456,7 @@ impl ::std::convert::TryFrom<&::std::string::String>
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant39AnnotationsItemIntent {
+impl ::std::convert::TryFrom<::std::string::String> for SessionCommandAnnotationIntent {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -5252,19 +2466,19 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant39Ann
 }
 #[derive(::serde::Serialize, Clone, Debug)]
 #[serde(transparent)]
-pub struct SessionEventVariant39AnnotationsItemSchemaVersion(f64);
-impl ::std::ops::Deref for SessionEventVariant39AnnotationsItemSchemaVersion {
+pub struct SessionCommandAnnotationSchemaVersion(f64);
+impl ::std::ops::Deref for SessionCommandAnnotationSchemaVersion {
     type Target = f64;
     fn deref(&self) -> &f64 {
         &self.0
     }
 }
-impl ::std::convert::From<SessionEventVariant39AnnotationsItemSchemaVersion> for f64 {
-    fn from(value: SessionEventVariant39AnnotationsItemSchemaVersion) -> Self {
+impl ::std::convert::From<SessionCommandAnnotationSchemaVersion> for f64 {
+    fn from(value: SessionCommandAnnotationSchemaVersion) -> Self {
         value.0
     }
 }
-impl ::std::convert::TryFrom<f64> for SessionEventVariant39AnnotationsItemSchemaVersion {
+impl ::std::convert::TryFrom<f64> for SessionCommandAnnotationSchemaVersion {
     type Error = self::error::ConversionError;
     fn try_from(value: f64) -> ::std::result::Result<Self, self::error::ConversionError> {
         if ![1_f64].contains(&value) {
@@ -5274,7 +2488,7 @@ impl ::std::convert::TryFrom<f64> for SessionEventVariant39AnnotationsItemSchema
         }
     }
 }
-impl<'de> ::serde::Deserialize<'de> for SessionEventVariant39AnnotationsItemSchemaVersion {
+impl<'de> ::serde::Deserialize<'de> for SessionCommandAnnotationSchemaVersion {
     fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
@@ -5295,7 +2509,7 @@ impl<'de> ::serde::Deserialize<'de> for SessionEventVariant39AnnotationsItemSche
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant39AnnotationsItemStatus {
+pub enum SessionCommandAnnotationStatus {
     #[serde(rename = "pending")]
     Pending,
     #[serde(rename = "acknowledged")]
@@ -5305,7 +2519,7 @@ pub enum SessionEventVariant39AnnotationsItemStatus {
     #[serde(rename = "dismissed")]
     Dismissed,
 }
-impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemStatus {
+impl ::std::fmt::Display for SessionCommandAnnotationStatus {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Pending => f.write_str("pending"),
@@ -5315,7 +2529,7 @@ impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemStatus {
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemStatus {
+impl ::std::str::FromStr for SessionCommandAnnotationStatus {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
@@ -5327,15 +2541,13 @@ impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemStatus {
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant39AnnotationsItemStatus {
+impl ::std::convert::TryFrom<&str> for SessionCommandAnnotationStatus {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant39AnnotationsItemStatus
-{
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCommandAnnotationStatus {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -5343,7 +2555,7 @@ impl ::std::convert::TryFrom<&::std::string::String>
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant39AnnotationsItemStatus {
+impl ::std::convert::TryFrom<::std::string::String> for SessionCommandAnnotationStatus {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -5352,13 +2564,13 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant39Ann
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant39AnnotationsItemStyle {
+pub struct SessionCommandAnnotationStyle {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub color: ::std::option::Option<::std::string::String>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub opacity: ::std::option::Option<f64>,
 }
-impl ::std::default::Default for SessionEventVariant39AnnotationsItemStyle {
+impl ::std::default::Default for SessionCommandAnnotationStyle {
     fn default() -> Self {
         Self {
             color: Default::default(),
@@ -5367,13 +2579,13 @@ impl ::std::default::Default for SessionEventVariant39AnnotationsItemStyle {
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant39AnnotationsItemTarget {
-    pub selectors: ::std::vec::Vec<SessionEventVariant39AnnotationsItemTargetSelectorsItem>,
-    pub source: SessionEventVariant39AnnotationsItemTargetSource,
+pub struct SessionCommandAnnotationTarget {
+    pub selectors: ::std::vec::Vec<SessionCommandAnnotationTargetSelectorsItem>,
+    pub source: SessionCommandAnnotationTargetSource,
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(tag = "type")]
-pub enum SessionEventVariant39AnnotationsItemTargetSelectorsItem {
+pub enum SessionCommandAnnotationTargetSelectorsItem {
     #[serde(rename = "text-quote")]
     TextQuote {
         exact: ::std::string::String,
@@ -5402,7 +2614,7 @@ pub enum SessionEventVariant39AnnotationsItemTargetSelectorsItem {
         )]
         block_id: ::std::option::Option<::std::string::String>,
         #[serde(rename = "blockType")]
-        block_type: SessionEventVariant39AnnotationsItemTargetSelectorsItemBlockType,
+        block_type: SessionCommandAnnotationTargetSelectorsItemBlockType,
         path: ::std::string::String,
     },
     #[serde(rename = "xywh")]
@@ -5412,7 +2624,7 @@ pub enum SessionEventVariant39AnnotationsItemTargetSelectorsItem {
         page: ::std::option::Option<f64>,
         #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
         rotation: ::std::option::Option<f64>,
-        unit: SessionEventVariant39AnnotationsItemTargetSelectorsItemUnit,
+        unit: SessionCommandAnnotationTargetSelectorsItemUnit,
         w: f64,
         x: f64,
         y: f64,
@@ -5422,7 +2634,7 @@ pub enum SessionEventVariant39AnnotationsItemTargetSelectorsItem {
         #[serde(rename = "columnKey")]
         column_key: ::std::string::String,
         #[serde(rename = "rowKey")]
-        row_key: SessionEventVariant39AnnotationsItemTargetSelectorsItemRowKey,
+        row_key: SessionCommandAnnotationTargetSelectorsItemRowKey,
     },
 }
 #[derive(
@@ -5437,7 +2649,7 @@ pub enum SessionEventVariant39AnnotationsItemTargetSelectorsItem {
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant39AnnotationsItemTargetSelectorsItemBlockType {
+pub enum SessionCommandAnnotationTargetSelectorsItemBlockType {
     #[serde(rename = "paragraph")]
     Paragraph,
     #[serde(rename = "code")]
@@ -5457,7 +2669,7 @@ pub enum SessionEventVariant39AnnotationsItemTargetSelectorsItemBlockType {
     #[serde(rename = "html-preview")]
     HtmlPreview,
 }
-impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemTargetSelectorsItemBlockType {
+impl ::std::fmt::Display for SessionCommandAnnotationTargetSelectorsItemBlockType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Paragraph => f.write_str("paragraph"),
@@ -5472,7 +2684,7 @@ impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemTargetSelectors
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemTargetSelectorsItemBlockType {
+impl ::std::str::FromStr for SessionCommandAnnotationTargetSelectorsItemBlockType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
@@ -5489,16 +2701,14 @@ impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemTargetSelectors
         }
     }
 }
-impl ::std::convert::TryFrom<&str>
-    for SessionEventVariant39AnnotationsItemTargetSelectorsItemBlockType
-{
+impl ::std::convert::TryFrom<&str> for SessionCommandAnnotationTargetSelectorsItemBlockType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
 impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant39AnnotationsItemTargetSelectorsItemBlockType
+    for SessionCommandAnnotationTargetSelectorsItemBlockType
 {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -5508,7 +2718,7 @@ impl ::std::convert::TryFrom<&::std::string::String>
     }
 }
 impl ::std::convert::TryFrom<::std::string::String>
-    for SessionEventVariant39AnnotationsItemTargetSelectorsItemBlockType
+    for SessionCommandAnnotationTargetSelectorsItemBlockType
 {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -5519,11 +2729,11 @@ impl ::std::convert::TryFrom<::std::string::String>
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(untagged)]
-pub enum SessionEventVariant39AnnotationsItemTargetSelectorsItemRowKey {
+pub enum SessionCommandAnnotationTargetSelectorsItemRowKey {
     Number(f64),
     String(::std::string::String),
 }
-impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemTargetSelectorsItemRowKey {
+impl ::std::fmt::Display for SessionCommandAnnotationTargetSelectorsItemRowKey {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match self {
             Self::Number(x) => x.fmt(f),
@@ -5531,7 +2741,7 @@ impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemTargetSelectors
         }
     }
 }
-impl ::std::convert::From<f64> for SessionEventVariant39AnnotationsItemTargetSelectorsItemRowKey {
+impl ::std::convert::From<f64> for SessionCommandAnnotationTargetSelectorsItemRowKey {
     fn from(value: f64) -> Self {
         Self::Number(value)
     }
@@ -5548,13 +2758,13 @@ impl ::std::convert::From<f64> for SessionEventVariant39AnnotationsItemTargetSel
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant39AnnotationsItemTargetSelectorsItemUnit {
+pub enum SessionCommandAnnotationTargetSelectorsItemUnit {
     #[serde(rename = "pixel")]
     Pixel,
     #[serde(rename = "percent")]
     Percent,
 }
-impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemTargetSelectorsItemUnit {
+impl ::std::fmt::Display for SessionCommandAnnotationTargetSelectorsItemUnit {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Pixel => f.write_str("pixel"),
@@ -5562,7 +2772,7 @@ impl ::std::fmt::Display for SessionEventVariant39AnnotationsItemTargetSelectors
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemTargetSelectorsItemUnit {
+impl ::std::str::FromStr for SessionCommandAnnotationTargetSelectorsItemUnit {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
@@ -5572,14 +2782,14 @@ impl ::std::str::FromStr for SessionEventVariant39AnnotationsItemTargetSelectors
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant39AnnotationsItemTargetSelectorsItemUnit {
+impl ::std::convert::TryFrom<&str> for SessionCommandAnnotationTargetSelectorsItemUnit {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
 impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant39AnnotationsItemTargetSelectorsItemUnit
+    for SessionCommandAnnotationTargetSelectorsItemUnit
 {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -5589,7 +2799,7 @@ impl ::std::convert::TryFrom<&::std::string::String>
     }
 }
 impl ::std::convert::TryFrom<::std::string::String>
-    for SessionEventVariant39AnnotationsItemTargetSelectorsItemUnit
+    for SessionCommandAnnotationTargetSelectorsItemUnit
 {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -5599,14 +2809,14 @@ impl ::std::convert::TryFrom<::std::string::String>
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant39AnnotationsItemTargetSource {
+pub struct SessionCommandAnnotationTargetSource {
     #[serde(rename = "messageId")]
     pub message_id: ::std::string::String,
     #[serde(rename = "sessionId")]
     pub session_id: ::std::string::String,
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant39AnnotationsItemThreadRef {
+pub struct SessionCommandAnnotationThreadRef {
     #[serde(
         rename = "sessionId",
         default,
@@ -5620,7 +2830,7 @@ pub struct SessionEventVariant39AnnotationsItemThreadRef {
     )]
     pub thread_id: ::std::option::Option<::std::string::String>,
 }
-impl ::std::default::Default for SessionEventVariant39AnnotationsItemThreadRef {
+impl ::std::default::Default for SessionCommandAnnotationThreadRef {
     fn default() -> Self {
         Self {
             session_id: Default::default(),
@@ -5628,117 +2838,91 @@ impl ::std::default::Default for SessionEventVariant39AnnotationsItemThreadRef {
         }
     }
 }
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant39Type {
-    #[serde(rename = "message_annotations_updated")]
-    MessageAnnotationsUpdated,
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCommandPatch {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub body: ::std::option::Option<::std::vec::Vec<SessionCommandPatchBodyItem>>,
+    #[serde(
+        rename = "createdAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub created_at: ::std::option::Option<f64>,
+    #[serde(
+        rename = "createdBy",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub created_by: ::std::option::Option<SessionCommandPatchCreatedBy>,
+    #[serde(
+        rename = "deletedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub deleted_at: ::std::option::Option<f64>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub id: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub intent: ::std::option::Option<SessionCommandPatchIntent>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub meta: ::std::option::Option<::serde_json::Map<::std::string::String, ::serde_json::Value>>,
+    #[serde(
+        rename = "schemaVersion",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub schema_version: ::std::option::Option<SessionCommandPatchSchemaVersion>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub status: ::std::option::Option<SessionCommandPatchStatus>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub style: ::std::option::Option<SessionCommandPatchStyle>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub target: ::std::option::Option<SessionCommandPatchTarget>,
+    #[serde(
+        rename = "threadRef",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thread_ref: ::std::option::Option<SessionCommandPatchThreadRef>,
+    #[serde(
+        rename = "updatedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub updated_at: ::std::option::Option<f64>,
 }
-impl ::std::fmt::Display for SessionEventVariant39Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::MessageAnnotationsUpdated => f.write_str("message_annotations_updated"),
+impl ::std::default::Default for SessionCommandPatch {
+    fn default() -> Self {
+        Self {
+            body: Default::default(),
+            created_at: Default::default(),
+            created_by: Default::default(),
+            deleted_at: Default::default(),
+            id: Default::default(),
+            intent: Default::default(),
+            meta: Default::default(),
+            schema_version: Default::default(),
+            status: Default::default(),
+            style: Default::default(),
+            target: Default::default(),
+            thread_ref: Default::default(),
+            updated_at: Default::default(),
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant39Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "message_annotations_updated" => Ok(Self::MessageAnnotationsUpdated),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant39Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant39Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant39Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant3Phase {
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "end")]
-    End,
-}
-impl ::std::fmt::Display for SessionEventVariant3Phase {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Active => f.write_str("active"),
-            Self::End => f.write_str("end"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant3Phase {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "active" => Ok(Self::Active),
-            "end" => Ok(Self::End),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant3Phase {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant3Phase {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant3Phase {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "type")]
+pub enum SessionCommandPatchBodyItem {
+    #[serde(rename = "highlight")]
+    Highlight,
+    #[serde(rename = "note")]
+    Note {
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        format: ::std::option::Option<SessionCommandPatchBodyItemFormat>,
+        text: ::std::string::String,
+    },
+    #[serde(rename = "tag")]
+    Tag { value: ::std::string::String },
 }
 #[derive(
     ::serde::Deserialize,
@@ -5752,33 +2936,37 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant3Phas
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant3Type {
-    #[serde(rename = "retry")]
-    Retry,
+pub enum SessionCommandPatchBodyItemFormat {
+    #[serde(rename = "plain")]
+    Plain,
+    #[serde(rename = "markdown")]
+    Markdown,
 }
-impl ::std::fmt::Display for SessionEventVariant3Type {
+impl ::std::fmt::Display for SessionCommandPatchBodyItemFormat {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Retry => f.write_str("retry"),
+            Self::Plain => f.write_str("plain"),
+            Self::Markdown => f.write_str("markdown"),
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant3Type {
+impl ::std::str::FromStr for SessionCommandPatchBodyItemFormat {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "retry" => Ok(Self::Retry),
+            "plain" => Ok(Self::Plain),
+            "markdown" => Ok(Self::Markdown),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant3Type {
+impl ::std::convert::TryFrom<&str> for SessionCommandPatchBodyItemFormat {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant3Type {
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCommandPatchBodyItemFormat {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -5786,169 +2974,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant3Typ
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant3Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant40Type {
-    #[serde(rename = "working_directory_error")]
-    WorkingDirectoryError,
-}
-impl ::std::fmt::Display for SessionEventVariant40Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::WorkingDirectoryError => f.write_str("working_directory_error"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant40Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "working_directory_error" => Ok(Self::WorkingDirectoryError),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant40Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant40Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant40Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant4Type {
-    #[serde(rename = "text_delta")]
-    TextDelta,
-}
-impl ::std::fmt::Display for SessionEventVariant4Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TextDelta => f.write_str("text_delta"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant4Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "text_delta" => Ok(Self::TextDelta),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant4Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant4Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant4Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant5Type {
-    #[serde(rename = "text_complete")]
-    TextComplete,
-}
-impl ::std::fmt::Display for SessionEventVariant5Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TextComplete => f.write_str("text_complete"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant5Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "text_complete" => Ok(Self::TextComplete),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant5Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant5Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant5Type {
+impl ::std::convert::TryFrom<::std::string::String> for SessionCommandPatchBodyItemFormat {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -5957,19 +2983,16 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant5Type
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant6ToolDisplayMeta {
+pub struct SessionCommandPatchCreatedBy {
+    pub id: ::std::string::String,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub category: ::std::option::Option<SessionEventVariant6ToolDisplayMetaCategory>,
-    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub description: ::std::option::Option<::std::string::String>,
-    #[serde(rename = "displayName")]
-    pub display_name: ::std::string::String,
+    pub name: ::std::option::Option<::std::string::String>,
     #[serde(
-        rename = "iconDataUrl",
+        rename = "type",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub icon_data_url: ::std::option::Option<::std::string::String>,
+    pub type_: ::std::option::Option<SessionCommandPatchCreatedByType>,
 }
 #[derive(
     ::serde::Deserialize,
@@ -5983,38 +3006,363 @@ pub struct SessionEventVariant6ToolDisplayMeta {
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant6ToolDisplayMetaCategory {
-    #[serde(rename = "skill")]
-    Skill,
-    #[serde(rename = "native")]
-    Native,
+pub enum SessionCommandPatchCreatedByType {
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "agent")]
+    Agent,
+    #[serde(rename = "system")]
+    System,
 }
-impl ::std::fmt::Display for SessionEventVariant6ToolDisplayMetaCategory {
+impl ::std::fmt::Display for SessionCommandPatchCreatedByType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Skill => f.write_str("skill"),
-            Self::Native => f.write_str("native"),
+            Self::User => f.write_str("user"),
+            Self::Agent => f.write_str("agent"),
+            Self::System => f.write_str("system"),
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant6ToolDisplayMetaCategory {
+impl ::std::str::FromStr for SessionCommandPatchCreatedByType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "skill" => Ok(Self::Skill),
-            "native" => Ok(Self::Native),
+            "user" => Ok(Self::User),
+            "agent" => Ok(Self::Agent),
+            "system" => Ok(Self::System),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant6ToolDisplayMetaCategory {
+impl ::std::convert::TryFrom<&str> for SessionCommandPatchCreatedByType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCommandPatchCreatedByType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionCommandPatchCreatedByType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionCommandPatchIntent {
+    #[serde(rename = "highlight")]
+    Highlight,
+    #[serde(rename = "comment")]
+    Comment,
+    #[serde(rename = "question")]
+    Question,
+}
+impl ::std::fmt::Display for SessionCommandPatchIntent {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Highlight => f.write_str("highlight"),
+            Self::Comment => f.write_str("comment"),
+            Self::Question => f.write_str("question"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionCommandPatchIntent {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "highlight" => Ok(Self::Highlight),
+            "comment" => Ok(Self::Comment),
+            "question" => Ok(Self::Question),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionCommandPatchIntent {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCommandPatchIntent {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionCommandPatchIntent {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Serialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct SessionCommandPatchSchemaVersion(f64);
+impl ::std::ops::Deref for SessionCommandPatchSchemaVersion {
+    type Target = f64;
+    fn deref(&self) -> &f64 {
+        &self.0
+    }
+}
+impl ::std::convert::From<SessionCommandPatchSchemaVersion> for f64 {
+    fn from(value: SessionCommandPatchSchemaVersion) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::TryFrom<f64> for SessionCommandPatchSchemaVersion {
+    type Error = self::error::ConversionError;
+    fn try_from(value: f64) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if ![1_f64].contains(&value) {
+            Err("invalid value".into())
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for SessionCommandPatchSchemaVersion {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        Self::try_from(<f64>::deserialize(deserializer)?)
+            .map_err(|e| <D::Error as ::serde::de::Error>::custom(e.to_string()))
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionCommandPatchStatus {
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "acknowledged")]
+    Acknowledged,
+    #[serde(rename = "resolved")]
+    Resolved,
+    #[serde(rename = "dismissed")]
+    Dismissed,
+}
+impl ::std::fmt::Display for SessionCommandPatchStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pending => f.write_str("pending"),
+            Self::Acknowledged => f.write_str("acknowledged"),
+            Self::Resolved => f.write_str("resolved"),
+            Self::Dismissed => f.write_str("dismissed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionCommandPatchStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pending" => Ok(Self::Pending),
+            "acknowledged" => Ok(Self::Acknowledged),
+            "resolved" => Ok(Self::Resolved),
+            "dismissed" => Ok(Self::Dismissed),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionCommandPatchStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCommandPatchStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionCommandPatchStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCommandPatchStyle {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub color: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub opacity: ::std::option::Option<f64>,
+}
+impl ::std::default::Default for SessionCommandPatchStyle {
+    fn default() -> Self {
+        Self {
+            color: Default::default(),
+            opacity: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCommandPatchTarget {
+    pub selectors: ::std::vec::Vec<SessionCommandPatchTargetSelectorsItem>,
+    pub source: SessionCommandPatchTargetSource,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "type")]
+pub enum SessionCommandPatchTargetSelectorsItem {
+    #[serde(rename = "text-quote")]
+    TextQuote {
+        exact: ::std::string::String,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        prefix: ::std::option::Option<::std::string::String>,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        suffix: ::std::option::Option<::std::string::String>,
+    },
+    #[serde(rename = "text-position")]
+    TextPosition {
+        end: f64,
+        start: f64,
+        #[serde(
+            rename = "textVersion",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        text_version: ::std::option::Option<::std::string::String>,
+    },
+    #[serde(rename = "block")]
+    Block {
+        #[serde(
+            rename = "blockId",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        block_id: ::std::option::Option<::std::string::String>,
+        #[serde(rename = "blockType")]
+        block_type: SessionCommandPatchTargetSelectorsItemBlockType,
+        path: ::std::string::String,
+    },
+    #[serde(rename = "xywh")]
+    Xywh {
+        h: f64,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        page: ::std::option::Option<f64>,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        rotation: ::std::option::Option<f64>,
+        unit: SessionCommandPatchTargetSelectorsItemUnit,
+        w: f64,
+        x: f64,
+        y: f64,
+    },
+    #[serde(rename = "table-cell")]
+    TableCell {
+        #[serde(rename = "columnKey")]
+        column_key: ::std::string::String,
+        #[serde(rename = "rowKey")]
+        row_key: SessionCommandPatchTargetSelectorsItemRowKey,
+    },
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionCommandPatchTargetSelectorsItemBlockType {
+    #[serde(rename = "paragraph")]
+    Paragraph,
+    #[serde(rename = "code")]
+    Code,
+    #[serde(rename = "latex")]
+    Latex,
+    #[serde(rename = "mermaid")]
+    Mermaid,
+    #[serde(rename = "datatable")]
+    Datatable,
+    #[serde(rename = "spreadsheet")]
+    Spreadsheet,
+    #[serde(rename = "image-preview")]
+    ImagePreview,
+    #[serde(rename = "pdf-preview")]
+    PdfPreview,
+    #[serde(rename = "html-preview")]
+    HtmlPreview,
+}
+impl ::std::fmt::Display for SessionCommandPatchTargetSelectorsItemBlockType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Paragraph => f.write_str("paragraph"),
+            Self::Code => f.write_str("code"),
+            Self::Latex => f.write_str("latex"),
+            Self::Mermaid => f.write_str("mermaid"),
+            Self::Datatable => f.write_str("datatable"),
+            Self::Spreadsheet => f.write_str("spreadsheet"),
+            Self::ImagePreview => f.write_str("image-preview"),
+            Self::PdfPreview => f.write_str("pdf-preview"),
+            Self::HtmlPreview => f.write_str("html-preview"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionCommandPatchTargetSelectorsItemBlockType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "paragraph" => Ok(Self::Paragraph),
+            "code" => Ok(Self::Code),
+            "latex" => Ok(Self::Latex),
+            "mermaid" => Ok(Self::Mermaid),
+            "datatable" => Ok(Self::Datatable),
+            "spreadsheet" => Ok(Self::Spreadsheet),
+            "image-preview" => Ok(Self::ImagePreview),
+            "pdf-preview" => Ok(Self::PdfPreview),
+            "html-preview" => Ok(Self::HtmlPreview),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionCommandPatchTargetSelectorsItemBlockType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
 impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant6ToolDisplayMetaCategory
+    for SessionCommandPatchTargetSelectorsItemBlockType
 {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -6024,7 +3372,260 @@ impl ::std::convert::TryFrom<&::std::string::String>
     }
 }
 impl ::std::convert::TryFrom<::std::string::String>
-    for SessionEventVariant6ToolDisplayMetaCategory
+    for SessionCommandPatchTargetSelectorsItemBlockType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum SessionCommandPatchTargetSelectorsItemRowKey {
+    Number(f64),
+    String(::std::string::String),
+}
+impl ::std::fmt::Display for SessionCommandPatchTargetSelectorsItemRowKey {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match self {
+            Self::Number(x) => x.fmt(f),
+            Self::String(x) => x.fmt(f),
+        }
+    }
+}
+impl ::std::convert::From<f64> for SessionCommandPatchTargetSelectorsItemRowKey {
+    fn from(value: f64) -> Self {
+        Self::Number(value)
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionCommandPatchTargetSelectorsItemUnit {
+    #[serde(rename = "pixel")]
+    Pixel,
+    #[serde(rename = "percent")]
+    Percent,
+}
+impl ::std::fmt::Display for SessionCommandPatchTargetSelectorsItemUnit {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pixel => f.write_str("pixel"),
+            Self::Percent => f.write_str("percent"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionCommandPatchTargetSelectorsItemUnit {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pixel" => Ok(Self::Pixel),
+            "percent" => Ok(Self::Percent),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionCommandPatchTargetSelectorsItemUnit {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionCommandPatchTargetSelectorsItemUnit
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionCommandPatchTargetSelectorsItemUnit {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCommandPatchTargetSource {
+    #[serde(rename = "messageId")]
+    pub message_id: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCommandPatchThreadRef {
+    #[serde(
+        rename = "sessionId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub session_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "threadId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thread_id: ::std::option::Option<::std::string::String>,
+}
+impl ::std::default::Default for SessionCommandPatchThreadRef {
+    fn default() -> Self {
+        Self {
+            session_id: Default::default(),
+            thread_id: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCompleteEvent {
+    #[serde(
+        rename = "backgroundTasksAlive",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub background_tasks_alive: ::std::option::Option<bool>,
+    #[serde(
+        rename = "hasUnread",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub has_unread: ::std::option::Option<bool>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(
+        rename = "tokenUsage",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub token_usage: ::std::option::Option<SessionCompleteEventTokenUsage>,
+    #[serde(rename = "type")]
+    pub type_: SessionCompleteEventType,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCompleteEventTokenUsage {
+    #[serde(
+        rename = "cacheCreationTokens",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub cache_creation_tokens: ::std::option::Option<f64>,
+    #[serde(
+        rename = "cacheReadTokens",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub cache_read_tokens: ::std::option::Option<f64>,
+    #[serde(rename = "contextTokens")]
+    pub context_tokens: f64,
+    #[serde(
+        rename = "contextUsage",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub context_usage: ::std::option::Option<SessionCompleteEventTokenUsageContextUsage>,
+    #[serde(
+        rename = "contextWindow",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub context_window: ::std::option::Option<f64>,
+    #[serde(rename = "costUsd")]
+    pub cost_usd: f64,
+    #[serde(rename = "inputTokens")]
+    pub input_tokens: f64,
+    #[serde(rename = "outputTokens")]
+    pub output_tokens: f64,
+    #[serde(rename = "totalTokens")]
+    pub total_tokens: f64,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCompleteEventTokenUsageContextUsage {
+    #[serde(rename = "canCompact")]
+    pub can_compact: bool,
+    #[serde(rename = "isEstimate")]
+    pub is_estimate: bool,
+    #[serde(rename = "isStale")]
+    pub is_stale: bool,
+    #[serde(rename = "limitKind")]
+    pub limit_kind: SessionCompleteEventTokenUsageContextUsageLimitKind,
+    #[serde(
+        rename = "limitTokens",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub limit_tokens: ::std::option::Option<f64>,
+    #[serde(rename = "usedTokens")]
+    #[serde(deserialize_with = "required_option")]
+    pub used_tokens: ::std::option::Option<f64>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionCompleteEventTokenUsageContextUsageLimitKind {
+    #[serde(rename = "compaction")]
+    Compaction,
+    #[serde(rename = "context")]
+    Context,
+}
+impl ::std::fmt::Display for SessionCompleteEventTokenUsageContextUsageLimitKind {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Compaction => f.write_str("compaction"),
+            Self::Context => f.write_str("context"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionCompleteEventTokenUsageContextUsageLimitKind {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "compaction" => Ok(Self::Compaction),
+            "context" => Ok(Self::Context),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionCompleteEventTokenUsageContextUsageLimitKind {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionCompleteEventTokenUsageContextUsageLimitKind
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionCompleteEventTokenUsageContextUsageLimitKind
 {
     type Error = self::error::ConversionError;
     fn try_from(
@@ -6045,33 +3646,33 @@ impl ::std::convert::TryFrom<::std::string::String>
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant6Type {
-    #[serde(rename = "tool_start")]
-    ToolStart,
+pub enum SessionCompleteEventType {
+    #[serde(rename = "complete")]
+    Complete,
 }
-impl ::std::fmt::Display for SessionEventVariant6Type {
+impl ::std::fmt::Display for SessionCompleteEventType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::ToolStart => f.write_str("tool_start"),
+            Self::Complete => f.write_str("complete"),
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant6Type {
+impl ::std::str::FromStr for SessionCompleteEventType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "tool_start" => Ok(Self::ToolStart),
+            "complete" => Ok(Self::Complete),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant6Type {
+impl ::std::convert::TryFrom<&str> for SessionCompleteEventType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant6Type {
+impl ::std::convert::TryFrom<&::std::string::String> for SessionCompleteEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -6079,13 +3680,28 @@ impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant6Typ
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant6Type {
+impl ::std::convert::TryFrom<::std::string::String> for SessionCompleteEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionConnectionChangedEvent {
+    #[serde(rename = "connectionSlug")]
+    pub connection_slug: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(
+        rename = "supportsBranching",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub supports_branching: ::std::option::Option<bool>,
+    #[serde(rename = "type")]
+    pub type_: SessionConnectionChangedEventType,
 }
 #[derive(
     ::serde::Deserialize,
@@ -6099,33 +3715,33 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant6Type
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant7Type {
-    #[serde(rename = "tool_result")]
-    ToolResult,
+pub enum SessionConnectionChangedEventType {
+    #[serde(rename = "connection_changed")]
+    ConnectionChanged,
 }
-impl ::std::fmt::Display for SessionEventVariant7Type {
+impl ::std::fmt::Display for SessionConnectionChangedEventType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::ToolResult => f.write_str("tool_result"),
+            Self::ConnectionChanged => f.write_str("connection_changed"),
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant7Type {
+impl ::std::str::FromStr for SessionConnectionChangedEventType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "tool_result" => Ok(Self::ToolResult),
+            "connection_changed" => Ok(Self::ConnectionChanged),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant7Type {
+impl ::std::convert::TryFrom<&str> for SessionConnectionChangedEventType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant7Type {
+impl ::std::convert::TryFrom<&::std::string::String> for SessionConnectionChangedEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -6133,13 +3749,39 @@ impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant7Typ
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant7Type {
+impl ::std::convert::TryFrom<::std::string::String> for SessionConnectionChangedEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionCurrentStatus {
+    pub message: ::std::string::String,
+    #[serde(
+        rename = "statusType",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub status_type: ::std::option::Option<::std::string::String>,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionErrorEvent {
+    #[serde(
+        rename = "backgroundTasksAlive",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub background_tasks_alive: ::std::option::Option<bool>,
+    pub error: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub timestamp: ::std::option::Option<f64>,
+    #[serde(rename = "type")]
+    pub type_: SessionErrorEventType,
 }
 #[derive(
     ::serde::Deserialize,
@@ -6153,18 +3795,18 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant7Type
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant8Type {
+pub enum SessionErrorEventType {
     #[serde(rename = "error")]
     Error,
 }
-impl ::std::fmt::Display for SessionEventVariant8Type {
+impl ::std::fmt::Display for SessionErrorEventType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Error => f.write_str("error"),
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant8Type {
+impl ::std::str::FromStr for SessionErrorEventType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
@@ -6173,13 +3815,13 @@ impl ::std::str::FromStr for SessionEventVariant8Type {
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant8Type {
+impl ::std::convert::TryFrom<&str> for SessionErrorEventType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant8Type {
+impl ::std::convert::TryFrom<&::std::string::String> for SessionErrorEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -6187,7 +3829,7 @@ impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant8Typ
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant8Type {
+impl ::std::convert::TryFrom<::std::string::String> for SessionErrorEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -6196,38 +3838,467 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant8Type
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant9Error {
-    pub actions: ::std::vec::Vec<SessionEventVariant9ErrorActionsItem>,
-    #[serde(rename = "canRetry")]
-    pub can_retry: bool,
-    pub code: SessionEventVariant9ErrorCode,
+#[serde(untagged)]
+pub enum SessionEvent {
+    AsyncOperationEvent(SessionAsyncOperationEvent),
+    CodingModeChangedEvent(SessionCodingModeChangedEvent),
+    CompleteEvent(SessionCompleteEvent),
+    ConnectionChangedEvent(SessionConnectionChangedEvent),
+    ErrorEvent(SessionErrorEvent),
+    InfoEvent(SessionInfoEvent),
+    InterruptedEvent(SessionInterruptedEvent),
+    MessageAnnotationsUpdatedEvent(SessionMessageAnnotationsUpdatedEvent),
+    NameChangedEvent(SessionNameChangedEvent),
+    PermissionModeChangedEvent(SessionPermissionModeChangedEvent),
+    PermissionRequestEvent(SessionPermissionRequestEvent),
+    PlanSubmittedEvent(SessionPlanSubmittedEvent),
+    RetryBackoffEvent(SessionRetryBackoffEvent),
+    RetryStateEvent(SessionRetryStateEvent),
+    SessionArchivedEvent(SessionSessionArchivedEvent),
+    SessionCreatedEvent(SessionSessionCreatedEvent),
+    SessionDeletedEvent(SessionSessionDeletedEvent),
+    SessionFlaggedEvent(SessionSessionFlaggedEvent),
+    SessionModelChangedEvent(SessionSessionModelChangedEvent),
+    SessionUnarchivedEvent(SessionSessionUnarchivedEvent),
+    SessionUnflaggedEvent(SessionSessionUnflaggedEvent),
+    ShellBackgroundedEvent(SessionShellBackgroundedEvent),
+    ShellKilledEvent(SessionShellKilledEvent),
+    StatusEvent(SessionStatusEvent),
+    TaskActivityEvent(SessionTaskActivityEvent),
+    TaskBackgroundedEvent(SessionTaskBackgroundedEvent),
+    TaskCompletedEvent(SessionTaskCompletedEvent),
+    TaskProgressEvent(SessionTaskProgressEvent),
+    TextCompleteEvent(SessionTextCompleteEvent),
+    TextDeltaEvent(SessionTextDeltaEvent),
+    TextDiscardEvent(SessionTextDiscardEvent),
+    TitleGeneratedEvent(SessionTitleGeneratedEvent),
+    TitleRegeneratingEvent(SessionTitleRegeneratingEvent),
+    ToolResultEvent(SessionToolResultEvent),
+    ToolStartEvent(SessionToolStartEvent),
+    TypedErrorEvent(SessionTypedErrorEvent),
+    UsageUpdateEvent(SessionUsageUpdateEvent),
+    UserMessageEvent(SessionUserMessageEvent),
+    WorkflowAgentCompletedEvent(SessionWorkflowAgentCompletedEvent),
+    WorkingDirectoryChangedEvent(SessionWorkingDirectoryChangedEvent),
+    WorkingDirectoryErrorEvent(SessionWorkingDirectoryErrorEvent),
+}
+impl ::std::convert::From<SessionAsyncOperationEvent> for SessionEvent {
+    fn from(value: SessionAsyncOperationEvent) -> Self {
+        Self::AsyncOperationEvent(value)
+    }
+}
+impl ::std::convert::From<SessionCodingModeChangedEvent> for SessionEvent {
+    fn from(value: SessionCodingModeChangedEvent) -> Self {
+        Self::CodingModeChangedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionCompleteEvent> for SessionEvent {
+    fn from(value: SessionCompleteEvent) -> Self {
+        Self::CompleteEvent(value)
+    }
+}
+impl ::std::convert::From<SessionConnectionChangedEvent> for SessionEvent {
+    fn from(value: SessionConnectionChangedEvent) -> Self {
+        Self::ConnectionChangedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionErrorEvent> for SessionEvent {
+    fn from(value: SessionErrorEvent) -> Self {
+        Self::ErrorEvent(value)
+    }
+}
+impl ::std::convert::From<SessionInfoEvent> for SessionEvent {
+    fn from(value: SessionInfoEvent) -> Self {
+        Self::InfoEvent(value)
+    }
+}
+impl ::std::convert::From<SessionInterruptedEvent> for SessionEvent {
+    fn from(value: SessionInterruptedEvent) -> Self {
+        Self::InterruptedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionMessageAnnotationsUpdatedEvent> for SessionEvent {
+    fn from(value: SessionMessageAnnotationsUpdatedEvent) -> Self {
+        Self::MessageAnnotationsUpdatedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionNameChangedEvent> for SessionEvent {
+    fn from(value: SessionNameChangedEvent) -> Self {
+        Self::NameChangedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionPermissionModeChangedEvent> for SessionEvent {
+    fn from(value: SessionPermissionModeChangedEvent) -> Self {
+        Self::PermissionModeChangedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionPermissionRequestEvent> for SessionEvent {
+    fn from(value: SessionPermissionRequestEvent) -> Self {
+        Self::PermissionRequestEvent(value)
+    }
+}
+impl ::std::convert::From<SessionPlanSubmittedEvent> for SessionEvent {
+    fn from(value: SessionPlanSubmittedEvent) -> Self {
+        Self::PlanSubmittedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionRetryBackoffEvent> for SessionEvent {
+    fn from(value: SessionRetryBackoffEvent) -> Self {
+        Self::RetryBackoffEvent(value)
+    }
+}
+impl ::std::convert::From<SessionRetryStateEvent> for SessionEvent {
+    fn from(value: SessionRetryStateEvent) -> Self {
+        Self::RetryStateEvent(value)
+    }
+}
+impl ::std::convert::From<SessionSessionArchivedEvent> for SessionEvent {
+    fn from(value: SessionSessionArchivedEvent) -> Self {
+        Self::SessionArchivedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionSessionCreatedEvent> for SessionEvent {
+    fn from(value: SessionSessionCreatedEvent) -> Self {
+        Self::SessionCreatedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionSessionDeletedEvent> for SessionEvent {
+    fn from(value: SessionSessionDeletedEvent) -> Self {
+        Self::SessionDeletedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionSessionFlaggedEvent> for SessionEvent {
+    fn from(value: SessionSessionFlaggedEvent) -> Self {
+        Self::SessionFlaggedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionSessionModelChangedEvent> for SessionEvent {
+    fn from(value: SessionSessionModelChangedEvent) -> Self {
+        Self::SessionModelChangedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionSessionUnarchivedEvent> for SessionEvent {
+    fn from(value: SessionSessionUnarchivedEvent) -> Self {
+        Self::SessionUnarchivedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionSessionUnflaggedEvent> for SessionEvent {
+    fn from(value: SessionSessionUnflaggedEvent) -> Self {
+        Self::SessionUnflaggedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionShellBackgroundedEvent> for SessionEvent {
+    fn from(value: SessionShellBackgroundedEvent) -> Self {
+        Self::ShellBackgroundedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionShellKilledEvent> for SessionEvent {
+    fn from(value: SessionShellKilledEvent) -> Self {
+        Self::ShellKilledEvent(value)
+    }
+}
+impl ::std::convert::From<SessionStatusEvent> for SessionEvent {
+    fn from(value: SessionStatusEvent) -> Self {
+        Self::StatusEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTaskActivityEvent> for SessionEvent {
+    fn from(value: SessionTaskActivityEvent) -> Self {
+        Self::TaskActivityEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTaskBackgroundedEvent> for SessionEvent {
+    fn from(value: SessionTaskBackgroundedEvent) -> Self {
+        Self::TaskBackgroundedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTaskCompletedEvent> for SessionEvent {
+    fn from(value: SessionTaskCompletedEvent) -> Self {
+        Self::TaskCompletedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTaskProgressEvent> for SessionEvent {
+    fn from(value: SessionTaskProgressEvent) -> Self {
+        Self::TaskProgressEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTextCompleteEvent> for SessionEvent {
+    fn from(value: SessionTextCompleteEvent) -> Self {
+        Self::TextCompleteEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTextDeltaEvent> for SessionEvent {
+    fn from(value: SessionTextDeltaEvent) -> Self {
+        Self::TextDeltaEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTextDiscardEvent> for SessionEvent {
+    fn from(value: SessionTextDiscardEvent) -> Self {
+        Self::TextDiscardEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTitleGeneratedEvent> for SessionEvent {
+    fn from(value: SessionTitleGeneratedEvent) -> Self {
+        Self::TitleGeneratedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTitleRegeneratingEvent> for SessionEvent {
+    fn from(value: SessionTitleRegeneratingEvent) -> Self {
+        Self::TitleRegeneratingEvent(value)
+    }
+}
+impl ::std::convert::From<SessionToolResultEvent> for SessionEvent {
+    fn from(value: SessionToolResultEvent) -> Self {
+        Self::ToolResultEvent(value)
+    }
+}
+impl ::std::convert::From<SessionToolStartEvent> for SessionEvent {
+    fn from(value: SessionToolStartEvent) -> Self {
+        Self::ToolStartEvent(value)
+    }
+}
+impl ::std::convert::From<SessionTypedErrorEvent> for SessionEvent {
+    fn from(value: SessionTypedErrorEvent) -> Self {
+        Self::TypedErrorEvent(value)
+    }
+}
+impl ::std::convert::From<SessionUsageUpdateEvent> for SessionEvent {
+    fn from(value: SessionUsageUpdateEvent) -> Self {
+        Self::UsageUpdateEvent(value)
+    }
+}
+impl ::std::convert::From<SessionUserMessageEvent> for SessionEvent {
+    fn from(value: SessionUserMessageEvent) -> Self {
+        Self::UserMessageEvent(value)
+    }
+}
+impl ::std::convert::From<SessionWorkflowAgentCompletedEvent> for SessionEvent {
+    fn from(value: SessionWorkflowAgentCompletedEvent) -> Self {
+        Self::WorkflowAgentCompletedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionWorkingDirectoryChangedEvent> for SessionEvent {
+    fn from(value: SessionWorkingDirectoryChangedEvent) -> Self {
+        Self::WorkingDirectoryChangedEvent(value)
+    }
+}
+impl ::std::convert::From<SessionWorkingDirectoryErrorEvent> for SessionEvent {
+    fn from(value: SessionWorkingDirectoryErrorEvent) -> Self {
+        Self::WorkingDirectoryErrorEvent(value)
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionInfoEvent {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub details: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+    pub level: ::std::option::Option<SessionInfoEventLevel>,
     pub message: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
     #[serde(
-        rename = "originalError",
+        rename = "statusType",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
     )]
-    pub original_error: ::std::option::Option<::std::string::String>,
-    #[serde(
-        rename = "retryDelayMs",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub retry_delay_ms: ::std::option::Option<f64>,
-    pub title: ::std::string::String,
+    pub status_type: ::std::option::Option<SessionInfoEventStatusType>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub timestamp: ::std::option::Option<f64>,
+    #[serde(rename = "type")]
+    pub type_: SessionInfoEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionInfoEventLevel {
+    #[serde(rename = "info")]
+    Info,
+    #[serde(rename = "warning")]
+    Warning,
+    #[serde(rename = "error")]
+    Error,
+    #[serde(rename = "success")]
+    Success,
+}
+impl ::std::fmt::Display for SessionInfoEventLevel {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Info => f.write_str("info"),
+            Self::Warning => f.write_str("warning"),
+            Self::Error => f.write_str("error"),
+            Self::Success => f.write_str("success"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionInfoEventLevel {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "info" => Ok(Self::Info),
+            "warning" => Ok(Self::Warning),
+            "error" => Ok(Self::Error),
+            "success" => Ok(Self::Success),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionInfoEventLevel {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionInfoEventLevel {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionInfoEventLevel {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionInfoEventStatusType {
+    #[serde(rename = "compaction_complete")]
+    CompactionComplete,
+}
+impl ::std::fmt::Display for SessionInfoEventStatusType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::CompactionComplete => f.write_str("compaction_complete"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionInfoEventStatusType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "compaction_complete" => Ok(Self::CompactionComplete),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionInfoEventStatusType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionInfoEventStatusType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionInfoEventStatusType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionInfoEventType {
+    #[serde(rename = "info")]
+    Info,
+}
+impl ::std::fmt::Display for SessionInfoEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Info => f.write_str("info"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionInfoEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "info" => Ok(Self::Info),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionInfoEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionInfoEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionInfoEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
-pub struct SessionEventVariant9ErrorActionsItem {
+pub struct SessionInterruptedEvent {
+    #[serde(
+        rename = "backgroundTasksAlive",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub background_tasks_alive: ::std::option::Option<bool>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub action: ::std::option::Option<SessionEventVariant9ErrorActionsItemAction>,
-    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub command: ::std::option::Option<::std::string::String>,
-    pub key: ::std::string::String,
-    pub label: ::std::string::String,
-    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub url: ::std::option::Option<::std::string::String>,
+    pub message: ::std::option::Option<Message>,
+    #[serde(
+        rename = "queuedMessages",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub queued_messages: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionInterruptedEventType,
 }
 #[derive(
     ::serde::Deserialize,
@@ -6241,43 +4312,33 @@ pub struct SessionEventVariant9ErrorActionsItem {
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionEventVariant9ErrorActionsItemAction {
-    #[serde(rename = "retry")]
-    Retry,
-    #[serde(rename = "settings")]
-    Settings,
-    #[serde(rename = "open_url")]
-    OpenUrl,
+pub enum SessionInterruptedEventType {
+    #[serde(rename = "interrupted")]
+    Interrupted,
 }
-impl ::std::fmt::Display for SessionEventVariant9ErrorActionsItemAction {
+impl ::std::fmt::Display for SessionInterruptedEventType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Retry => f.write_str("retry"),
-            Self::Settings => f.write_str("settings"),
-            Self::OpenUrl => f.write_str("open_url"),
+            Self::Interrupted => f.write_str("interrupted"),
         }
     }
 }
-impl ::std::str::FromStr for SessionEventVariant9ErrorActionsItemAction {
+impl ::std::str::FromStr for SessionInterruptedEventType {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "retry" => Ok(Self::Retry),
-            "settings" => Ok(Self::Settings),
-            "open_url" => Ok(Self::OpenUrl),
+            "interrupted" => Ok(Self::Interrupted),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionEventVariant9ErrorActionsItemAction {
+impl ::std::convert::TryFrom<&str> for SessionInterruptedEventType {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String>
-    for SessionEventVariant9ErrorActionsItemAction
-{
+impl ::std::convert::TryFrom<&::std::string::String> for SessionInterruptedEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -6285,191 +4346,7 @@ impl ::std::convert::TryFrom<&::std::string::String>
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant9ErrorActionsItemAction {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant9ErrorCode {
-    #[serde(rename = "invalid_api_key")]
-    InvalidApiKey,
-    #[serde(rename = "invalid_credentials")]
-    InvalidCredentials,
-    #[serde(rename = "response_too_large")]
-    ResponseTooLarge,
-    #[serde(rename = "token_expired")]
-    TokenExpired,
-    #[serde(rename = "rate_limited")]
-    RateLimited,
-    #[serde(rename = "service_error")]
-    ServiceError,
-    #[serde(rename = "service_unavailable")]
-    ServiceUnavailable,
-    #[serde(rename = "network_error")]
-    NetworkError,
-    #[serde(rename = "proxy_error")]
-    ProxyError,
-    #[serde(rename = "billing_error")]
-    BillingError,
-    #[serde(rename = "model_no_tool_support")]
-    ModelNoToolSupport,
-    #[serde(rename = "invalid_model")]
-    InvalidModel,
-    #[serde(rename = "data_policy_error")]
-    DataPolicyError,
-    #[serde(rename = "invalid_request")]
-    InvalidRequest,
-    #[serde(rename = "image_too_large")]
-    ImageTooLarge,
-    #[serde(rename = "provider_error")]
-    ProviderError,
-    #[serde(rename = "queued_message_replay_failed")]
-    QueuedMessageReplayFailed,
-    #[serde(rename = "sdk_binary_missing")]
-    SdkBinaryMissing,
-    #[serde(rename = "sdk_cwd_missing")]
-    SdkCwdMissing,
-    #[serde(rename = "unknown_error")]
-    UnknownError,
-}
-impl ::std::fmt::Display for SessionEventVariant9ErrorCode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::InvalidApiKey => f.write_str("invalid_api_key"),
-            Self::InvalidCredentials => f.write_str("invalid_credentials"),
-            Self::ResponseTooLarge => f.write_str("response_too_large"),
-            Self::TokenExpired => f.write_str("token_expired"),
-            Self::RateLimited => f.write_str("rate_limited"),
-            Self::ServiceError => f.write_str("service_error"),
-            Self::ServiceUnavailable => f.write_str("service_unavailable"),
-            Self::NetworkError => f.write_str("network_error"),
-            Self::ProxyError => f.write_str("proxy_error"),
-            Self::BillingError => f.write_str("billing_error"),
-            Self::ModelNoToolSupport => f.write_str("model_no_tool_support"),
-            Self::InvalidModel => f.write_str("invalid_model"),
-            Self::DataPolicyError => f.write_str("data_policy_error"),
-            Self::InvalidRequest => f.write_str("invalid_request"),
-            Self::ImageTooLarge => f.write_str("image_too_large"),
-            Self::ProviderError => f.write_str("provider_error"),
-            Self::QueuedMessageReplayFailed => f.write_str("queued_message_replay_failed"),
-            Self::SdkBinaryMissing => f.write_str("sdk_binary_missing"),
-            Self::SdkCwdMissing => f.write_str("sdk_cwd_missing"),
-            Self::UnknownError => f.write_str("unknown_error"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant9ErrorCode {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "invalid_api_key" => Ok(Self::InvalidApiKey),
-            "invalid_credentials" => Ok(Self::InvalidCredentials),
-            "response_too_large" => Ok(Self::ResponseTooLarge),
-            "token_expired" => Ok(Self::TokenExpired),
-            "rate_limited" => Ok(Self::RateLimited),
-            "service_error" => Ok(Self::ServiceError),
-            "service_unavailable" => Ok(Self::ServiceUnavailable),
-            "network_error" => Ok(Self::NetworkError),
-            "proxy_error" => Ok(Self::ProxyError),
-            "billing_error" => Ok(Self::BillingError),
-            "model_no_tool_support" => Ok(Self::ModelNoToolSupport),
-            "invalid_model" => Ok(Self::InvalidModel),
-            "data_policy_error" => Ok(Self::DataPolicyError),
-            "invalid_request" => Ok(Self::InvalidRequest),
-            "image_too_large" => Ok(Self::ImageTooLarge),
-            "provider_error" => Ok(Self::ProviderError),
-            "queued_message_replay_failed" => Ok(Self::QueuedMessageReplayFailed),
-            "sdk_binary_missing" => Ok(Self::SdkBinaryMissing),
-            "sdk_cwd_missing" => Ok(Self::SdkCwdMissing),
-            "unknown_error" => Ok(Self::UnknownError),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant9ErrorCode {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant9ErrorCode {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant9ErrorCode {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[derive(
-    ::serde::Deserialize,
-    ::serde::Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum SessionEventVariant9Type {
-    #[serde(rename = "typed_error")]
-    TypedError,
-}
-impl ::std::fmt::Display for SessionEventVariant9Type {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::TypedError => f.write_str("typed_error"),
-        }
-    }
-}
-impl ::std::str::FromStr for SessionEventVariant9Type {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "typed_error" => Ok(Self::TypedError),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for SessionEventVariant9Type {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for SessionEventVariant9Type {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for SessionEventVariant9Type {
+impl ::std::convert::TryFrom<::std::string::String> for SessionInterruptedEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -6547,6 +4424,76 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionLastMessageRole {
         value.parse()
     }
 }
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionMessageAnnotationsUpdatedEvent {
+    pub annotations: ::std::vec::Vec<SessionMessageAnnotationsUpdatedEventAnnotationsItem>,
+    #[serde(rename = "messageId")]
+    pub message_id: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionMessageAnnotationsUpdatedEventType,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionMessageAnnotationsUpdatedEventAnnotationsItem {
+    pub body: ::std::vec::Vec<SessionMessageAnnotationsUpdatedEventAnnotationsItemBodyItem>,
+    #[serde(rename = "createdAt")]
+    pub created_at: f64,
+    #[serde(
+        rename = "createdBy",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub created_by:
+        ::std::option::Option<SessionMessageAnnotationsUpdatedEventAnnotationsItemCreatedBy>,
+    #[serde(
+        rename = "deletedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub deleted_at: ::std::option::Option<f64>,
+    pub id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub intent: ::std::option::Option<SessionMessageAnnotationsUpdatedEventAnnotationsItemIntent>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub meta: ::std::option::Option<::serde_json::Map<::std::string::String, ::serde_json::Value>>,
+    #[serde(rename = "schemaVersion")]
+    pub schema_version: SessionMessageAnnotationsUpdatedEventAnnotationsItemSchemaVersion,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub status: ::std::option::Option<SessionMessageAnnotationsUpdatedEventAnnotationsItemStatus>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub style: ::std::option::Option<SessionMessageAnnotationsUpdatedEventAnnotationsItemStyle>,
+    pub target: SessionMessageAnnotationsUpdatedEventAnnotationsItemTarget,
+    #[serde(
+        rename = "threadRef",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thread_ref:
+        ::std::option::Option<SessionMessageAnnotationsUpdatedEventAnnotationsItemThreadRef>,
+    #[serde(
+        rename = "updatedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub updated_at: ::std::option::Option<f64>,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "type")]
+pub enum SessionMessageAnnotationsUpdatedEventAnnotationsItemBodyItem {
+    #[serde(rename = "highlight")]
+    Highlight,
+    #[serde(rename = "note")]
+    Note {
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        format: ::std::option::Option<
+            SessionMessageAnnotationsUpdatedEventAnnotationsItemBodyItemFormat,
+        >,
+        text: ::std::string::String,
+    },
+    #[serde(rename = "tag")]
+    Tag { value: ::std::string::String },
+}
 #[derive(
     ::serde::Deserialize,
     ::serde::Serialize,
@@ -6559,41 +4506,41 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionLastMessageRole {
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionPermissionMode {
-    #[serde(rename = "safe")]
-    Safe,
-    #[serde(rename = "ask")]
-    Ask,
-    #[serde(rename = "allow-all")]
-    AllowAll,
+pub enum SessionMessageAnnotationsUpdatedEventAnnotationsItemBodyItemFormat {
+    #[serde(rename = "plain")]
+    Plain,
+    #[serde(rename = "markdown")]
+    Markdown,
 }
-impl ::std::fmt::Display for SessionPermissionMode {
+impl ::std::fmt::Display for SessionMessageAnnotationsUpdatedEventAnnotationsItemBodyItemFormat {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Safe => f.write_str("safe"),
-            Self::Ask => f.write_str("ask"),
-            Self::AllowAll => f.write_str("allow-all"),
+            Self::Plain => f.write_str("plain"),
+            Self::Markdown => f.write_str("markdown"),
         }
     }
 }
-impl ::std::str::FromStr for SessionPermissionMode {
+impl ::std::str::FromStr for SessionMessageAnnotationsUpdatedEventAnnotationsItemBodyItemFormat {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "safe" => Ok(Self::Safe),
-            "ask" => Ok(Self::Ask),
-            "allow-all" => Ok(Self::AllowAll),
+            "plain" => Ok(Self::Plain),
+            "markdown" => Ok(Self::Markdown),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionPermissionMode {
+impl ::std::convert::TryFrom<&str>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemBodyItemFormat
+{
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for SessionPermissionMode {
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemBodyItemFormat
+{
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -6601,7 +4548,960 @@ impl ::std::convert::TryFrom<&::std::string::String> for SessionPermissionMode {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionPermissionMode {
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemBodyItemFormat
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionMessageAnnotationsUpdatedEventAnnotationsItemCreatedBy {
+    pub id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub type_:
+        ::std::option::Option<SessionMessageAnnotationsUpdatedEventAnnotationsItemCreatedByType>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionMessageAnnotationsUpdatedEventAnnotationsItemCreatedByType {
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "agent")]
+    Agent,
+    #[serde(rename = "system")]
+    System,
+}
+impl ::std::fmt::Display for SessionMessageAnnotationsUpdatedEventAnnotationsItemCreatedByType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::User => f.write_str("user"),
+            Self::Agent => f.write_str("agent"),
+            Self::System => f.write_str("system"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionMessageAnnotationsUpdatedEventAnnotationsItemCreatedByType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "user" => Ok(Self::User),
+            "agent" => Ok(Self::Agent),
+            "system" => Ok(Self::System),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemCreatedByType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemCreatedByType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemCreatedByType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionMessageAnnotationsUpdatedEventAnnotationsItemIntent {
+    #[serde(rename = "highlight")]
+    Highlight,
+    #[serde(rename = "comment")]
+    Comment,
+    #[serde(rename = "question")]
+    Question,
+}
+impl ::std::fmt::Display for SessionMessageAnnotationsUpdatedEventAnnotationsItemIntent {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Highlight => f.write_str("highlight"),
+            Self::Comment => f.write_str("comment"),
+            Self::Question => f.write_str("question"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionMessageAnnotationsUpdatedEventAnnotationsItemIntent {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "highlight" => Ok(Self::Highlight),
+            "comment" => Ok(Self::Comment),
+            "question" => Ok(Self::Question),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionMessageAnnotationsUpdatedEventAnnotationsItemIntent {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemIntent
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemIntent
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Serialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct SessionMessageAnnotationsUpdatedEventAnnotationsItemSchemaVersion(f64);
+impl ::std::ops::Deref for SessionMessageAnnotationsUpdatedEventAnnotationsItemSchemaVersion {
+    type Target = f64;
+    fn deref(&self) -> &f64 {
+        &self.0
+    }
+}
+impl ::std::convert::From<SessionMessageAnnotationsUpdatedEventAnnotationsItemSchemaVersion>
+    for f64
+{
+    fn from(value: SessionMessageAnnotationsUpdatedEventAnnotationsItemSchemaVersion) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::TryFrom<f64>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemSchemaVersion
+{
+    type Error = self::error::ConversionError;
+    fn try_from(value: f64) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if ![1_f64].contains(&value) {
+            Err("invalid value".into())
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+impl<'de> ::serde::Deserialize<'de>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemSchemaVersion
+{
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        Self::try_from(<f64>::deserialize(deserializer)?)
+            .map_err(|e| <D::Error as ::serde::de::Error>::custom(e.to_string()))
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionMessageAnnotationsUpdatedEventAnnotationsItemStatus {
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "acknowledged")]
+    Acknowledged,
+    #[serde(rename = "resolved")]
+    Resolved,
+    #[serde(rename = "dismissed")]
+    Dismissed,
+}
+impl ::std::fmt::Display for SessionMessageAnnotationsUpdatedEventAnnotationsItemStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pending => f.write_str("pending"),
+            Self::Acknowledged => f.write_str("acknowledged"),
+            Self::Resolved => f.write_str("resolved"),
+            Self::Dismissed => f.write_str("dismissed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionMessageAnnotationsUpdatedEventAnnotationsItemStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pending" => Ok(Self::Pending),
+            "acknowledged" => Ok(Self::Acknowledged),
+            "resolved" => Ok(Self::Resolved),
+            "dismissed" => Ok(Self::Dismissed),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionMessageAnnotationsUpdatedEventAnnotationsItemStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemStatus
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemStatus
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionMessageAnnotationsUpdatedEventAnnotationsItemStyle {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub color: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub opacity: ::std::option::Option<f64>,
+}
+impl ::std::default::Default for SessionMessageAnnotationsUpdatedEventAnnotationsItemStyle {
+    fn default() -> Self {
+        Self {
+            color: Default::default(),
+            opacity: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionMessageAnnotationsUpdatedEventAnnotationsItemTarget {
+    pub selectors:
+        ::std::vec::Vec<SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItem>,
+    pub source: SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSource,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "type")]
+pub enum SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItem {
+    #[serde(rename = "text-quote")]
+    TextQuote {
+        exact: ::std::string::String,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        prefix: ::std::option::Option<::std::string::String>,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        suffix: ::std::option::Option<::std::string::String>,
+    },
+    #[serde(rename = "text-position")]
+    TextPosition {
+        end: f64,
+        start: f64,
+        #[serde(
+            rename = "textVersion",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        text_version: ::std::option::Option<::std::string::String>,
+    },
+    #[serde(rename = "block")]
+    Block {
+        #[serde(
+            rename = "blockId",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        block_id: ::std::option::Option<::std::string::String>,
+        #[serde(rename = "blockType")]
+        block_type:
+            SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemBlockType,
+        path: ::std::string::String,
+    },
+    #[serde(rename = "xywh")]
+    Xywh {
+        h: f64,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        page: ::std::option::Option<f64>,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        rotation: ::std::option::Option<f64>,
+        unit: SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemUnit,
+        w: f64,
+        x: f64,
+        y: f64,
+    },
+    #[serde(rename = "table-cell")]
+    TableCell {
+        #[serde(rename = "columnKey")]
+        column_key: ::std::string::String,
+        #[serde(rename = "rowKey")]
+        row_key: SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemRowKey,
+    },
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemBlockType {
+    #[serde(rename = "paragraph")]
+    Paragraph,
+    #[serde(rename = "code")]
+    Code,
+    #[serde(rename = "latex")]
+    Latex,
+    #[serde(rename = "mermaid")]
+    Mermaid,
+    #[serde(rename = "datatable")]
+    Datatable,
+    #[serde(rename = "spreadsheet")]
+    Spreadsheet,
+    #[serde(rename = "image-preview")]
+    ImagePreview,
+    #[serde(rename = "pdf-preview")]
+    PdfPreview,
+    #[serde(rename = "html-preview")]
+    HtmlPreview,
+}
+impl ::std::fmt::Display
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemBlockType
+{
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Paragraph => f.write_str("paragraph"),
+            Self::Code => f.write_str("code"),
+            Self::Latex => f.write_str("latex"),
+            Self::Mermaid => f.write_str("mermaid"),
+            Self::Datatable => f.write_str("datatable"),
+            Self::Spreadsheet => f.write_str("spreadsheet"),
+            Self::ImagePreview => f.write_str("image-preview"),
+            Self::PdfPreview => f.write_str("pdf-preview"),
+            Self::HtmlPreview => f.write_str("html-preview"),
+        }
+    }
+}
+impl ::std::str::FromStr
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemBlockType
+{
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "paragraph" => Ok(Self::Paragraph),
+            "code" => Ok(Self::Code),
+            "latex" => Ok(Self::Latex),
+            "mermaid" => Ok(Self::Mermaid),
+            "datatable" => Ok(Self::Datatable),
+            "spreadsheet" => Ok(Self::Spreadsheet),
+            "image-preview" => Ok(Self::ImagePreview),
+            "pdf-preview" => Ok(Self::PdfPreview),
+            "html-preview" => Ok(Self::HtmlPreview),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemBlockType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemBlockType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemBlockType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemRowKey {
+    Number(f64),
+    String(::std::string::String),
+}
+impl ::std::fmt::Display
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemRowKey
+{
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match self {
+            Self::Number(x) => x.fmt(f),
+            Self::String(x) => x.fmt(f),
+        }
+    }
+}
+impl ::std::convert::From<f64>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemRowKey
+{
+    fn from(value: f64) -> Self {
+        Self::Number(value)
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemUnit {
+    #[serde(rename = "pixel")]
+    Pixel,
+    #[serde(rename = "percent")]
+    Percent,
+}
+impl ::std::fmt::Display
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemUnit
+{
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pixel => f.write_str("pixel"),
+            Self::Percent => f.write_str("percent"),
+        }
+    }
+}
+impl ::std::str::FromStr
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemUnit
+{
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pixel" => Ok(Self::Pixel),
+            "percent" => Ok(Self::Percent),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemUnit
+{
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemUnit
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSelectorsItemUnit
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionMessageAnnotationsUpdatedEventAnnotationsItemTargetSource {
+    #[serde(rename = "messageId")]
+    pub message_id: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionMessageAnnotationsUpdatedEventAnnotationsItemThreadRef {
+    #[serde(
+        rename = "sessionId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub session_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "threadId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thread_id: ::std::option::Option<::std::string::String>,
+}
+impl ::std::default::Default for SessionMessageAnnotationsUpdatedEventAnnotationsItemThreadRef {
+    fn default() -> Self {
+        Self {
+            session_id: Default::default(),
+            thread_id: Default::default(),
+        }
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionMessageAnnotationsUpdatedEventType {
+    #[serde(rename = "message_annotations_updated")]
+    MessageAnnotationsUpdated,
+}
+impl ::std::fmt::Display for SessionMessageAnnotationsUpdatedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::MessageAnnotationsUpdated => f.write_str("message_annotations_updated"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionMessageAnnotationsUpdatedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "message_annotations_updated" => Ok(Self::MessageAnnotationsUpdated),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionMessageAnnotationsUpdatedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionMessageAnnotationsUpdatedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionMessageAnnotationsUpdatedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionNameChangedEvent {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub name: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionNameChangedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionNameChangedEventType {
+    #[serde(rename = "name_changed")]
+    NameChanged,
+}
+impl ::std::fmt::Display for SessionNameChangedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::NameChanged => f.write_str("name_changed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionNameChangedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "name_changed" => Ok(Self::NameChanged),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionNameChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionNameChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionNameChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionPermissionModeChangedEvent {
+    #[serde(
+        rename = "changedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub changed_at: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "changedBy",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub changed_by: ::std::option::Option<SessionPermissionModeChangedEventChangedBy>,
+    #[serde(
+        rename = "modeVersion",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub mode_version: ::std::option::Option<f64>,
+    #[serde(rename = "permissionMode")]
+    pub permission_mode: PermissionMode,
+    #[serde(
+        rename = "previousPermissionMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub previous_permission_mode: ::std::option::Option<PermissionMode>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(
+        rename = "transitionDisplay",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub transition_display: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionPermissionModeChangedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionPermissionModeChangedEventChangedBy {
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "system")]
+    System,
+    #[serde(rename = "restore")]
+    Restore,
+    #[serde(rename = "unknown")]
+    Unknown,
+}
+impl ::std::fmt::Display for SessionPermissionModeChangedEventChangedBy {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::User => f.write_str("user"),
+            Self::System => f.write_str("system"),
+            Self::Restore => f.write_str("restore"),
+            Self::Unknown => f.write_str("unknown"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionPermissionModeChangedEventChangedBy {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "user" => Ok(Self::User),
+            "system" => Ok(Self::System),
+            "restore" => Ok(Self::Restore),
+            "unknown" => Ok(Self::Unknown),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionPermissionModeChangedEventChangedBy {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionPermissionModeChangedEventChangedBy
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionPermissionModeChangedEventChangedBy {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionPermissionModeChangedEventType {
+    #[serde(rename = "permission_mode_changed")]
+    PermissionModeChanged,
+}
+impl ::std::fmt::Display for SessionPermissionModeChangedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::PermissionModeChanged => f.write_str("permission_mode_changed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionPermissionModeChangedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "permission_mode_changed" => Ok(Self::PermissionModeChanged),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionPermissionModeChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionPermissionModeChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionPermissionModeChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionPermissionRequestEvent {
+    pub request: PermissionRequest,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionPermissionRequestEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionPermissionRequestEventType {
+    #[serde(rename = "permission_request")]
+    PermissionRequest,
+}
+impl ::std::fmt::Display for SessionPermissionRequestEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::PermissionRequest => f.write_str("permission_request"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionPermissionRequestEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "permission_request" => Ok(Self::PermissionRequest),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionPermissionRequestEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionPermissionRequestEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionPermissionRequestEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionPlanSubmittedEvent {
+    pub message: Message,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionPlanSubmittedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionPlanSubmittedEventType {
+    #[serde(rename = "plan_submitted")]
+    PlanSubmitted,
+}
+impl ::std::fmt::Display for SessionPlanSubmittedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::PlanSubmitted => f.write_str("plan_submitted"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionPlanSubmittedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "plan_submitted" => Ok(Self::PlanSubmitted),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionPlanSubmittedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionPlanSubmittedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionPlanSubmittedEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -6639,6 +5539,15 @@ impl ::std::default::Default for SessionPrMonitorsValue {
         }
     }
 }
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionRetryBackoffEvent {
+    pub message: ::std::string::String,
+    pub phase: SessionRetryBackoffEventPhase,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionRetryBackoffEventType,
+}
 #[derive(
     ::serde::Deserialize,
     ::serde::Serialize,
@@ -6651,53 +5560,33 @@ impl ::std::default::Default for SessionPrMonitorsValue {
     PartialEq,
     PartialOrd,
 )]
-pub enum SessionThinkingLevel {
-    #[serde(rename = "off")]
-    Off,
-    #[serde(rename = "low")]
-    Low,
-    #[serde(rename = "medium")]
-    Medium,
-    #[serde(rename = "high")]
-    High,
-    #[serde(rename = "xhigh")]
-    Xhigh,
-    #[serde(rename = "max")]
-    Max,
+pub enum SessionRetryBackoffEventPhase {
+    #[serde(rename = "backoff")]
+    Backoff,
 }
-impl ::std::fmt::Display for SessionThinkingLevel {
+impl ::std::fmt::Display for SessionRetryBackoffEventPhase {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Off => f.write_str("off"),
-            Self::Low => f.write_str("low"),
-            Self::Medium => f.write_str("medium"),
-            Self::High => f.write_str("high"),
-            Self::Xhigh => f.write_str("xhigh"),
-            Self::Max => f.write_str("max"),
+            Self::Backoff => f.write_str("backoff"),
         }
     }
 }
-impl ::std::str::FromStr for SessionThinkingLevel {
+impl ::std::str::FromStr for SessionRetryBackoffEventPhase {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "off" => Ok(Self::Off),
-            "low" => Ok(Self::Low),
-            "medium" => Ok(Self::Medium),
-            "high" => Ok(Self::High),
-            "xhigh" => Ok(Self::Xhigh),
-            "max" => Ok(Self::Max),
+            "backoff" => Ok(Self::Backoff),
             _ => Err("invalid value".into()),
         }
     }
 }
-impl ::std::convert::TryFrom<&str> for SessionThinkingLevel {
+impl ::std::convert::TryFrom<&str> for SessionRetryBackoffEventPhase {
     type Error = self::error::ConversionError;
     fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<&::std::string::String> for SessionThinkingLevel {
+impl ::std::convert::TryFrom<&::std::string::String> for SessionRetryBackoffEventPhase {
     type Error = self::error::ConversionError;
     fn try_from(
         value: &::std::string::String,
@@ -6705,7 +5594,1661 @@ impl ::std::convert::TryFrom<&::std::string::String> for SessionThinkingLevel {
         value.parse()
     }
 }
-impl ::std::convert::TryFrom<::std::string::String> for SessionThinkingLevel {
+impl ::std::convert::TryFrom<::std::string::String> for SessionRetryBackoffEventPhase {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionRetryBackoffEventType {
+    #[serde(rename = "retry")]
+    Retry,
+}
+impl ::std::fmt::Display for SessionRetryBackoffEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Retry => f.write_str("retry"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionRetryBackoffEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "retry" => Ok(Self::Retry),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionRetryBackoffEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionRetryBackoffEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionRetryBackoffEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionRetryStateEvent {
+    pub phase: SessionRetryStateEventPhase,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionRetryStateEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionRetryStateEventPhase {
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "end")]
+    End,
+}
+impl ::std::fmt::Display for SessionRetryStateEventPhase {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Active => f.write_str("active"),
+            Self::End => f.write_str("end"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionRetryStateEventPhase {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "active" => Ok(Self::Active),
+            "end" => Ok(Self::End),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionRetryStateEventPhase {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionRetryStateEventPhase {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionRetryStateEventPhase {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionRetryStateEventType {
+    #[serde(rename = "retry")]
+    Retry,
+}
+impl ::std::fmt::Display for SessionRetryStateEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Retry => f.write_str("retry"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionRetryStateEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "retry" => Ok(Self::Retry),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionRetryStateEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionRetryStateEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionRetryStateEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionSessionArchivedEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionSessionArchivedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionSessionArchivedEventType {
+    #[serde(rename = "session_archived")]
+    SessionArchived,
+}
+impl ::std::fmt::Display for SessionSessionArchivedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionArchived => f.write_str("session_archived"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionSessionArchivedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session_archived" => Ok(Self::SessionArchived),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionSessionArchivedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionSessionArchivedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionSessionArchivedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionSessionCreatedEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionSessionCreatedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionSessionCreatedEventType {
+    #[serde(rename = "session_created")]
+    SessionCreated,
+}
+impl ::std::fmt::Display for SessionSessionCreatedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionCreated => f.write_str("session_created"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionSessionCreatedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session_created" => Ok(Self::SessionCreated),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionSessionCreatedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionSessionCreatedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionSessionCreatedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionSessionDeletedEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionSessionDeletedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionSessionDeletedEventType {
+    #[serde(rename = "session_deleted")]
+    SessionDeleted,
+}
+impl ::std::fmt::Display for SessionSessionDeletedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionDeleted => f.write_str("session_deleted"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionSessionDeletedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session_deleted" => Ok(Self::SessionDeleted),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionSessionDeletedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionSessionDeletedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionSessionDeletedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionSessionFlaggedEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionSessionFlaggedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionSessionFlaggedEventType {
+    #[serde(rename = "session_flagged")]
+    SessionFlagged,
+}
+impl ::std::fmt::Display for SessionSessionFlaggedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionFlagged => f.write_str("session_flagged"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionSessionFlaggedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session_flagged" => Ok(Self::SessionFlagged),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionSessionFlaggedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionSessionFlaggedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionSessionFlaggedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionSessionModelChangedEvent {
+    #[serde(deserialize_with = "required_option")]
+    pub model: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionSessionModelChangedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionSessionModelChangedEventType {
+    #[serde(rename = "session_model_changed")]
+    SessionModelChanged,
+}
+impl ::std::fmt::Display for SessionSessionModelChangedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionModelChanged => f.write_str("session_model_changed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionSessionModelChangedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session_model_changed" => Ok(Self::SessionModelChanged),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionSessionModelChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionSessionModelChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionSessionModelChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionSessionUnarchivedEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionSessionUnarchivedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionSessionUnarchivedEventType {
+    #[serde(rename = "session_unarchived")]
+    SessionUnarchived,
+}
+impl ::std::fmt::Display for SessionSessionUnarchivedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionUnarchived => f.write_str("session_unarchived"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionSessionUnarchivedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session_unarchived" => Ok(Self::SessionUnarchived),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionSessionUnarchivedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionSessionUnarchivedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionSessionUnarchivedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionSessionUnflaggedEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionSessionUnflaggedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionSessionUnflaggedEventType {
+    #[serde(rename = "session_unflagged")]
+    SessionUnflagged,
+}
+impl ::std::fmt::Display for SessionSessionUnflaggedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::SessionUnflagged => f.write_str("session_unflagged"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionSessionUnflaggedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "session_unflagged" => Ok(Self::SessionUnflagged),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionSessionUnflaggedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionSessionUnflaggedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionSessionUnflaggedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionShellBackgroundedEvent {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub command: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub intent: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "shellId")]
+    pub shell_id: ::std::string::String,
+    #[serde(rename = "toolUseId")]
+    pub tool_use_id: ::std::string::String,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionShellBackgroundedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionShellBackgroundedEventType {
+    #[serde(rename = "shell_backgrounded")]
+    ShellBackgrounded,
+}
+impl ::std::fmt::Display for SessionShellBackgroundedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::ShellBackgrounded => f.write_str("shell_backgrounded"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionShellBackgroundedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "shell_backgrounded" => Ok(Self::ShellBackgrounded),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionShellBackgroundedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionShellBackgroundedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionShellBackgroundedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionShellKilledEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "shellId")]
+    pub shell_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionShellKilledEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionShellKilledEventType {
+    #[serde(rename = "shell_killed")]
+    ShellKilled,
+}
+impl ::std::fmt::Display for SessionShellKilledEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::ShellKilled => f.write_str("shell_killed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionShellKilledEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "shell_killed" => Ok(Self::ShellKilled),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionShellKilledEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionShellKilledEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionShellKilledEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionStatusEvent {
+    pub message: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(
+        rename = "statusType",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub status_type: ::std::option::Option<SessionStatusEventStatusType>,
+    #[serde(rename = "type")]
+    pub type_: SessionStatusEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionStatusEventStatusType {
+    #[serde(rename = "compacting")]
+    Compacting,
+}
+impl ::std::fmt::Display for SessionStatusEventStatusType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Compacting => f.write_str("compacting"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionStatusEventStatusType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "compacting" => Ok(Self::Compacting),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionStatusEventStatusType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionStatusEventStatusType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionStatusEventStatusType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionStatusEventType {
+    #[serde(rename = "status")]
+    Status,
+}
+impl ::std::fmt::Display for SessionStatusEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Status => f.write_str("status"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionStatusEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "status" => Ok(Self::Status),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionStatusEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionStatusEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionStatusEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTaskActivityEvent {
+    #[serde(
+        rename = "lastToolName",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_tool_name: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub summary: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "taskId")]
+    pub task_id: ::std::string::String,
+    #[serde(
+        rename = "toolUseId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_use_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "toolUses",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_uses: ::std::option::Option<f64>,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionTaskActivityEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTaskActivityEventType {
+    #[serde(rename = "task_activity")]
+    TaskActivity,
+}
+impl ::std::fmt::Display for SessionTaskActivityEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TaskActivity => f.write_str("task_activity"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTaskActivityEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "task_activity" => Ok(Self::TaskActivity),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTaskActivityEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTaskActivityEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTaskActivityEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTaskBackgroundedEvent {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub intent: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub kind: ::std::option::Option<SessionTaskBackgroundedEventKind>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "taskId")]
+    pub task_id: ::std::string::String,
+    #[serde(rename = "toolUseId")]
+    pub tool_use_id: ::std::string::String,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionTaskBackgroundedEventType,
+    #[serde(
+        rename = "workflowId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub workflow_id: ::std::option::Option<::std::string::String>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTaskBackgroundedEventKind {
+    #[serde(rename = "workflow")]
+    Workflow,
+}
+impl ::std::fmt::Display for SessionTaskBackgroundedEventKind {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Workflow => f.write_str("workflow"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTaskBackgroundedEventKind {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "workflow" => Ok(Self::Workflow),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTaskBackgroundedEventKind {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTaskBackgroundedEventKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTaskBackgroundedEventKind {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTaskBackgroundedEventType {
+    #[serde(rename = "task_backgrounded")]
+    TaskBackgrounded,
+}
+impl ::std::fmt::Display for SessionTaskBackgroundedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TaskBackgrounded => f.write_str("task_backgrounded"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTaskBackgroundedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "task_backgrounded" => Ok(Self::TaskBackgrounded),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTaskBackgroundedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTaskBackgroundedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTaskBackgroundedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTaskCompletedEvent {
+    #[serde(
+        rename = "launchedHere",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub launched_here: ::std::option::Option<bool>,
+    #[serde(
+        rename = "outputFile",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub output_file: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    pub status: SessionTaskCompletedEventStatus,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub summary: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "taskId")]
+    pub task_id: ::std::string::String,
+    #[serde(
+        rename = "toolUseId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_use_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionTaskCompletedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTaskCompletedEventStatus {
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "failed")]
+    Failed,
+    #[serde(rename = "stopped")]
+    Stopped,
+}
+impl ::std::fmt::Display for SessionTaskCompletedEventStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Completed => f.write_str("completed"),
+            Self::Failed => f.write_str("failed"),
+            Self::Stopped => f.write_str("stopped"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTaskCompletedEventStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "completed" => Ok(Self::Completed),
+            "failed" => Ok(Self::Failed),
+            "stopped" => Ok(Self::Stopped),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTaskCompletedEventStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTaskCompletedEventStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTaskCompletedEventStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTaskCompletedEventType {
+    #[serde(rename = "task_completed")]
+    TaskCompleted,
+}
+impl ::std::fmt::Display for SessionTaskCompletedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TaskCompleted => f.write_str("task_completed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTaskCompletedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "task_completed" => Ok(Self::TaskCompleted),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTaskCompletedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTaskCompletedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTaskCompletedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTaskProgressEvent {
+    #[serde(rename = "elapsedSeconds")]
+    pub elapsed_seconds: f64,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "toolUseId")]
+    pub tool_use_id: ::std::string::String,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionTaskProgressEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTaskProgressEventType {
+    #[serde(rename = "task_progress")]
+    TaskProgress,
+}
+impl ::std::fmt::Display for SessionTaskProgressEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TaskProgress => f.write_str("task_progress"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTaskProgressEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "task_progress" => Ok(Self::TaskProgress),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTaskProgressEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTaskProgressEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTaskProgressEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTextCompleteEvent {
+    #[serde(
+        rename = "isIntermediate",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_intermediate: ::std::option::Option<bool>,
+    #[serde(
+        rename = "messageId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub message_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "parentToolUseId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub parent_tool_use_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    pub text: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub timestamp: ::std::option::Option<f64>,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionTextCompleteEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTextCompleteEventType {
+    #[serde(rename = "text_complete")]
+    TextComplete,
+}
+impl ::std::fmt::Display for SessionTextCompleteEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TextComplete => f.write_str("text_complete"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTextCompleteEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "text_complete" => Ok(Self::TextComplete),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTextCompleteEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTextCompleteEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTextCompleteEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTextDeltaEvent {
+    pub delta: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionTextDeltaEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTextDeltaEventType {
+    #[serde(rename = "text_delta")]
+    TextDelta,
+}
+impl ::std::fmt::Display for SessionTextDeltaEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TextDelta => f.write_str("text_delta"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTextDeltaEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "text_delta" => Ok(Self::TextDelta),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTextDeltaEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTextDeltaEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTextDeltaEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTextDiscardEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "turnId")]
+    pub turn_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionTextDiscardEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTextDiscardEventType {
+    #[serde(rename = "text_discard")]
+    TextDiscard,
+}
+impl ::std::fmt::Display for SessionTextDiscardEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TextDiscard => f.write_str("text_discard"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTextDiscardEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "text_discard" => Ok(Self::TextDiscard),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTextDiscardEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTextDiscardEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTextDiscardEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTitleGeneratedEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    pub title: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionTitleGeneratedEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTitleGeneratedEventType {
+    #[serde(rename = "title_generated")]
+    TitleGenerated,
+}
+impl ::std::fmt::Display for SessionTitleGeneratedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TitleGenerated => f.write_str("title_generated"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTitleGeneratedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "title_generated" => Ok(Self::TitleGenerated),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTitleGeneratedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTitleGeneratedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTitleGeneratedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTitleRegeneratingEvent {
+    #[serde(rename = "isRegenerating")]
+    pub is_regenerating: bool,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionTitleRegeneratingEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTitleRegeneratingEventType {
+    #[serde(rename = "title_regenerating")]
+    TitleRegenerating,
+}
+impl ::std::fmt::Display for SessionTitleRegeneratingEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TitleRegenerating => f.write_str("title_regenerating"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTitleRegeneratingEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "title_regenerating" => Ok(Self::TitleRegenerating),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTitleRegeneratingEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTitleRegeneratingEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTitleRegeneratingEventType {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -6827,6 +7370,1352 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionTokenUsageContext
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionToolResultEvent {
+    #[serde(
+        rename = "isError",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_error: ::std::option::Option<bool>,
+    #[serde(
+        rename = "parentToolUseId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub parent_tool_use_id: ::std::option::Option<::std::string::String>,
+    pub result: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub timestamp: ::std::option::Option<f64>,
+    #[serde(
+        rename = "toolInput",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_input:
+        ::std::option::Option<::serde_json::Map<::std::string::String, ::serde_json::Value>>,
+    #[serde(rename = "toolName")]
+    pub tool_name: ::std::string::String,
+    #[serde(rename = "toolUseId")]
+    pub tool_use_id: ::std::string::String,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionToolResultEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionToolResultEventType {
+    #[serde(rename = "tool_result")]
+    ToolResult,
+}
+impl ::std::fmt::Display for SessionToolResultEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::ToolResult => f.write_str("tool_result"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionToolResultEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "tool_result" => Ok(Self::ToolResult),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionToolResultEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionToolResultEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionToolResultEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionToolStartEvent {
+    #[serde(
+        rename = "parentToolUseId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub parent_tool_use_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub timestamp: ::std::option::Option<f64>,
+    #[serde(
+        rename = "toolDisplayMeta",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_display_meta: ::std::option::Option<SessionToolStartEventToolDisplayMeta>,
+    #[serde(
+        rename = "toolDisplayName",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_display_name: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "toolInput")]
+    pub tool_input: ::serde_json::Map<::std::string::String, ::serde_json::Value>,
+    #[serde(
+        rename = "toolIntent",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_intent: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "toolName")]
+    pub tool_name: ::std::string::String,
+    #[serde(rename = "toolUseId")]
+    pub tool_use_id: ::std::string::String,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionToolStartEventType,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionToolStartEventToolDisplayMeta {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub category: ::std::option::Option<SessionToolStartEventToolDisplayMetaCategory>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub description: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "displayName")]
+    pub display_name: ::std::string::String,
+    #[serde(
+        rename = "iconDataUrl",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub icon_data_url: ::std::option::Option<::std::string::String>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionToolStartEventToolDisplayMetaCategory {
+    #[serde(rename = "skill")]
+    Skill,
+    #[serde(rename = "native")]
+    Native,
+}
+impl ::std::fmt::Display for SessionToolStartEventToolDisplayMetaCategory {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Skill => f.write_str("skill"),
+            Self::Native => f.write_str("native"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionToolStartEventToolDisplayMetaCategory {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "skill" => Ok(Self::Skill),
+            "native" => Ok(Self::Native),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionToolStartEventToolDisplayMetaCategory {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionToolStartEventToolDisplayMetaCategory
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionToolStartEventToolDisplayMetaCategory
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionToolStartEventType {
+    #[serde(rename = "tool_start")]
+    ToolStart,
+}
+impl ::std::fmt::Display for SessionToolStartEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::ToolStart => f.write_str("tool_start"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionToolStartEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "tool_start" => Ok(Self::ToolStart),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionToolStartEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionToolStartEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionToolStartEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTypedErrorEvent {
+    pub error: SessionTypedErrorEventError,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub timestamp: ::std::option::Option<f64>,
+    #[serde(rename = "type")]
+    pub type_: SessionTypedErrorEventType,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTypedErrorEventError {
+    pub actions: ::std::vec::Vec<SessionTypedErrorEventErrorActionsItem>,
+    #[serde(rename = "canRetry")]
+    pub can_retry: bool,
+    pub code: SessionTypedErrorEventErrorCode,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub details: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+    pub message: ::std::string::String,
+    #[serde(
+        rename = "originalError",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub original_error: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "retryDelayMs",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub retry_delay_ms: ::std::option::Option<f64>,
+    pub title: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionTypedErrorEventErrorActionsItem {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub action: ::std::option::Option<SessionTypedErrorEventErrorActionsItemAction>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub command: ::std::option::Option<::std::string::String>,
+    pub key: ::std::string::String,
+    pub label: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub url: ::std::option::Option<::std::string::String>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTypedErrorEventErrorActionsItemAction {
+    #[serde(rename = "retry")]
+    Retry,
+    #[serde(rename = "settings")]
+    Settings,
+    #[serde(rename = "open_url")]
+    OpenUrl,
+}
+impl ::std::fmt::Display for SessionTypedErrorEventErrorActionsItemAction {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Retry => f.write_str("retry"),
+            Self::Settings => f.write_str("settings"),
+            Self::OpenUrl => f.write_str("open_url"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTypedErrorEventErrorActionsItemAction {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "retry" => Ok(Self::Retry),
+            "settings" => Ok(Self::Settings),
+            "open_url" => Ok(Self::OpenUrl),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTypedErrorEventErrorActionsItemAction {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionTypedErrorEventErrorActionsItemAction
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionTypedErrorEventErrorActionsItemAction
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTypedErrorEventErrorCode {
+    #[serde(rename = "invalid_api_key")]
+    InvalidApiKey,
+    #[serde(rename = "invalid_credentials")]
+    InvalidCredentials,
+    #[serde(rename = "response_too_large")]
+    ResponseTooLarge,
+    #[serde(rename = "token_expired")]
+    TokenExpired,
+    #[serde(rename = "rate_limited")]
+    RateLimited,
+    #[serde(rename = "service_error")]
+    ServiceError,
+    #[serde(rename = "service_unavailable")]
+    ServiceUnavailable,
+    #[serde(rename = "network_error")]
+    NetworkError,
+    #[serde(rename = "proxy_error")]
+    ProxyError,
+    #[serde(rename = "billing_error")]
+    BillingError,
+    #[serde(rename = "model_no_tool_support")]
+    ModelNoToolSupport,
+    #[serde(rename = "invalid_model")]
+    InvalidModel,
+    #[serde(rename = "data_policy_error")]
+    DataPolicyError,
+    #[serde(rename = "invalid_request")]
+    InvalidRequest,
+    #[serde(rename = "image_too_large")]
+    ImageTooLarge,
+    #[serde(rename = "provider_error")]
+    ProviderError,
+    #[serde(rename = "queued_message_replay_failed")]
+    QueuedMessageReplayFailed,
+    #[serde(rename = "sdk_binary_missing")]
+    SdkBinaryMissing,
+    #[serde(rename = "sdk_cwd_missing")]
+    SdkCwdMissing,
+    #[serde(rename = "unknown_error")]
+    UnknownError,
+}
+impl ::std::fmt::Display for SessionTypedErrorEventErrorCode {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::InvalidApiKey => f.write_str("invalid_api_key"),
+            Self::InvalidCredentials => f.write_str("invalid_credentials"),
+            Self::ResponseTooLarge => f.write_str("response_too_large"),
+            Self::TokenExpired => f.write_str("token_expired"),
+            Self::RateLimited => f.write_str("rate_limited"),
+            Self::ServiceError => f.write_str("service_error"),
+            Self::ServiceUnavailable => f.write_str("service_unavailable"),
+            Self::NetworkError => f.write_str("network_error"),
+            Self::ProxyError => f.write_str("proxy_error"),
+            Self::BillingError => f.write_str("billing_error"),
+            Self::ModelNoToolSupport => f.write_str("model_no_tool_support"),
+            Self::InvalidModel => f.write_str("invalid_model"),
+            Self::DataPolicyError => f.write_str("data_policy_error"),
+            Self::InvalidRequest => f.write_str("invalid_request"),
+            Self::ImageTooLarge => f.write_str("image_too_large"),
+            Self::ProviderError => f.write_str("provider_error"),
+            Self::QueuedMessageReplayFailed => f.write_str("queued_message_replay_failed"),
+            Self::SdkBinaryMissing => f.write_str("sdk_binary_missing"),
+            Self::SdkCwdMissing => f.write_str("sdk_cwd_missing"),
+            Self::UnknownError => f.write_str("unknown_error"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTypedErrorEventErrorCode {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "invalid_api_key" => Ok(Self::InvalidApiKey),
+            "invalid_credentials" => Ok(Self::InvalidCredentials),
+            "response_too_large" => Ok(Self::ResponseTooLarge),
+            "token_expired" => Ok(Self::TokenExpired),
+            "rate_limited" => Ok(Self::RateLimited),
+            "service_error" => Ok(Self::ServiceError),
+            "service_unavailable" => Ok(Self::ServiceUnavailable),
+            "network_error" => Ok(Self::NetworkError),
+            "proxy_error" => Ok(Self::ProxyError),
+            "billing_error" => Ok(Self::BillingError),
+            "model_no_tool_support" => Ok(Self::ModelNoToolSupport),
+            "invalid_model" => Ok(Self::InvalidModel),
+            "data_policy_error" => Ok(Self::DataPolicyError),
+            "invalid_request" => Ok(Self::InvalidRequest),
+            "image_too_large" => Ok(Self::ImageTooLarge),
+            "provider_error" => Ok(Self::ProviderError),
+            "queued_message_replay_failed" => Ok(Self::QueuedMessageReplayFailed),
+            "sdk_binary_missing" => Ok(Self::SdkBinaryMissing),
+            "sdk_cwd_missing" => Ok(Self::SdkCwdMissing),
+            "unknown_error" => Ok(Self::UnknownError),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTypedErrorEventErrorCode {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTypedErrorEventErrorCode {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTypedErrorEventErrorCode {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionTypedErrorEventType {
+    #[serde(rename = "typed_error")]
+    TypedError,
+}
+impl ::std::fmt::Display for SessionTypedErrorEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::TypedError => f.write_str("typed_error"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionTypedErrorEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "typed_error" => Ok(Self::TypedError),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionTypedErrorEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionTypedErrorEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionTypedErrorEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionUsageUpdateEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "tokenUsage")]
+    pub token_usage: SessionUsageUpdateEventTokenUsage,
+    #[serde(rename = "type")]
+    pub type_: SessionUsageUpdateEventType,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionUsageUpdateEventTokenUsage {
+    #[serde(
+        rename = "contextUsage",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub context_usage: ::std::option::Option<SessionUsageUpdateEventTokenUsageContextUsage>,
+    #[serde(
+        rename = "contextWindow",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub context_window: ::std::option::Option<f64>,
+    #[serde(rename = "inputTokens")]
+    pub input_tokens: f64,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionUsageUpdateEventTokenUsageContextUsage {
+    #[serde(rename = "canCompact")]
+    pub can_compact: bool,
+    #[serde(rename = "isEstimate")]
+    pub is_estimate: bool,
+    #[serde(rename = "isStale")]
+    pub is_stale: bool,
+    #[serde(rename = "limitKind")]
+    pub limit_kind: SessionUsageUpdateEventTokenUsageContextUsageLimitKind,
+    #[serde(
+        rename = "limitTokens",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub limit_tokens: ::std::option::Option<f64>,
+    #[serde(rename = "usedTokens")]
+    #[serde(deserialize_with = "required_option")]
+    pub used_tokens: ::std::option::Option<f64>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionUsageUpdateEventTokenUsageContextUsageLimitKind {
+    #[serde(rename = "compaction")]
+    Compaction,
+    #[serde(rename = "context")]
+    Context,
+}
+impl ::std::fmt::Display for SessionUsageUpdateEventTokenUsageContextUsageLimitKind {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Compaction => f.write_str("compaction"),
+            Self::Context => f.write_str("context"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionUsageUpdateEventTokenUsageContextUsageLimitKind {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "compaction" => Ok(Self::Compaction),
+            "context" => Ok(Self::Context),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionUsageUpdateEventTokenUsageContextUsageLimitKind {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionUsageUpdateEventTokenUsageContextUsageLimitKind
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionUsageUpdateEventTokenUsageContextUsageLimitKind
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionUsageUpdateEventType {
+    #[serde(rename = "usage_update")]
+    UsageUpdate,
+}
+impl ::std::fmt::Display for SessionUsageUpdateEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::UsageUpdate => f.write_str("usage_update"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionUsageUpdateEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "usage_update" => Ok(Self::UsageUpdate),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionUsageUpdateEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionUsageUpdateEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionUsageUpdateEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionUserMessageEvent {
+    pub message: Message,
+    #[serde(
+        rename = "optimisticMessageId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub optimistic_message_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    pub status: SessionUserMessageEventStatus,
+    #[serde(rename = "type")]
+    pub type_: SessionUserMessageEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionUserMessageEventStatus {
+    #[serde(rename = "accepted")]
+    Accepted,
+    #[serde(rename = "queued")]
+    Queued,
+    #[serde(rename = "processing")]
+    Processing,
+}
+impl ::std::fmt::Display for SessionUserMessageEventStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Accepted => f.write_str("accepted"),
+            Self::Queued => f.write_str("queued"),
+            Self::Processing => f.write_str("processing"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionUserMessageEventStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "accepted" => Ok(Self::Accepted),
+            "queued" => Ok(Self::Queued),
+            "processing" => Ok(Self::Processing),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionUserMessageEventStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionUserMessageEventStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionUserMessageEventStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionUserMessageEventType {
+    #[serde(rename = "user_message")]
+    UserMessage,
+}
+impl ::std::fmt::Display for SessionUserMessageEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::UserMessage => f.write_str("user_message"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionUserMessageEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "user_message" => Ok(Self::UserMessage),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionUserMessageEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionUserMessageEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionUserMessageEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionWorkflowAgentCompletedEvent {
+    #[serde(rename = "agentId")]
+    pub agent_id: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionWorkflowAgentCompletedEventType,
+    #[serde(rename = "workflowId")]
+    pub workflow_id: ::std::string::String,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionWorkflowAgentCompletedEventType {
+    #[serde(rename = "workflow_agent_completed")]
+    WorkflowAgentCompleted,
+}
+impl ::std::fmt::Display for SessionWorkflowAgentCompletedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::WorkflowAgentCompleted => f.write_str("workflow_agent_completed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionWorkflowAgentCompletedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "workflow_agent_completed" => Ok(Self::WorkflowAgentCompleted),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionWorkflowAgentCompletedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionWorkflowAgentCompletedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionWorkflowAgentCompletedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionWorkingDirectoryChangedEvent {
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionWorkingDirectoryChangedEventType,
+    #[serde(rename = "workingDirectory")]
+    pub working_directory: ::std::string::String,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionWorkingDirectoryChangedEventType {
+    #[serde(rename = "working_directory_changed")]
+    WorkingDirectoryChanged,
+}
+impl ::std::fmt::Display for SessionWorkingDirectoryChangedEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::WorkingDirectoryChanged => f.write_str("working_directory_changed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionWorkingDirectoryChangedEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "working_directory_changed" => Ok(Self::WorkingDirectoryChanged),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionWorkingDirectoryChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionWorkingDirectoryChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionWorkingDirectoryChangedEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionWorkingDirectoryErrorEvent {
+    pub error: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: SessionWorkingDirectoryErrorEventType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionWorkingDirectoryErrorEventType {
+    #[serde(rename = "working_directory_error")]
+    WorkingDirectoryError,
+}
+impl ::std::fmt::Display for SessionWorkingDirectoryErrorEventType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::WorkingDirectoryError => f.write_str("working_directory_error"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionWorkingDirectoryErrorEventType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "working_directory_error" => Ok(Self::WorkingDirectoryError),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionWorkingDirectoryErrorEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionWorkingDirectoryErrorEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionWorkingDirectoryErrorEventType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct StoredAttachment {
+    pub id: ::std::string::String,
+    #[serde(
+        rename = "markdownPath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub markdown_path: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "mimeType")]
+    pub mime_type: ::std::string::String,
+    pub name: ::std::string::String,
+    #[serde(
+        rename = "originalMimeType",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub original_mime_type: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "originalSize",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub original_size: ::std::option::Option<u64>,
+    #[serde(
+        rename = "resizedBase64",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub resized_base64: ::std::option::Option<::std::string::String>,
+    pub size: u64,
+    #[serde(rename = "storedPath")]
+    pub stored_path: ::std::string::String,
+    #[serde(
+        rename = "thumbnailBase64",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thumbnail_base64: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "thumbnailPath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thumbnail_path: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: StoredAttachmentType,
+    #[serde(
+        rename = "wasResized",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub was_resized: ::std::option::Option<bool>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum StoredAttachmentType {
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "pdf")]
+    Pdf,
+    #[serde(rename = "office")]
+    Office,
+    #[serde(rename = "audio")]
+    Audio,
+    #[serde(rename = "unknown")]
+    Unknown,
+}
+impl ::std::fmt::Display for StoredAttachmentType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Image => f.write_str("image"),
+            Self::Text => f.write_str("text"),
+            Self::Pdf => f.write_str("pdf"),
+            Self::Office => f.write_str("office"),
+            Self::Audio => f.write_str("audio"),
+            Self::Unknown => f.write_str("unknown"),
+        }
+    }
+}
+impl ::std::str::FromStr for StoredAttachmentType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "image" => Ok(Self::Image),
+            "text" => Ok(Self::Text),
+            "pdf" => Ok(Self::Pdf),
+            "office" => Ok(Self::Office),
+            "audio" => Ok(Self::Audio),
+            "unknown" => Ok(Self::Unknown),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for StoredAttachmentType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for StoredAttachmentType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for StoredAttachmentType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum ThinkingLevel {
+    #[serde(rename = "off")]
+    Off,
+    #[serde(rename = "low")]
+    Low,
+    #[serde(rename = "medium")]
+    Medium,
+    #[serde(rename = "high")]
+    High,
+    #[serde(rename = "xhigh")]
+    Xhigh,
+    #[serde(rename = "max")]
+    Max,
+}
+impl ::std::fmt::Display for ThinkingLevel {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Off => f.write_str("off"),
+            Self::Low => f.write_str("low"),
+            Self::Medium => f.write_str("medium"),
+            Self::High => f.write_str("high"),
+            Self::Xhigh => f.write_str("xhigh"),
+            Self::Max => f.write_str("max"),
+        }
+    }
+}
+impl ::std::str::FromStr for ThinkingLevel {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "off" => Ok(Self::Off),
+            "low" => Ok(Self::Low),
+            "medium" => Ok(Self::Medium),
+            "high" => Ok(Self::High),
+            "xhigh" => Ok(Self::Xhigh),
+            "max" => Ok(Self::Max),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for ThinkingLevel {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for ThinkingLevel {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for ThinkingLevel {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum ToolStatus {
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "executing")]
+    Executing,
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "error")]
+    Error,
+    #[serde(rename = "backgrounded")]
+    Backgrounded,
+}
+impl ::std::fmt::Display for ToolStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pending => f.write_str("pending"),
+            Self::Executing => f.write_str("executing"),
+            Self::Completed => f.write_str("completed"),
+            Self::Error => f.write_str("error"),
+            Self::Backgrounded => f.write_str("backgrounded"),
+        }
+    }
+}
+impl ::std::str::FromStr for ToolStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pending" => Ok(Self::Pending),
+            "executing" => Ok(Self::Executing),
+            "completed" => Ok(Self::Completed),
+            "error" => Ok(Self::Error),
+            "backgrounded" => Ok(Self::Backgrounded),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for ToolStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for ToolStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for ToolStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct Workspace {
+    #[serde(rename = "createdAt")]
+    pub created_at: i64,
+    #[serde(
+        rename = "iconUrl",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub icon_url: ::std::option::Option<::std::string::String>,
+    pub id: ::std::string::String,
+    #[serde(
+        rename = "lastAccessedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_accessed_at: ::std::option::Option<i64>,
+    pub name: ::std::string::String,
+    #[serde(rename = "rootPath")]
+    pub root_path: ::std::string::String,
+    pub slug: ::std::string::String,
 }
 
 fn required_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>

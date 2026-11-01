@@ -94,7 +94,7 @@ fn streamed_text_tool_result_and_final_answer_reach_the_window(cx: &mut TestAppC
     state.apply(&serde_json::from_value(serde_json::json!({"type":"text_complete","sessionId":"s","turnId":"t","text":"最终答案","messageId":"final"})).unwrap());
     for value in [
         serde_json::json!({"type":"tool_start","sessionId":"s","toolUseId":"read","toolName":"Read","toolInput":{"path":"proof.txt"}}),
-        serde_json::json!({"type":"tool_result","sessionId":"s","toolUseId":"read","result":"REAL_TOOL_RESULT","isError":false}),
+        serde_json::json!({"type":"tool_result","sessionId":"s","toolUseId":"read","toolName":"Read","result":"REAL_TOOL_RESULT","isError":false}),
         serde_json::json!({"type":"complete","sessionId":"s"}),
     ] {
         state.apply(&serde_json::from_value(value).unwrap());

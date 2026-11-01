@@ -1,5 +1,6 @@
 //! Typed phase-zero API. This facade owns positional wire arguments and timeouts.
 use crate::{ClientOptions, ConnectionState, Endpoint, RpcClient, RpcError};
+use agentkit_protocol::constants::channels;
 use agentkit_protocol::prototype::{Connection, SendAck, Session, Workspace};
 use secrecy::{ExposeSecret, SecretString};
 use serde_json::{Value, json};
@@ -22,25 +23,25 @@ impl WorkbenchApi {
     }
     /// Fetch configured workspaces before selecting a binding.
     pub async fn workspaces(&self) -> Result<Vec<Workspace>, RpcError> {
-        self.client.invoke("workspaces:get", vec![]).await
+        self.client.invoke(channels::workspaces::GET, vec![]).await
     }
     /// Fetch summaries for this connection's workspace.
     pub async fn sessions(&self) -> Result<Vec<Session>, RpcError> {
-        self.client.invoke("sessions:get", vec![]).await
+        self.client.invoke(channels::sessions::GET, vec![]).await
     }
     /// Load persisted messages for a session.
     pub async fn session(&self, id: &str) -> Result<Session, RpcError> {
         self.client
-            .invoke("sessions:getMessages", vec![json!(id)])
+            .invoke(channels::sessions::GET_MESSAGES, vec![json!(id)])
             .await
     }
-    /// Decode an actual backend snapshot with the generated T-0-07 DTO surface.
+    /// Decode an actual backend snapshot with the generated wire DTO surface.
     pub async fn session_generated(
         &self,
         id: &str,
     ) -> Result<agentkit_protocol::generated::Session, RpcError> {
         self.client
-            .invoke("sessions:getMessages", vec![json!(id)])
+            .invoke(channels::sessions::GET_MESSAGES, vec![json!(id)])
             .await
     }
     /// Create a safe session; no permission escalation is performed.
@@ -54,7 +55,7 @@ impl WorkbenchApi {
             options["workingDirectory"] = json!(directory);
         }
         self.client
-            .invoke("sessions:create", vec![json!(workspace), options])
+            .invoke(channels::sessions::CREATE, vec![json!(workspace), options])
             .await
     }
     /// Submit a message with a stable optimistic identity and the documented long timeout.
@@ -67,7 +68,7 @@ impl WorkbenchApi {
         // Slots 2/3 are supplied as empty attachment arrays so options is positional argument 4.
         self.client
             .invoke_timeout(
-                "sessions:sendMessage",
+                channels::sessions::SEND_MESSAGE,
                 vec![
                     json!(session),
                     json!(text),
@@ -82,7 +83,7 @@ impl WorkbenchApi {
     /// Cancel the current backend round.
     pub async fn cancel(&self, session: &str) -> Result<(), RpcError> {
         self.client
-            .invoke::<Value>("sessions:cancel", vec![json!(session)])
+            .invoke::<Value>(channels::sessions::CANCEL, vec![json!(session)])
             .await
             .map(|_| ())
     }
@@ -96,7 +97,7 @@ impl WorkbenchApi {
     ) -> Result<(), RpcError> {
         self.client
             .invoke::<Value>(
-                "sessions:respondToPermission",
+                channels::sessions::RESPOND_TO_PERMISSION,
                 vec![
                     json!(session),
                     json!(request),
@@ -110,7 +111,7 @@ impl WorkbenchApi {
     /// Query connection authentication state, without retrieving credentials.
     pub async fn connections(&self) -> Result<Vec<Connection>, RpcError> {
         self.client
-            .invoke("LLM_Connection:listWithStatus", vec![])
+            .invoke(channels::llm_connections::LIST_WITH_STATUS, vec![])
             .await
     }
     /// Configure a user-selected compatible endpoint. Used by the prototype connection form and tests.
@@ -126,7 +127,7 @@ impl WorkbenchApi {
         }
         let result: Value = self
             .client
-            .invoke("settings:setupLlmConnection", vec![setup])
+            .invoke(channels::settings::SETUP_LLM_CONNECTION, vec![setup])
             .await?;
         if result["success"] != true {
             return Err(RpcError::Transport(
@@ -138,7 +139,7 @@ impl WorkbenchApi {
         }
         self.client
             .invoke::<Value>(
-                "LLM_Connection:setDefault",
+                channels::llm_connections::SET_DEFAULT,
                 vec![json!("workbench-endpoint")],
             )
             .await?;
@@ -147,13 +148,16 @@ impl WorkbenchApi {
     /// Disable unsupported browser tooling on this backend.
     pub async fn disable_browser(&self) -> Result<(), RpcError> {
         self.client
-            .invoke::<Value>("tools:setBrowserToolEnabled", vec![json!(false)])
+            .invoke::<Value>(
+                channels::tools::SET_BROWSER_TOOL_ENABLED,
+                vec![json!(false)],
+            )
             .await
             .map(|_| ())
     }
     /// Push-event stream. Each element is the upstream positional argument array.
     pub fn session_events(&self) -> async_channel::Receiver<Vec<Value>> {
-        self.client.subscribe("session:event")
+        self.client.subscribe(channels::sessions::EVENT)
     }
     /// Current transport state.
     pub fn state(&self) -> ConnectionState {

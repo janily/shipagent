@@ -1,0 +1,12 @@
+[
+  { "pointer": "/Message/properties/timestamp", "from": { "type": "number" }, "to": { "type": "integer", "format": "int64" }, "reason": "Epoch milliseconds, signed as specified in 02; reject fractional timestamps." },
+  { "pointer": "/Session/properties/lastMessageAt", "from": { "type": "number" }, "to": { "type": "integer", "format": "int64" }, "reason": "Epoch milliseconds, signed as specified in 02." },
+  { "pointer": "/Session/properties/createdAt", "from": { "type": "number" }, "to": { "type": "integer", "format": "int64" }, "reason": "Epoch milliseconds, signed as specified in 02." },
+  { "pointer": "/Session/properties/archivedAt", "from": { "type": "number" }, "to": { "type": "integer", "format": "int64" }, "reason": "Epoch milliseconds; same domain as createdAt." },
+  { "pointer": "/Session/properties/messageCount", "from": { "type": "number" }, "to": { "type": "integer", "format": "uint32", "minimum": 0 }, "reason": "Nonnegative message count, u32 in 02." },
+  { "pointer": "/Workspace/properties/createdAt", "from": { "type": "number" }, "to": { "type": "integer", "format": "int64" }, "reason": "Workspace creation epoch milliseconds." },
+  { "pointer": "/Workspace/properties/lastAccessedAt", "from": { "type": "number" }, "to": { "type": "integer", "format": "int64" }, "reason": "Workspace access epoch milliseconds." },
+  { "pointer": "/FileAttachment/properties/size", "from": { "type": "number" }, "to": { "type": "integer", "format": "uint64", "minimum": 0 }, "reason": "Byte count, u64 in 02." },
+  { "pointer": "/StoredAttachment/properties/size", "from": { "type": "number" }, "to": { "type": "integer", "format": "uint64", "minimum": 0 }, "reason": "Byte count, u64 in 02." },
+  { "pointer": "/StoredAttachment/properties/originalSize", "from": { "type": "number" }, "to": { "type": "integer", "format": "uint64", "minimum": 0 }, "reason": "Original byte count before resizing." }
+]

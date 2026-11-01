@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14, windows-2022]
+        os: [ubuntu-latest, macos-15, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14, windows-2022]
+        os: [ubuntu-latest, macos-15, windows-2022]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -72,7 +72,7 @@ jobs:
         include:
           - os: ubuntu-latest
             backend: linux-x64
-          - os: macos-14
+          - os: macos-15
             backend: darwin-arm64
           - os: windows-2022
             backend: win32-x64
@@ -118,5 +118,5 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts --prefix tools/codegen
-      - run: node --test tools/codegen/schema.test.mjs
+      - run: node --test tools/codegen/*.test.mjs
       - run: cargo xtask codegen --check

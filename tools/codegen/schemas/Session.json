@@ -1,5 +1,5 @@
 {
-  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; tools/codegen/input.ts",
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
   "$ref": "#/definitions/Session",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
@@ -336,64 +336,7 @@
         },
         "attachments": {
           "items": {
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "markdownPath": {
-                "type": "string"
-              },
-              "mimeType": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "originalMimeType": {
-                "type": "string"
-              },
-              "originalSize": {
-                "type": "number"
-              },
-              "resizedBase64": {
-                "type": "string"
-              },
-              "size": {
-                "type": "number"
-              },
-              "storedPath": {
-                "type": "string"
-              },
-              "thumbnailBase64": {
-                "type": "string"
-              },
-              "thumbnailPath": {
-                "type": "string"
-              },
-              "type": {
-                "enum": [
-                  "image",
-                  "text",
-                  "pdf",
-                  "office",
-                  "audio",
-                  "unknown"
-                ],
-                "type": "string"
-              },
-              "wasResized": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "id",
-              "type",
-              "name",
-              "mimeType",
-              "size",
-              "storedPath"
-            ],
-            "type": "object"
+            "$ref": "#/definitions/StoredAttachment"
           },
           "type": "array"
         },
@@ -536,17 +479,7 @@
           "type": "string"
         },
         "role": {
-          "enum": [
-            "user",
-            "assistant",
-            "tool",
-            "error",
-            "status",
-            "info",
-            "warning",
-            "plan"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/MessageRole"
         },
         "shellId": {
           "type": "string"
@@ -563,7 +496,8 @@
           "type": "string"
         },
         "timestamp": {
-          "type": "number"
+          "format": "int64",
+          "type": "integer"
         },
         "toolDisplayMeta": {
           "properties": {
@@ -609,14 +543,7 @@
           "type": "string"
         },
         "toolStatus": {
-          "enum": [
-            "pending",
-            "executing",
-            "completed",
-            "error",
-            "backgrounded"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ToolStatus"
         },
         "toolUseId": {
           "type": "string"
@@ -633,10 +560,32 @@
       ],
       "type": "object"
     },
+    "MessageRole": {
+      "enum": [
+        "user",
+        "assistant",
+        "tool",
+        "error",
+        "status",
+        "info",
+        "warning",
+        "plan"
+      ],
+      "type": "string"
+    },
+    "PermissionMode": {
+      "enum": [
+        "safe",
+        "ask",
+        "allow-all"
+      ],
+      "type": "string"
+    },
     "Session": {
       "properties": {
         "archivedAt": {
-          "type": "number"
+          "format": "int64",
+          "type": "integer"
         },
         "boundPrs": {
           "items": {
@@ -672,7 +621,8 @@
           "type": "boolean"
         },
         "createdAt": {
-          "type": "number"
+          "format": "int64",
+          "type": "integer"
         },
         "currentStatus": {
           "properties": {
@@ -716,7 +666,8 @@
           "type": "string"
         },
         "lastMessageAt": {
-          "type": "number"
+          "format": "int64",
+          "type": "integer"
         },
         "lastMessageRole": {
           "enum": [
@@ -735,7 +686,9 @@
           "type": "string"
         },
         "messageCount": {
-          "type": "number"
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
         },
         "messages": {
           "items": {
@@ -753,15 +706,7 @@
           "type": "string"
         },
         "permissionMode": {
-          "enum": [
-            "safe",
-            "ask",
-            "allow-all"
-          ],
-          "type": "string"
-        },
-        "preview": {
-          "type": "string"
+          "$ref": "#/definitions/PermissionMode"
         },
         "prMonitors": {
           "additionalProperties": {
@@ -783,6 +728,9 @@
           },
           "type": "object"
         },
+        "preview": {
+          "type": "string"
+        },
         "sessionFolderPath": {
           "type": "string"
         },
@@ -790,15 +738,7 @@
           "type": "boolean"
         },
         "thinkingLevel": {
-          "enum": [
-            "off",
-            "low",
-            "medium",
-            "high",
-            "xhigh",
-            "max"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ThinkingLevel"
         },
         "tokenUsage": {
           "properties": {
@@ -892,6 +832,91 @@
         "isProcessing"
       ],
       "type": "object"
+    },
+    "StoredAttachment": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "markdownPath": {
+          "type": "string"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "originalMimeType": {
+          "type": "string"
+        },
+        "originalSize": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resizedBase64": {
+          "type": "string"
+        },
+        "size": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "storedPath": {
+          "type": "string"
+        },
+        "thumbnailBase64": {
+          "type": "string"
+        },
+        "thumbnailPath": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "image",
+            "text",
+            "pdf",
+            "office",
+            "audio",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "wasResized": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name",
+        "mimeType",
+        "size",
+        "storedPath"
+      ],
+      "type": "object"
+    },
+    "ThinkingLevel": {
+      "enum": [
+        "off",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "type": "string"
+    },
+    "ToolStatus": {
+      "enum": [
+        "pending",
+        "executing",
+        "completed",
+        "error",
+        "backgrounded"
+      ],
+      "type": "string"
     }
   }
 }
