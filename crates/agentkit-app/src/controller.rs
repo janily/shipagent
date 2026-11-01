@@ -164,6 +164,7 @@ pub(crate) struct WorkbenchController {
     state: Option<ChatState>,
     quitting: Rc<Cell<bool>>,
     loading: bool,
+    transport_epoch: u64,
     startup: StartupSlot,
     events: Option<Task<()>>,
     monitor: Option<Task<()>>,
@@ -196,6 +197,7 @@ impl WorkbenchController {
             state: None,
             quitting,
             loading: false,
+            transport_epoch: 0,
             startup,
             events: None,
             monitor: None,
@@ -257,6 +259,7 @@ impl WorkbenchController {
         self.workspace = Some(started.workspace.clone());
         self.state = Some(state.clone());
         let api = started.running.api.clone();
+        self.transport_epoch = api.snapshot().recovery_id;
         *self.runtime.borrow_mut() = Some(started.running);
         self.view.update(cx, |view, cx| {
             view.connected(started.workspace.name, started.model, cx);
@@ -319,21 +322,44 @@ impl WorkbenchController {
                 }
             }
         }));
+        let mut observed = api.snapshot();
         self.monitor = Some(cx.spawn_in(window, async move |weak, cx| {
             loop {
                 cx.background_executor()
                     .timer(Duration::from_millis(250))
                     .await;
-                if api.state() == ConnectionState::Disconnected {
+                let snapshot = api.snapshot();
+                if snapshot.state != observed.state || snapshot.recovery_id != observed.recovery_id
+                {
+                    let recovered = snapshot.state == ConnectionState::Connected
+                        && snapshot.recovery_id != observed.recovery_id;
+                    let terminal = snapshot.state == ConnectionState::Disconnected;
                     let message = api
                         .last_error()
                         .map(|e| e.to_string())
-                        .unwrap_or_else(|| "Backend disconnected".into());
-                    let _ = weak.update_in(cx, |this, _, cx| {
-                        this.view
-                            .update(cx, |view, cx| view.show_error(message, true, cx))
-                    });
-                    break;
+                        .unwrap_or_else(|| "Backend reconnecting".into());
+                    if weak
+                        .update_in(cx, |this, _, cx| {
+                            if recovered {
+                                if !snapshot.needs_refresh {
+                                    this.transport_epoch = snapshot.recovery_id;
+                                }
+                                this.view.update(cx, |view, cx| {
+                                    view.transport_recovered(snapshot.needs_refresh, cx)
+                                });
+                            } else if snapshot.state != ConnectionState::Connected {
+                                this.view
+                                    .update(cx, |view, cx| view.show_error(message, true, cx));
+                            }
+                        })
+                        .is_err()
+                    {
+                        break;
+                    }
+                    observed = snapshot;
+                    if terminal {
+                        break;
+                    }
                 }
                 if weak.upgrade().is_none() {
                     break;
@@ -341,6 +367,7 @@ impl WorkbenchController {
             }
         }));
     }
+
     fn api(&self) -> Option<WorkbenchApi> {
         self.runtime
             .borrow()
@@ -359,6 +386,16 @@ impl WorkbenchController {
         let Some(api) = self.api() else {
             return;
         };
+        if !transport_is_current(&api.snapshot(), self.transport_epoch) {
+            self.view.update(cx, |view, cx| {
+                view.show_error(
+                    "连接不可用或状态需要重新加载，草稿已保留。".into(),
+                    true,
+                    cx,
+                )
+            });
+            return;
+        }
         match intent {
             WorkbenchIntent::Submit(text) => {
                 let Some(state) = &mut self.state else {
@@ -529,5 +566,36 @@ impl WorkbenchController {
 impl Render for WorkbenchController {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         self.view.clone()
+    }
+}
+
+fn transport_is_current(snapshot: &agentkit_client::ConnectionSnapshot, loaded_epoch: u64) -> bool {
+    snapshot.state == ConnectionState::Connected
+        && (!snapshot.needs_refresh || snapshot.recovery_id == loaded_epoch)
+}
+#[cfg(test)]
+mod transport_policy_tests {
+    use super::*;
+    #[::core::prelude::v1::test]
+    fn stale_new_generation_blocks_even_if_monitor_has_not_ticked() {
+        let mut snapshot = agentkit_client::ConnectionSnapshot {
+            state: ConnectionState::Connected,
+            client_id: None,
+            server_version: None,
+            registered_channels: None,
+            max_message_bytes: 1024,
+            last_seen_seq: 0,
+            recovery_id: 1,
+            needs_refresh: true,
+        };
+        assert!(transport_is_current(&snapshot, 1));
+        snapshot.recovery_id = 2;
+        assert!(!transport_is_current(&snapshot, 1));
+        snapshot.needs_refresh = false;
+        assert!(transport_is_current(&snapshot, 1));
+        snapshot.state = ConnectionState::Fatal {
+            reason: "auth".into(),
+        };
+        assert!(!transport_is_current(&snapshot, 1));
     }
 }

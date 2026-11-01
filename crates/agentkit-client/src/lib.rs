@@ -90,6 +90,20 @@ pub enum RpcError {
     #[error("Invalid local RPC endpoint")]
     Configuration,
 }
+impl RpcError {
+    /// Stable wire-compatible error code for callers to branch on.
+    pub fn protocol_code(&self) -> &str {
+        match self {
+            Self::Wire(error) => error.code.as_str(),
+            Self::Timeout => "CLIENT_REQUEST_TIMEOUT",
+            Self::Disconnected | Self::Transport(_) => "CLIENT_DISCONNECTED",
+            Self::TooLarge => "TRANSFER_TOO_LARGE",
+            Self::ChannelUnavailable(_) => "CHANNEL_NOT_FOUND",
+            Self::Decode(_) => "CLIENT_DECODE_ERROR",
+            Self::Configuration => "CLIENT_CONFIGURATION_ERROR",
+        }
+    }
+}
 impl From<serde_json::Error> for RpcError {
     fn from(error: serde_json::Error) -> Self {
         Self::Decode(Arc::new(error))
@@ -160,6 +174,20 @@ impl RpcClient {
         args: Vec<Value>,
     ) -> Result<T, RpcError> {
         self.invoke_timeout(channel, args, self.timeout).await
+    }
+    /// Explicitly idempotent read; retries a timeout at most once. Never use for writes.
+    pub async fn invoke_read<T: DeserializeOwned>(
+        &self,
+        channel: &str,
+        args: Vec<Value>,
+    ) -> Result<T, RpcError> {
+        let first = self.invoke(channel, args.clone()).await;
+        if matches!(&first,Err(error) if matches!(error.protocol_code(),"CLIENT_REQUEST_TIMEOUT"|"REQUEST_TIMEOUT"))
+        {
+            self.invoke(channel, args).await
+        } else {
+            first
+        }
     }
     /// RPC with a caller-selected deadline; queued stale writes are never replayed.
     pub async fn invoke_timeout<T: DeserializeOwned>(

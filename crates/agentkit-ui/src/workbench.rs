@@ -119,6 +119,21 @@ impl WorkbenchView {
         self.error = None;
         cx.notify();
     }
+    /// Recover transport availability; stale state requires an explicit reload.
+    pub fn transport_recovered(&mut self, full_refresh: bool, cx: &mut Context<Self>) {
+        if full_refresh {
+            self.show_error(
+                "连接已恢复，请重新加载会话以同步完整状态。".into(),
+                true,
+                cx,
+            );
+        } else {
+            self.ready = true;
+            self.error = None;
+            self.status_key = "ak.connected";
+            cx.notify();
+        }
+    }
     /// Update sidebar summaries from the backend.
     pub fn set_sessions(&mut self, sessions: Vec<Session>, cx: &mut Context<Self>) {
         self.sessions = sessions;

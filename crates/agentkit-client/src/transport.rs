@@ -193,13 +193,16 @@ fn expire(pending: &mut HashMap<String, Pending>) {
     }
 }
 fn io_deadline(pending: &HashMap<String, Pending>) -> Duration {
+    let now = Instant::now();
     pending
         .values()
-        .map(|p| p.deadline.saturating_duration_since(Instant::now()))
+        .filter(|p| p.deadline > now && !p.result.is_canceled())
+        .map(|p| p.deadline.saturating_duration_since(now))
         .min()
         .unwrap_or(Duration::from_secs(5))
         .min(Duration::from_secs(5))
 }
+
 fn invalidate(shared: &Shared, commands: &async_channel::Receiver<Command>, reason: RpcError) {
     let mut info = locked(&shared.info);
     info.generation = info.generation.wrapping_add(1);
@@ -357,6 +360,7 @@ async fn session(socket: &mut Socket, ack: &Envelope, context: SessionContext<'_
                         let _ = result.send(Err(RpcError::Timeout));
                         continue;
                     }
+                    expire(&mut pending);
                     pending.insert(
                         frame.id.clone(),
                         Pending {
@@ -419,6 +423,11 @@ async fn session(socket: &mut Socket, ack: &Envelope, context: SessionContext<'_
                             }
                             if let Some(channel) = frame.channel {
                                 shared.publish(&channel, frame.args.unwrap_or_default());
+                                if channel
+                                    == agentkit_protocol::constants::channels::server::SHUTTING_DOWN
+                                {
+                                    return Err(Exit::Closed);
+                                }
                             }
                         }
                         EnvelopeKind::Request => dispatcher.start(frame, shared, advertised),

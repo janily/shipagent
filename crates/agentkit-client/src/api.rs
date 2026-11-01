@@ -163,7 +163,11 @@ impl WorkbenchApi {
     pub fn state(&self) -> ConnectionState {
         self.client.state()
     }
-    /// Last terminal connection error.
+    /// Recovery metadata for the current transport generation.
+    pub fn snapshot(&self) -> crate::ConnectionSnapshot {
+        self.client.snapshot()
+    }
+    /// Latest transport error, cleared on successful recovery.
     pub fn last_error(&self) -> Option<RpcError> {
         self.client.last_error()
     }
