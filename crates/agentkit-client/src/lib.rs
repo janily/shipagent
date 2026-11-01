@@ -132,6 +132,7 @@ pub struct RpcClient {
     timeout: Duration,
     stop: async_channel::Sender<()>,
     endpoints: async_channel::Sender<Endpoint>,
+    bound_generation: Option<u64>,
 }
 impl RpcClient {
     /// Return immediately and connect on an independent smol IO thread.
@@ -146,6 +147,7 @@ impl RpcClient {
             timeout: options.request_timeout,
             stop,
             endpoints,
+            bound_generation: None,
         };
         let thread_shared = shared.clone();
         if std::thread::Builder::new()
@@ -166,6 +168,20 @@ impl RpcClient {
             shared.finish();
         }
         handle
+    }
+    /// Capture a connected handle and metadata atomically, before deferring an intent.
+    /// Its RPCs fail with Disconnected if that socket generation is lost; they cannot
+    /// queue on a replacement connection even when first polled after recovery.
+    pub fn bind_connection(&self) -> Result<(Self, ConnectionSnapshot), RpcError> {
+        let info = locked(&self.shared.info);
+        if info.snapshot.state != ConnectionState::Connected
+            || self.bound_generation.is_some_and(|g| g != info.generation)
+        {
+            return Err(RpcError::Disconnected);
+        }
+        let mut bound = self.clone();
+        bound.bound_generation = Some(info.generation);
+        Ok((bound, info.snapshot.clone()))
     }
     /// Ordinary RPC. No implicit retry, including for writes.
     pub async fn invoke<T: DeserializeOwned>(
@@ -216,6 +232,11 @@ impl RpcClient {
         {
             // Sending under this lock makes queue invalidation atomic with a loss.
             let info = locked(&self.shared.info);
+            if self.bound_generation.is_some_and(|g| {
+                g != info.generation || info.snapshot.state != ConnectionState::Connected
+            }) {
+                return Err(RpcError::Disconnected);
+            }
             if matches!(info.snapshot.state, ConnectionState::Fatal { .. }) {
                 return Err(info.failure.clone().unwrap_or(RpcError::Disconnected));
             }

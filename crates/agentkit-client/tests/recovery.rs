@@ -117,7 +117,7 @@ fn recovery_classifies_stale_fresh_and_resumed_connections_and_keeps_max_seq() {
             port_send
                 .send(format!("ws://{}", listener.local_addr().unwrap()))
                 .unwrap();
-            for index in 0..4 {
+            for index in 0..5 {
                 let (tcp, _) = bounded(listener.accept()).await.unwrap().unwrap();
                 let mut ws = async_tungstenite::accept_async(tcp).await.unwrap();
                 let h = frame(&mut ws).await;
@@ -125,8 +125,8 @@ fn recovery_classifies_stale_fresh_and_resumed_connections_and_keeps_max_seq() {
                     assert_eq!(h["reconnectClientId"], "client");
                     assert_eq!(h["lastSeq"], 12);
                 }
-                let mut ack = json!({"type":"handshake_ack","clientId":"client","registeredChannels":["drop","echo"],"serverVersion":format!("v{index}")});
-                if index == 1 || index == 2 {
+                let mut ack = json!({"type":"handshake_ack","clientId":"client","registeredChannels":["drop","echo","pull"],"serverVersion":format!("v{index}")});
+                if index == 1 || index == 2 || index == 4 {
                     ack["reconnected"] = json!(true);
                     ack["stale"] = json!(index == 2);
                 }
@@ -138,10 +138,12 @@ fn recovery_classifies_stale_fresh_and_resumed_connections_and_keeps_max_seq() {
                     json!({"type":"response","id":echo["id"],"result":index}),
                 )
                 .await;
-                if index == 3 {
+                if index == 4 {
                     let _ = bounded(ws.next()).await;
                     break;
                 }
+                let gate = frame(&mut ws).await;
+                assert_eq!(gate["channel"], "pull");
                 for seq in [9, 6, 12] {
                     send(
                         &mut ws,
@@ -149,6 +151,11 @@ fn recovery_classifies_stale_fresh_and_resumed_connections_and_keeps_max_seq() {
                     )
                     .await;
                 }
+                send(
+                    &mut ws,
+                    json!({"type":"response","id":gate["id"],"result":true}),
+                )
+                .await;
                 assert_eq!(frame(&mut ws).await["channel"], "drop");
                 ws.close(None).await.unwrap();
                 if index == 0 {
@@ -173,7 +180,7 @@ fn recovery_classifies_stale_fresh_and_resumed_connections_and_keeps_max_seq() {
     let events = client.subscribe("event");
     let recovery = client.subscribe("__transport:reconnected");
     smol::block_on(async {
-        for index in 0..4 {
+        for index in 0..5 {
             // A failed handshake can reject a queued unsent read; explicitly retry
             // after observing its Reconnecting state, never replay any write.
             let mut result = client.invoke::<u64>("echo", vec![]).await;
@@ -184,15 +191,24 @@ fn recovery_classifies_stale_fresh_and_resumed_connections_and_keeps_max_seq() {
             assert_eq!(client.server_version(), Some(format!("v{index}")));
             if index > 0 {
                 let notice = bounded(recovery.recv()).await.unwrap().unwrap();
-                assert_eq!(notice[0], index != 1);
+                assert_eq!(notice[0], index == 2 || index == 3);
                 assert_eq!(
                     client.snapshot().last_seen_seq,
                     if index == 3 { 0 } else { 12 }
                 );
             }
-            if index == 3 {
+            assert_eq!(
+                client.snapshot().refresh_epoch,
+                match index {
+                    0 | 1 => 1,
+                    2 => 3,
+                    _ => 4,
+                }
+            );
+            if index == 4 {
                 break;
             }
+            assert!(client.invoke::<bool>("pull", vec![]).await.unwrap());
             for seq in [9, 6, 12] {
                 assert_eq!(bounded(events.recv()).await.unwrap().unwrap()[0], seq);
             }
@@ -358,4 +374,64 @@ fn workspace_binding_changes_only_after_successful_switch_response() {
     });
     client.close();
     server.join().unwrap();
+}
+
+#[test]
+fn deferred_bound_write_cannot_migrate_to_another_connection() {
+    let (urls, recv) = std::sync::mpsc::channel();
+    let server = std::thread::spawn(move || {
+        smol::block_on(async move {
+            let listener = async_net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            urls.send(format!("ws://{}", listener.local_addr().unwrap()))
+                .unwrap();
+            let (tcp, _) = listener.accept().await.unwrap();
+            let mut ws = async_tungstenite::accept_async(tcp).await.unwrap();
+            let _ = frame(&mut ws).await;
+            send(&mut ws,json!({"type":"handshake_ack","clientId":"old","registeredChannels":["echo","drop","write"]})).await;
+            let ready = frame(&mut ws).await;
+            send(
+                &mut ws,
+                json!({"type":"response","id":ready["id"],"result":true}),
+            )
+            .await;
+            let _ = frame(&mut ws).await;
+            ws.close(None).await.unwrap();
+            let (tcp, _) = bounded(listener.accept()).await.unwrap().unwrap();
+            let mut ws = async_tungstenite::accept_async(tcp).await.unwrap();
+            let _ = frame(&mut ws).await;
+            send(&mut ws,json!({"type":"handshake_ack","clientId":"new","stale":true,"registeredChannels":["echo","write"]})).await;
+            let req = frame(&mut ws).await;
+            let old_was_sent = req["channel"] == "write";
+            send(
+                &mut ws,
+                json!({"type":"response","id":req["id"],"result":true}),
+            )
+            .await;
+            old_was_sent
+        })
+    });
+    let mut options =
+        ClientOptions::local(recv.recv().unwrap(), "secret".into(), "workspace".into());
+    options.max_reconnect_delay = Duration::from_millis(20);
+    let client = RpcClient::connect(options);
+    let recovery = client.subscribe("__transport:reconnected");
+    assert!(smol::block_on(client.invoke::<bool>("echo", vec![])).unwrap());
+    let (bound, _snapshot) = client.bind_connection().unwrap();
+    let deferred = bound.invoke_timeout::<bool>("write", vec![], Duration::from_secs(1));
+    assert!(smol::block_on(client.invoke::<Value>("drop", vec![])).is_err());
+    assert!(
+        matches!(client.bind_connection(), Err(RpcError::Disconnected)),
+        "lost socket cannot issue a new binding"
+    );
+    smol::block_on(bounded(recovery.recv())).unwrap().unwrap();
+    let late = smol::block_on(deferred);
+    let good = if late.is_err() {
+        Some(smol::block_on(client.invoke::<bool>("echo", vec![])))
+    } else {
+        None
+    };
+    client.close();
+    assert!(!server.join().unwrap(), "old intent was sent on new socket");
+    assert!(matches!(late, Err(RpcError::Disconnected)));
+    assert!(good.unwrap().unwrap());
 }

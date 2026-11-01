@@ -48,6 +48,8 @@ pub struct ConnectionSnapshot {
     pub last_seen_seq: u64,
     /// Increments for each successful handshake.
     pub recovery_id: u64,
+    /// Last handshake generation requiring reload; retained across later resumes.
+    pub refresh_epoch: u64,
     /// Snapshot/cache reload required after the latest handshake.
     pub needs_refresh: bool,
 }
@@ -75,6 +77,7 @@ impl Shared {
                         agentkit_protocol::constants::limits::DEFAULT_MAX_MESSAGE_BYTES,
                     last_seen_seq: 0,
                     recovery_id: 0,
+                    refresh_epoch: 0,
                     needs_refresh: true,
                 },
                 failure: None,
@@ -83,6 +86,27 @@ impl Shared {
             subscribers: Arc::new(Mutex::new(HashMap::new())),
             states: Mutex::new(Vec::new()),
             capabilities: Mutex::new(capabilities),
+        }
+    }
+    pub fn invalidate(&self, commands: &async_channel::Receiver<Command>, reason: RpcError) {
+        let mut info = locked(&self.info);
+        // Binding and enqueue use this same lock. Never leave a lost generation
+        // observable as Connected while its socket is closing.
+        if !matches!(
+            info.snapshot.state,
+            ConnectionState::Fatal { .. }
+                | ConnectionState::Disconnected
+                | ConnectionState::Connecting
+        ) {
+            info.snapshot.state = ConnectionState::Connecting;
+            locked(&self.states).retain(|s| s.try_send(ConnectionState::Connecting).is_ok());
+        }
+        info.generation = info.generation.wrapping_add(1);
+        info.failure = Some(reason.clone());
+        info.snapshot.registered_channels = None;
+        info.snapshot.server_version = None;
+        while let Ok(Command::Invoke { result, .. }) = commands.try_recv() {
+            let _ = result.send(Err(reason.clone()));
         }
     }
     pub fn set_state(&self, state: ConnectionState) {

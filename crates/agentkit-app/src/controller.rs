@@ -341,11 +341,12 @@ impl WorkbenchController {
                     if weak
                         .update_in(cx, |this, _, cx| {
                             if recovered {
-                                if !snapshot.needs_refresh {
+                                let requires_reload = snapshot.refresh_epoch > this.transport_epoch;
+                                if !requires_reload {
                                     this.transport_epoch = snapshot.recovery_id;
                                 }
                                 this.view.update(cx, |view, cx| {
-                                    view.transport_recovered(snapshot.needs_refresh, cx)
+                                    view.transport_recovered(requires_reload, cx)
                                 });
                             } else if snapshot.state != ConnectionState::Connected {
                                 this.view
@@ -386,7 +387,13 @@ impl WorkbenchController {
         let Some(api) = self.api() else {
             return;
         };
-        if !transport_is_current(&api.snapshot(), self.transport_epoch) {
+        let Ok((api, snapshot)) = api.bind_connection() else {
+            self.view.update(cx, |view, cx| {
+                view.show_error("连接不可用，草稿已保留。".into(), true, cx)
+            });
+            return;
+        };
+        if !transport_is_current(&snapshot, self.transport_epoch) {
             self.view.update(cx, |view, cx| {
                 view.show_error(
                     "连接不可用或状态需要重新加载，草稿已保留。".into(),
@@ -570,8 +577,7 @@ impl Render for WorkbenchController {
 }
 
 fn transport_is_current(snapshot: &agentkit_client::ConnectionSnapshot, loaded_epoch: u64) -> bool {
-    snapshot.state == ConnectionState::Connected
-        && (!snapshot.needs_refresh || snapshot.recovery_id == loaded_epoch)
+    snapshot.state == ConnectionState::Connected && snapshot.refresh_epoch <= loaded_epoch
 }
 #[cfg(test)]
 mod transport_policy_tests {
@@ -586,13 +592,30 @@ mod transport_policy_tests {
             max_message_bytes: 1024,
             last_seen_seq: 0,
             recovery_id: 1,
+            refresh_epoch: 1,
             needs_refresh: true,
         };
         assert!(transport_is_current(&snapshot, 1));
         snapshot.recovery_id = 2;
-        assert!(!transport_is_current(&snapshot, 1));
         snapshot.needs_refresh = false;
-        assert!(transport_is_current(&snapshot, 1));
+        assert!(
+            transport_is_current(&snapshot, 1),
+            "unbroken resume keeps loaded history valid"
+        );
+        snapshot.recovery_id = 3;
+        snapshot.refresh_epoch = 3;
+        snapshot.needs_refresh = true;
+        assert!(!transport_is_current(&snapshot, 1));
+        snapshot.recovery_id = 4;
+        snapshot.needs_refresh = false;
+        assert!(
+            !transport_is_current(&snapshot, 1),
+            "later resume must not erase missed stale generation"
+        );
+        assert!(
+            transport_is_current(&snapshot, 4),
+            "actual reload clears prior debt"
+        );
         snapshot.state = ConnectionState::Fatal {
             reason: "auth".into(),
         };

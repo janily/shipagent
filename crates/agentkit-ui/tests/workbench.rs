@@ -276,5 +276,17 @@ fn stale_recovery_blocks_send_and_retains_draft_until_a_reload(cx: &mut TestAppC
         window.click("send", cx);
     })
     .unwrap();
+    assert!(
+        sent.borrow().is_empty(),
+        "a later resume cannot clear stale recovery debt"
+    );
+    cx.update_window(window, |_, window, cx| {
+        view.update(cx, |view, cx| {
+            view.connected("default".into(), Some("model".into()), cx)
+        });
+        window.render_frame(cx);
+        window.click("send", cx);
+    })
+    .unwrap();
     assert_eq!(*sent.borrow(), ["保留草稿"]);
 }

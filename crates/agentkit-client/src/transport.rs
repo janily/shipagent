@@ -203,16 +203,6 @@ fn io_deadline(pending: &HashMap<String, Pending>) -> Duration {
         .min(Duration::from_secs(5))
 }
 
-fn invalidate(shared: &Shared, commands: &async_channel::Receiver<Command>, reason: RpcError) {
-    let mut info = locked(&shared.info);
-    info.generation = info.generation.wrapping_add(1);
-    info.failure = Some(reason.clone());
-    info.snapshot.registered_channels = None;
-    info.snapshot.server_version = None;
-    while let Ok(Command::Invoke { result, .. }) = commands.try_recv() {
-        let _ = result.send(Err(reason.clone()));
-    }
-}
 fn terminal(error: &RpcError) -> bool {
     matches!(error, RpcError::Configuration)
         || matches!(error,RpcError::Wire(e) if matches!(e.code,agentkit_protocol::ErrorCode::AuthFailed|agentkit_protocol::ErrorCode::ProtocolVersionUnsupported))
@@ -486,7 +476,7 @@ async fn session(socket: &mut Socket, ack: &Envelope, context: SessionContext<'_
         Err(exit) => exit,
         Ok::<(), Exit>(()) => Exit::Closed,
     };
-    invalidate(shared, commands, RpcError::Disconnected);
+    shared.invalidate(commands, RpcError::Disconnected);
     expire(&mut pending);
     for (_, p) in pending {
         let _ = p.result.send(Err(RpcError::Disconnected));
@@ -536,6 +526,9 @@ pub(super) async fn run(
                     info.snapshot.last_seen_seq = cursor.seq;
                     info.snapshot.needs_refresh = !resumed || ack.stale == Some(true);
                     info.snapshot.recovery_id += 1;
+                    if info.snapshot.needs_refresh {
+                        info.snapshot.refresh_epoch = info.snapshot.recovery_id;
+                    }
                 }
                 shared.set_state(ConnectionState::Connected);
                 if had_connection {
@@ -575,7 +568,7 @@ pub(super) async fn run(
             Exit::Closed => break,
             Exit::Replace(endpoint) => {
                 if !invalidated {
-                    invalidate(&shared, &commands, RpcError::Disconnected);
+                    shared.invalidate(&commands, RpcError::Disconnected);
                 }
                 options.endpoint = endpoint;
                 cursor = Cursor::default();
@@ -584,14 +577,14 @@ pub(super) async fn run(
             }
             Exit::Lost(error) => {
                 if !invalidated {
-                    invalidate(&shared, &commands, error.clone());
+                    shared.invalidate(&commands, error.clone());
                 } else {
                     locked(&shared.info).failure = Some(error.clone());
                 }
                 if terminal(&error) {
                     shared.set_state(ConnectionState::Fatal{reason:if matches!(&error,RpcError::Wire(e) if e.code==agentkit_protocol::ErrorCode::AuthFailed){"Authentication failed".into()}else{"Endpoint or protocol rejected".into()}});
                     // Close the small pre-Fatal enqueue race before waiting for replacement.
-                    invalidate(&shared, &commands, error.clone());
+                    shared.invalidate(&commands, error.clone());
                     // A sidecar owner can replace credentials even after a fatal handshake.
                     match smol::future::race(
                         async {
@@ -629,7 +622,7 @@ pub(super) async fn run(
                 {
                     Ok(()) => {}
                     Err(Exit::Replace(ep)) => {
-                        invalidate(&shared, &commands, RpcError::Disconnected);
+                        shared.invalidate(&commands, RpcError::Disconnected);
                         options.endpoint = ep;
                         cursor = Cursor::default();
                         backoff = Backoff::default();
@@ -640,7 +633,7 @@ pub(super) async fn run(
         }
     }
     let last = locked(&shared.info).failure.clone();
-    invalidate(&shared, &commands, RpcError::Disconnected);
+    shared.invalidate(&commands, RpcError::Disconnected);
     if last.is_some() {
         locked(&shared.info).failure = last;
     }

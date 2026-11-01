@@ -21,6 +21,11 @@ impl WorkbenchApi {
             )),
         }
     }
+    /// Bind a user intent to the current socket before spawning deferred RPC work.
+    pub fn bind_connection(&self) -> Result<(Self, crate::ConnectionSnapshot), RpcError> {
+        let (client, snapshot) = self.client.bind_connection()?;
+        Ok((Self { client }, snapshot))
+    }
     /// Fetch configured workspaces before selecting a binding.
     pub async fn workspaces(&self) -> Result<Vec<Workspace>, RpcError> {
         self.client.invoke(channels::workspaces::GET, vec![]).await
