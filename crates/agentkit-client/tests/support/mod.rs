@@ -4,16 +4,16 @@ use futures::StreamExt;
 use serde_json::Value;
 use std::time::Duration;
 pub type Socket = WebSocketStream<async_net::TcpStream>;
+#[allow(clippy::expect_used)]
 pub async fn frame(ws: &mut Socket) -> Value {
     loop {
-        match bounded(ws.next())
+        if let Message::Text(text) = bounded(ws.next())
             .await
             .expect("frame deadline")
             .expect("socket closed")
             .expect("socket IO")
         {
-            Message::Text(text) => return serde_json::from_str(&text).unwrap(),
-            _ => {}
+            return serde_json::from_str(&text).unwrap();
         }
     }
 }

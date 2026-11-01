@@ -92,7 +92,7 @@ async fn connect(
     options: &ClientOptions,
     shared: &Shared,
     cursor: &Cursor,
-) -> Result<(Socket, Envelope), RpcError> {
+) -> Result<(Socket, Envelope, Vec<String>), RpcError> {
     let url = url::Url::parse(&options.endpoint.url).map_err(|_| RpcError::Configuration)?;
     if url.scheme() != "ws"
         || !matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"))
@@ -123,6 +123,11 @@ async fn connect(
     .await
     .map_err(transport)?;
     shared.set_state(ConnectionState::Handshaking);
+    let advertised: Vec<String> = locked(&shared.capabilities)
+        .keys()
+        .filter(|name| crate::capability::permitted(name))
+        .cloned()
+        .collect();
     send(
         &mut socket,
         &Envelope {
@@ -131,7 +136,7 @@ async fn connect(
             protocol_version: Some(agentkit_protocol::PROTOCOL_VERSION.into()),
             token: Some(options.endpoint.token.expose_secret().into()),
             workspace_id: Some(options.workspace_id.clone()),
-            client_capabilities: Some(vec![]),
+            client_capabilities: Some(advertised.clone()),
             reconnect_client_id: cursor.client_id.clone(),
             last_seq: cursor.client_id.as_ref().map(|_| cursor.seq),
             ..Envelope::default()
@@ -165,7 +170,7 @@ async fn connect(
                 if ack.max_message_bytes == Some(0) {
                     return Err(RpcError::Configuration);
                 }
-                return Ok((socket, ack));
+                return Ok((socket, ack, advertised));
             }
             Message::Ping(_) => socket.flush().await.map_err(transport)?,
             Message::Close(_) => return Err(RpcError::Disconnected),
@@ -210,215 +215,262 @@ fn terminal(error: &RpcError) -> bool {
         || matches!(error,RpcError::Wire(e) if matches!(e.code,agentkit_protocol::ErrorCode::AuthFailed|agentkit_protocol::ErrorCode::ProtocolVersionUnsupported))
 }
 fn validate_binary(value: &Value) -> Result<(), RpcError> {
-    let _: agentkit_protocol::RpcValue = serde_json::from_value(value.clone())?;
+    match value {
+        Value::Object(map) if map.get("__craftRpcType").and_then(Value::as_str) == Some("u8") => {
+            let _: agentkit_protocol::RpcValue = serde_json::from_value(value.clone())?;
+        }
+        Value::Object(map) => {
+            for value in map.values() {
+                validate_binary(value)?;
+            }
+        }
+        Value::Array(array) => {
+            for value in array {
+                validate_binary(value)?;
+            }
+        }
+        _ => {}
+    }
     Ok(())
 }
-async fn session(
-    socket: &mut Socket,
-    ack: &Envelope,
-    options: &mut ClientOptions,
-    shared: &Shared,
-    commands: &async_channel::Receiver<Command>,
-    stop: &async_channel::Receiver<()>,
-    updates: &async_channel::Receiver<Endpoint>,
-    cursor: &mut Cursor,
-) -> Exit {
+
+struct SessionContext<'a> {
+    options: &'a mut ClientOptions,
+    shared: &'a Shared,
+    commands: &'a async_channel::Receiver<Command>,
+    stop: &'a async_channel::Receiver<()>,
+    updates: &'a async_channel::Receiver<Endpoint>,
+    cursor: &'a mut Cursor,
+    advertised: &'a [String],
+}
+async fn session(socket: &mut Socket, ack: &Envelope, context: SessionContext<'_>) -> Exit {
+    let SessionContext {
+        options,
+        shared,
+        commands,
+        stop,
+        updates,
+        cursor,
+        advertised,
+    } = context;
     let mut pending = HashMap::<String, Pending>::new();
     let mut last_ack = Instant::now();
+    let mut dispatcher = crate::capability::Dispatcher::new(options.capability_timeout);
     let limit = ack
         .max_message_bytes
         .unwrap_or(agentkit_protocol::constants::limits::DEFAULT_MAX_MESSAGE_BYTES);
-    let outcome =
-        async {
-            enum Input {
-                Command(Result<Command, async_channel::RecvError>),
-                Frame(Option<Result<Message, async_tungstenite::tungstenite::Error>>),
-                Tick,
+    let outcome = async {
+        enum Input {
+            Command(Result<Command, async_channel::RecvError>),
+            Frame(Option<Result<Message, async_tungstenite::tungstenite::Error>>),
+            Reply(Result<Box<Envelope>, async_channel::RecvError>),
+            Tick,
+        }
+        loop {
+            expire(&mut pending);
+            if last_ack.elapsed() >= Duration::from_secs(5) {
+                io(
+                    send(
+                        socket,
+                        &Envelope {
+                            id: uuid::Uuid::new_v4().to_string(),
+                            kind: EnvelopeKind::SequenceAck,
+                            last_seq: Some(cursor.seq),
+                            ..Envelope::default()
+                        },
+                    ),
+                    io_deadline(&pending),
+                    stop,
+                    updates,
+                )
+                .await?;
+                last_ack = Instant::now();
             }
-            loop {
-                expire(&mut pending);
-                if last_ack.elapsed() >= Duration::from_secs(5) {
+            let next = smol::future::race(
+                smol::future::race(
+                    commands.recv().map(Input::Command),
+                    socket.next().map(Input::Frame),
+                ),
+                smol::future::race(
+                    dispatcher
+                        .replies
+                        .recv()
+                        .map(|r| Input::Reply(r.map(Box::new))),
+                    async {
+                        smol::Timer::after(Duration::from_millis(10)).await;
+                        Input::Tick
+                    },
+                ),
+            );
+            let input = io(
+                async { Ok(next.await) },
+                Duration::from_secs(60),
+                stop,
+                updates,
+            )
+            .await?;
+            match input {
+                Input::Command(Ok(Command::Invoke {
+                    frame,
+                    deadline,
+                    result,
+                    generation,
+                    switch_to,
+                })) => {
+                    if generation != locked(&shared.info).generation {
+                        let _ = result.send(Err(RpcError::Disconnected));
+                        continue;
+                    }
+                    if deadline <= Instant::now() || result.is_canceled() {
+                        let _ = result.send(Err(RpcError::Timeout));
+                        continue;
+                    }
+                    if ack
+                        .registered_channels
+                        .as_ref()
+                        .is_some_and(|c| !c.iter().any(|c| Some(c) == frame.channel.as_ref()))
+                    {
+                        let _ = result.send(Err(RpcError::ChannelUnavailable(
+                            frame.channel.unwrap_or_default(),
+                        )));
+                        continue;
+                    }
+                    if let Some(args) = &frame.args {
+                        let validation = args.iter().try_for_each(validate_binary);
+                        if let Err(error) = validation {
+                            let _ = result.send(Err(error));
+                            continue;
+                        }
+                    }
+                    let encoded = match serde_json::to_string(&frame) {
+                        Ok(v) => v,
+                        Err(e) => {
+                            let _ = result.send(Err(e.into()));
+                            continue;
+                        }
+                    };
+                    if encoded.len() as u64 > limit {
+                        let _ = result.send(Err(RpcError::TooLarge));
+                        continue;
+                    }
+                    if deadline <= Instant::now() || result.is_canceled() {
+                        let _ = result.send(Err(RpcError::Timeout));
+                        continue;
+                    }
+                    pending.insert(
+                        frame.id.clone(),
+                        Pending {
+                            deadline,
+                            result,
+                            switch_to,
+                        },
+                    );
                     io(
-                        send(
-                            socket,
-                            &Envelope {
-                                id: uuid::Uuid::new_v4().to_string(),
-                                kind: EnvelopeKind::SequenceAck,
-                                last_seq: Some(cursor.seq),
-                                ..Envelope::default()
-                            },
-                        ),
+                        async {
+                            socket
+                                .send(Message::Text(encoded.into()))
+                                .await
+                                .map_err(transport)
+                        },
                         io_deadline(&pending),
                         stop,
                         updates,
                     )
                     .await?;
-                    last_ack = Instant::now();
                 }
-                let next = smol::future::race(
-                    smol::future::race(
-                        commands.recv().map(Input::Command),
-                        socket.next().map(Input::Frame),
-                    ),
-                    async {
-                        smol::Timer::after(Duration::from_millis(10)).await;
-                        Input::Tick
-                    },
-                );
-                let input = io(
-                    async { Ok(next.await) },
-                    Duration::from_secs(60),
-                    stop,
-                    updates,
-                )
-                .await?;
-                match input {
-                    Input::Command(Ok(Command::Invoke {
-                        frame,
-                        deadline,
-                        result,
-                        generation,
-                        switch_to,
-                    })) => {
-                        if generation != locked(&shared.info).generation {
-                            let _ = result.send(Err(RpcError::Disconnected));
-                            continue;
-                        }
-                        if deadline <= Instant::now() || result.is_canceled() {
-                            let _ = result.send(Err(RpcError::Timeout));
-                            continue;
-                        }
-                        if ack
-                            .registered_channels
-                            .as_ref()
-                            .is_some_and(|c| !c.iter().any(|c| Some(c) == frame.channel.as_ref()))
-                        {
-                            let _ = result.send(Err(RpcError::ChannelUnavailable(
-                                frame.channel.unwrap_or_default(),
-                            )));
-                            continue;
-                        }
-                        let encoded = match serde_json::to_string(&frame) {
-                            Ok(v) => v,
-                            Err(e) => {
-                                let _ = result.send(Err(e.into()));
-                                continue;
-                            }
-                        };
-                        if encoded.len() as u64 > limit {
-                            let _ = result.send(Err(RpcError::TooLarge));
-                            continue;
-                        }
-                        if deadline <= Instant::now() || result.is_canceled() {
-                            let _ = result.send(Err(RpcError::Timeout));
-                            continue;
-                        }
-                        pending.insert(
-                            frame.id.clone(),
-                            Pending {
-                                deadline,
-                                result,
-                                switch_to,
-                            },
-                        );
-                        io(
-                            async {
-                                socket
-                                    .send(Message::Text(encoded.into()))
-                                    .await
-                                    .map_err(transport)
-                            },
-                            io_deadline(&pending),
-                            stop,
-                            updates,
-                        )
-                        .await?;
+                Input::Command(Err(_)) => return Err(Exit::Closed),
+                Input::Frame(Some(Ok(Message::Text(text)))) => {
+                    let frame: Envelope =
+                        serde_json::from_str(&text).map_err(|e| Exit::Lost(e.into()))?;
+                    if let Some(value) = &frame.result {
+                        validate_binary(value).map_err(Exit::Lost)?;
                     }
-                    Input::Command(Err(_)) => return Err(Exit::Closed),
-                    Input::Frame(Some(Ok(Message::Text(text)))) => {
-                        let frame: Envelope =
-                            serde_json::from_str(&text).map_err(|e| Exit::Lost(e.into()))?;
-                        if let Some(value) = &frame.result {
+                    if let Some(args) = &frame.args {
+                        for value in args {
                             validate_binary(value).map_err(Exit::Lost)?;
                         }
-                        if let Some(args) = &frame.args {
-                            for value in args {
-                                validate_binary(value).map_err(Exit::Lost)?;
+                    }
+                    match frame.kind {
+                        EnvelopeKind::Response | EnvelopeKind::Error => {
+                            if let Some(p) = pending.remove(&frame.id) {
+                                if frame.error.is_none()
+                                    && let Some(workspace) = p.switch_to
+                                {
+                                    options.workspace_id = workspace;
+                                }
+                                let reply = frame.error.map_or_else(
+                                    || Ok(frame.result.unwrap_or(Value::Null)),
+                                    |e| Err(RpcError::Wire(e)),
+                                );
+                                let _ = p.result.send(reply);
                             }
                         }
-                        match frame.kind {
-                            EnvelopeKind::Response | EnvelopeKind::Error => {
-                                if let Some(p) = pending.remove(&frame.id) {
-                                    if frame.error.is_none()
-                                        && let Some(workspace) = p.switch_to
-                                    {
-                                        options.workspace_id = workspace;
-                                    }
-                                    let reply = frame.error.map_or_else(
-                                        || Ok(frame.result.unwrap_or(Value::Null)),
-                                        |e| Err(RpcError::Wire(e)),
+                        EnvelopeKind::Event => {
+                            if let Some(seq) = frame.seq {
+                                if cursor.seq > 0 && seq > cursor.seq.saturating_add(1) {
+                                    tracing::warn!(
+                                        expected = cursor.seq.saturating_add(1),
+                                        received = seq,
+                                        "RPC event sequence gap"
                                     );
-                                    let _ = p.result.send(reply);
                                 }
+                                cursor.seq = cursor.seq.max(seq);
+                                locked(&shared.info).snapshot.last_seen_seq = cursor.seq;
                             }
-                            EnvelopeKind::Event => {
-                                if let Some(seq) = frame.seq {
-                                    if cursor.seq > 0 && seq > cursor.seq.saturating_add(1) {
-                                        tracing::warn!(
-                                            expected = cursor.seq.saturating_add(1),
-                                            received = seq,
-                                            "RPC event sequence gap"
-                                        );
-                                    }
-                                    cursor.seq = cursor.seq.max(seq);
-                                    locked(&shared.info).snapshot.last_seen_seq = cursor.seq;
-                                }
-                                if let Some(channel) = frame.channel {
-                                    shared.publish(&channel, frame.args.unwrap_or_default());
-                                }
+                            if let Some(channel) = frame.channel {
+                                shared.publish(&channel, frame.args.unwrap_or_default());
                             }
-                            EnvelopeKind::Request => io(
-                                send(
-                                    socket,
-                                    &Envelope {
-                                        id: frame.id,
-                                        kind: EnvelopeKind::Error,
-                                        channel: frame.channel,
-                                        error: Some(WireError {
-                                            code:
-                                                agentkit_protocol::ErrorCode::CapabilityUnavailable,
-                                            message: "Client capability unavailable".into(),
-                                            data: None,
-                                        }),
-                                        ..Envelope::default()
-                                    },
-                                ),
-                                io_deadline(&pending),
-                                stop,
-                                updates,
-                            )
-                            .await?,
-                            _ => {}
                         }
+                        EnvelopeKind::Request => dispatcher.start(frame, shared, advertised),
+                        _ => {}
                     }
-                    Input::Frame(Some(Ok(Message::Ping(_)))) => {
-                        io(
-                            async { socket.flush().await.map_err(transport) },
-                            io_deadline(&pending),
-                            stop,
-                            updates,
-                        )
-                        .await?
-                    }
-                    Input::Frame(Some(Ok(Message::Close(_)))) | Input::Frame(None) => {
-                        return Err(Exit::Lost(RpcError::Disconnected));
-                    }
-                    Input::Frame(Some(Err(e))) => return Err(Exit::Lost(transport(e))),
-                    _ => {}
                 }
+                Input::Reply(Ok(mut reply)) => {
+                    let mut encoded =
+                        serde_json::to_string(&reply).map_err(|e| Exit::Lost(e.into()))?;
+                    if encoded.len() as u64 > limit {
+                        *reply = crate::capability::failure(
+                            &reply,
+                            agentkit_protocol::ErrorCode::TransferTooLarge,
+                            "Client capability reply exceeds frame limit",
+                        );
+                        encoded =
+                            serde_json::to_string(&reply).map_err(|e| Exit::Lost(e.into()))?;
+                    }
+                    if encoded.len() as u64 > limit {
+                        return Err(Exit::Lost(RpcError::TooLarge));
+                    }
+                    io(
+                        async {
+                            socket
+                                .send(Message::Text(encoded.into()))
+                                .await
+                                .map_err(transport)
+                        },
+                        io_deadline(&pending),
+                        stop,
+                        updates,
+                    )
+                    .await?;
+                }
+                Input::Frame(Some(Ok(Message::Ping(_)))) => {
+                    io(
+                        async { socket.flush().await.map_err(transport) },
+                        io_deadline(&pending),
+                        stop,
+                        updates,
+                    )
+                    .await?
+                }
+                Input::Frame(Some(Ok(Message::Close(_)))) | Input::Frame(None) => {
+                    return Err(Exit::Lost(RpcError::Disconnected));
+                }
+                Input::Frame(Some(Err(e))) => return Err(Exit::Lost(transport(e))),
+                _ => {}
             }
         }
-        .await;
+    }
+    .await;
     // Invalidate queued calls before waking any sent caller; a newly queued call
     // belongs to the next generation even when it wakes immediately on loss.
     let exit = match outcome {
@@ -455,7 +507,7 @@ pub(super) async fn run(
         )
         .await;
         let (exit, invalidated) = match outcome {
-            Ok((mut socket, ack)) => {
+            Ok((mut socket, ack, advertised)) => {
                 let resumed = ack.reconnected == Some(true)
                     && !matches!((&cursor.server_id,&ack.server_id),(Some(old),Some(new)) if old!=new);
                 if !resumed {
@@ -488,12 +540,15 @@ pub(super) async fn run(
                 let exit = session(
                     &mut socket,
                     &ack,
-                    &mut options,
-                    &shared,
-                    &commands,
-                    &stop,
-                    &updates,
-                    &mut cursor,
+                    SessionContext {
+                        options: &mut options,
+                        shared: &shared,
+                        commands: &commands,
+                        stop: &stop,
+                        updates: &updates,
+                        cursor: &mut cursor,
+                        advertised: &advertised,
+                    },
                 )
                 .await;
                 backoff.stable(since.elapsed());

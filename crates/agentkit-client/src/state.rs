@@ -59,10 +59,11 @@ pub(crate) struct Info {
 pub(crate) struct Shared {
     pub info: Mutex<Info>,
     pub subscribers: Subscribers,
+    pub capabilities: Mutex<crate::capability::Handlers>,
     states: Mutex<Vec<async_channel::Sender<ConnectionState>>>,
 }
 impl Shared {
-    pub fn new() -> Self {
+    pub fn new(capabilities: crate::capability::Handlers) -> Self {
         Self {
             info: Mutex::new(Info {
                 snapshot: ConnectionSnapshot {
@@ -81,6 +82,7 @@ impl Shared {
             }),
             subscribers: Arc::new(Mutex::new(HashMap::new())),
             states: Mutex::new(Vec::new()),
+            capabilities: Mutex::new(capabilities),
         }
     }
     pub fn set_state(&self, state: ConnectionState) {

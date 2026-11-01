@@ -1,8 +1,10 @@
 //! Local WebSocket RPC client with reconnect, replay metadata and bounded IO.
 #![deny(missing_docs)]
+mod capability;
 mod state;
 mod transport;
 use agentkit_protocol::{Envelope, EnvelopeKind, WireError};
+pub use capability::CapabilityHandler;
 use futures::channel::oneshot;
 use secrecy::SecretString;
 use serde::de::DeserializeOwned;
@@ -17,7 +19,7 @@ use std::{
 
 pub use agentkit_protocol::Endpoint;
 /// Client connection configuration.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ClientOptions {
     /// Local backend connection.
     pub endpoint: Endpoint,
@@ -29,6 +31,22 @@ pub struct ClientOptions {
     pub connect_timeout: Duration,
     /// Maximum reconnect backoff (default 30 seconds).
     pub max_reconnect_delay: Duration,
+    /// Implemented reverse RPCs, registered before the initial handshake. Browser is filtered.
+    pub capabilities: std::collections::BTreeMap<String, CapabilityHandler>,
+    /// Maximum time for one reverse RPC (default 30 seconds).
+    pub capability_timeout: Duration,
+}
+impl std::fmt::Debug for ClientOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ClientOptions")
+            .field("endpoint", &self.endpoint)
+            .field("workspace_id", &self.workspace_id)
+            .field(
+                "capabilities",
+                &self.capabilities.keys().collect::<Vec<_>>(),
+            )
+            .finish_non_exhaustive()
+    }
 }
 impl ClientOptions {
     /// Build a loopback-only configuration. No unimplemented capabilities are advertised.
@@ -39,6 +57,8 @@ impl ClientOptions {
             request_timeout: Duration::from_secs(30),
             connect_timeout: Duration::from_secs(10),
             max_reconnect_delay: Duration::from_secs(30),
+            capabilities: Default::default(),
+            capability_timeout: Duration::from_secs(30),
         }
     }
 }
@@ -105,7 +125,7 @@ impl RpcClient {
         let (commands, receiver) = async_channel::unbounded();
         let (stop, stopping) = async_channel::bounded(1);
         let (endpoints, updates) = async_channel::unbounded();
-        let shared = Arc::new(Shared::new());
+        let shared = Arc::new(Shared::new(options.capabilities.clone()));
         let handle = Self {
             commands,
             shared: shared.clone(),
@@ -193,6 +213,72 @@ impl RpcClient {
         )
         .await?;
         Ok(serde_json::from_value(value)?)
+    }
+    /// Invoke with native binary leaves; base64 encoding counts toward the wire limit.
+    pub async fn invoke_values(
+        &self,
+        channel: &str,
+        args: Vec<agentkit_protocol::RpcValue>,
+    ) -> Result<agentkit_protocol::RpcValue, RpcError> {
+        let args = args
+            .into_iter()
+            .map(serde_json::to_value)
+            .collect::<Result<Vec<_>, _>>()?;
+        self.invoke(channel, args).await
+    }
+    fn mapped_subscription<T: Send + 'static>(
+        &self,
+        channel: &str,
+        map: impl Fn(Vec<Value>) -> Result<T, RpcError> + Send + 'static,
+    ) -> async_channel::Receiver<Result<T, RpcError>> {
+        let raw = self.subscribe(channel);
+        let (send, receive) = async_channel::unbounded();
+        smol::spawn(async move {
+            loop {
+                let next = smol::future::race(async { raw.recv().await.ok() }, async {
+                    send.closed().await;
+                    None
+                })
+                .await;
+                let Some(args) = next else {
+                    break;
+                };
+                if send.send(map(args)).await.is_err() {
+                    break;
+                }
+            }
+        })
+        .detach();
+        receive
+    }
+    /// Binary-aware event arguments. Dropping the receiver releases its forwarding task.
+    pub fn subscribe_values(
+        &self,
+        channel: &str,
+    ) -> async_channel::Receiver<Result<Vec<agentkit_protocol::RpcValue>, RpcError>> {
+        self.mapped_subscription(channel, |args| {
+            Ok(serde_json::from_value(Value::Array(args))?)
+        })
+    }
+    /// Validated session events, preserving future tags and reporting decode failures.
+    pub fn session_events(
+        &self,
+    ) -> async_channel::Receiver<Result<agentkit_protocol::DecodedSessionEvent, RpcError>> {
+        self.mapped_subscription(
+            agentkit_protocol::constants::channels::sessions::EVENT,
+            |args| {
+                Ok(serde_json::from_value(
+                    args.into_iter().next().unwrap_or(Value::Null),
+                )?)
+            },
+        )
+    }
+    /// Register/replace a reverse handler. New names are advertised on the next handshake;
+    /// use ClientOptions::capabilities for initial registration. Browser stays unavailable.
+    pub fn handle_capability(&self, name: &'static str, handler: CapabilityHandler) {
+        if capability::permitted(name) {
+            locked(&self.shared.capabilities).insert(name.into(), handler);
+        }
     }
     /// Subscribe with an independent unbounded queue, retained across reconnections.
     /// `__transport:reconnected` emits one bool: true requires a full cache reload.
