@@ -899,7 +899,8 @@
         },
         "version": {
           "const": 1,
-          "type": "number"
+          "format": "int64",
+          "type": "integer"
         }
       },
       "required": [

@@ -234,3 +234,9 @@ fn required_option<'de, D: serde::Deserializer<'de>, T: Deserialize<'de>>(
 ) -> Result<Option<T>, D::Error> {
     Option::<T>::deserialize(d)
 }
+/// No payload contract is defined upstream for these two non-emitting lifecycle channels.
+/// Preserve their positional values until the backend defines one; never depend on them.
+#[derive(Clone, Debug)]
+pub struct ServerNotice {
+    pub arguments: Vec<agentkit_protocol::RpcValue>,
+}
