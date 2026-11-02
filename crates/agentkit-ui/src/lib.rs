@@ -7,7 +7,8 @@ mod chat;
 pub mod samples;
 mod workbench;
 pub use workbench::{WorkbenchIntent, WorkbenchView};
-pub(crate) fn tr(key: &str) -> String {
+/// Translate a shared application UI key using the currently selected locale.
+pub fn tr(key: &str) -> String {
     rust_i18n::t!(key).to_string()
 }
 /// Choose the owned UI locale (currently zh-CN or en).

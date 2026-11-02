@@ -43,6 +43,14 @@
     "theme": "切换主题",
     "no_model": "请先添加模型连接",
     "unknown_model": "默认模型",
-    "permission_wait": "等待审批"
+    "permission_wait": "等待审批",
+    "sidecar_missing_runtime": "后端运行文件缺失，请重新安装应用。",
+    "sidecar_io": "后端无法启动或关闭，请查看日志后重试。",
+    "sidecar_ready_timeout": "后端未能及时就绪，请重试。",
+    "sidecar_exited_early": "后端在启动时退出，请查看日志后重试。",
+    "sidecar_occupied": "另一个后端正在使用此数据目录，请关闭后重试。",
+    "sidecar_invalid_endpoint": "后端返回的本地地址无效，请重试。",
+    "sidecar_restart_limit": "后端多次退出，已停止自动重启。请重试或查看日志。",
+    "sidecar_stopped": "后端监督器已停止。"
   }
 }
