@@ -18,7 +18,7 @@ test('effective schemas and constants reproduce from pinned source with complete
     const first = run();
     assert.deepEqual(run(), first);
     const provenance = JSON.parse(first['manifest.json']);
-    assert.equal(provenance.roots.length, 14);
+    assert.equal(provenance.roots.length, JSON.parse(readFileSync(join(here,'sources.json'),'utf8')).roots.length);
     for (const [name, hash] of Object.entries(provenance.artifacts)) assert.equal(createHash('sha256').update(first[name]).digest('hex'), hash, name);
     const message = JSON.parse(first['Message.json']).definitions.Message;
     assert.ok(message.required.includes('timestamp'));
@@ -37,4 +37,10 @@ test('effective schemas and constants reproduce from pinned source with complete
     assert.match(first['constants.rs'], /DEFAULT_MAX_MESSAGE_BYTES: u64 = 16777216/);
     assert.ok(!Object.values(first).join('').includes(here));
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('facade wire roots are generated while credential schemas stay manual', () => {
+  const sources=JSON.parse(readFileSync(join(here,'sources.json'),'utf8'));
+  for(const root of ['LlmConnectionWithStatus','SessionDraft','SessionBundle','WorkspaceSettings','PendingPlanExecution','LoadedSkill']) assert.ok(sources.roots.includes(root),root);
+  assert.deepEqual(sources.schemaOnlyRoots,['LlmConnectionSetup','TestLlmConnectionParams','ClaudeOAuthResult','NetworkProxySettings']);
 });

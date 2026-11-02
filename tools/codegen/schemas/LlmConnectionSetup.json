@@ -1,0 +1,116 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/LlmConnectionSetup",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ClaudeOAuthIdentityDto": {
+      "properties": {
+        "account": {
+          "properties": {
+            "emailAddress": {
+              "type": "string"
+            },
+            "uuid": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "organization": {
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "uuid": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "CustomEndpointConfig": {
+      "properties": {
+        "api": {
+          "enum": [
+            "openai-completions",
+            "anthropic-messages"
+          ],
+          "type": "string"
+        },
+        "maxTokens": {
+          "type": "number"
+        },
+        "supportsImages": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "api"
+      ],
+      "type": "object"
+    },
+    "LlmConnectionSetup": {
+      "properties": {
+        "baseUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "credential": {
+          "type": "string"
+        },
+        "customEndpoint": {
+          "$ref": "#/definitions/CustomEndpointConfig"
+        },
+        "defaultModel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "modelSelectionMode": {
+          "$ref": "#/definitions/ModelSelectionMode"
+        },
+        "models": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "oauthIdentity": {
+          "$ref": "#/definitions/ClaudeOAuthIdentityDto"
+        },
+        "piAuthProvider": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "updateOnly": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "slug"
+      ],
+      "type": "object"
+    },
+    "ModelSelectionMode": {
+      "enum": [
+        "automaticallySyncedFromProvider",
+        "userDefined3Tier"
+      ],
+      "type": "string"
+    }
+  }
+}

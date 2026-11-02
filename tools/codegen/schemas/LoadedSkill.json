@@ -1,0 +1,69 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/LoadedSkill",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "LoadedSkill": {
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "iconPath": {
+          "type": "string"
+        },
+        "metadata": {
+          "properties": {
+            "alwaysAllow": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": {
+              "type": "string"
+            },
+            "globs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "icon": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "description"
+          ],
+          "type": "object"
+        },
+        "path": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "global",
+            "workspace",
+            "project"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug",
+        "metadata",
+        "content",
+        "path",
+        "source"
+      ],
+      "type": "object"
+    }
+  }
+}

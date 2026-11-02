@@ -1,0 +1,84 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/DirectoryListingResult",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DirectoryListingResult": {
+      "properties": {
+        "breadcrumbs": {
+          "items": {
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "path"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "currentPath": {
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "properties": {
+              "isSymlink": {
+                "type": "boolean"
+              },
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "path",
+              "isSymlink"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "parentPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "platform": {
+          "enum": [
+            "win32",
+            "darwin",
+            "linux"
+          ],
+          "type": "string"
+        },
+        "totalEntries": {
+          "type": "number"
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "currentPath",
+        "parentPath",
+        "breadcrumbs",
+        "platform",
+        "truncated",
+        "totalEntries",
+        "entries"
+      ],
+      "type": "object"
+    }
+  }
+}

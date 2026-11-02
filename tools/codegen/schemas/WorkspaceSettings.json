@@ -1,0 +1,126 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/WorkspaceSettings",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "PermissionMode": {
+      "enum": [
+        "safe",
+        "ask",
+        "allow-all"
+      ],
+      "type": "string"
+    },
+    "ThinkingLevel": {
+      "enum": [
+        "off",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "type": "string"
+    },
+    "WorkspaceSettings": {
+      "properties": {
+        "boundPrs": {
+          "items": {
+            "properties": {
+              "addedAt": {
+                "type": "number"
+              },
+              "host": {
+                "type": "string"
+              },
+              "number": {
+                "type": "number"
+              },
+              "owner": {
+                "type": "string"
+              },
+              "repo": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "host",
+              "owner",
+              "repo",
+              "number",
+              "addedAt"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "chatStarters": {
+          "items": {
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "prompt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "prompt"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "codingMode": {
+          "type": "boolean"
+        },
+        "cyclablePermissionModes": {
+          "items": {
+            "$ref": "#/definitions/PermissionMode"
+          },
+          "type": "array"
+        },
+        "defaultLlmConnection": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "permissionMode": {
+          "$ref": "#/definitions/PermissionMode"
+        },
+        "prMonitors": {
+          "additionalProperties": {
+            "properties": {
+              "autoFix": {
+                "type": "boolean"
+              },
+              "lastFixAt": {
+                "type": "number"
+              },
+              "lastFixSignature": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "thinkingLevel": {
+          "$ref": "#/definitions/ThinkingLevel"
+        },
+        "workingDirectory": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

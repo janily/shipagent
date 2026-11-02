@@ -141,3 +141,21 @@ export function constantsRust({ channels, protocolVersion, limits }) {
   for (const [key, value] of Object.entries(sorted(limits))) output += `pub const ${valid(key)}: u64 = ${value};\n`;
   return output + '}\n';
 }
+
+// This rewrite only replaces the exact unsupported inline import expression.
+// Any field addition/removal/type/optionality change requires a fresh review.
+export function assertInterfaceOverride(upstream, override, name) {
+  function fields(source, original) {
+    const file=ts.createSourceFile('types.ts',source,ts.ScriptTarget.Latest,true);
+    const node=file.statements.find(n=>ts.isInterfaceDeclaration(n)&&n.name.text===name);
+    if(!node) throw new Error(`Missing override interface ${name}`);
+    if(node.heritageClauses?.length)throw new Error(`Unsupported override heritage: ${name}`);
+    return node.members.map(member=>{
+      if(!ts.isPropertySignature(member)||!member.type) throw new Error('Unsupported override field');
+      let type=member.type.getText(file);
+      if(original) type=type.replaceAll("import('../workspaces/types').ChatStarter",'ChatStarter');
+      return `${member.name.getText(file)}${member.questionToken?'?':''}:${type.replace(/\s/g,'')}`;
+    }).sort();
+  }
+  if(!isDeepStrictEqual(fields(upstream,true),fields(override,false)))throw new Error(`Interface override source changed: ${name}`);
+}

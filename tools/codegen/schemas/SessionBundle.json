@@ -1,0 +1,998 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/SessionBundle",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "MessageRole": {
+      "enum": [
+        "user",
+        "assistant",
+        "tool",
+        "error",
+        "status",
+        "info",
+        "warning",
+        "plan"
+      ],
+      "type": "string"
+    },
+    "PendingPlanExecution": {
+      "properties": {
+        "awaitingCompaction": {
+          "type": "boolean"
+        },
+        "draftInputSnapshot": {
+          "type": "string"
+        },
+        "executionDispatched": {
+          "type": "boolean"
+        },
+        "planPath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "planPath",
+        "awaitingCompaction"
+      ],
+      "type": "object"
+    },
+    "PermissionMode": {
+      "enum": [
+        "safe",
+        "ask",
+        "allow-all"
+      ],
+      "type": "string"
+    },
+    "SessionBundle": {
+      "properties": {
+        "branchInfo": {
+          "properties": {
+            "sdkCwd": {
+              "type": "string"
+            },
+            "sdkSessionId": {
+              "type": "string"
+            },
+            "sdkTurnId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "sdkSessionId",
+            "sdkTurnId",
+            "sdkCwd"
+          ],
+          "type": "object"
+        },
+        "files": {
+          "items": {
+            "properties": {
+              "contentBase64": {
+                "type": "string"
+              },
+              "relativePath": {
+                "type": "string"
+              },
+              "size": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "relativePath",
+              "contentBase64",
+              "size"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "session": {
+          "properties": {
+            "header": {
+              "properties": {
+                "archivedAt": {
+                  "type": "number"
+                },
+                "boundPrs": {
+                  "items": {
+                    "properties": {
+                      "addedAt": {
+                        "type": "number"
+                      },
+                      "host": {
+                        "type": "string"
+                      },
+                      "number": {
+                        "type": "number"
+                      },
+                      "owner": {
+                        "type": "string"
+                      },
+                      "repo": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "host",
+                      "owner",
+                      "repo",
+                      "number",
+                      "addedAt"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "branchFromMessageId": {
+                  "type": "string"
+                },
+                "branchFromSdkCwd": {
+                  "type": "string"
+                },
+                "branchFromSdkSessionId": {
+                  "type": "string"
+                },
+                "branchFromSdkTurnId": {
+                  "type": "string"
+                },
+                "branchFromSessionPath": {
+                  "type": "string"
+                },
+                "codingMode": {
+                  "type": "boolean"
+                },
+                "connectionLocked": {
+                  "type": "boolean"
+                },
+                "createdAt": {
+                  "type": "number"
+                },
+                "hasUnread": {
+                  "type": "boolean"
+                },
+                "hidden": {
+                  "type": "boolean"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "isArchived": {
+                  "type": "boolean"
+                },
+                "isFlagged": {
+                  "type": "boolean"
+                },
+                "lastFinalMessageId": {
+                  "type": "string"
+                },
+                "lastMessageAt": {
+                  "type": "number"
+                },
+                "lastMessageRole": {
+                  "enum": [
+                    "user",
+                    "assistant",
+                    "plan",
+                    "tool",
+                    "error"
+                  ],
+                  "type": "string"
+                },
+                "lastReadMessageId": {
+                  "type": "string"
+                },
+                "lastUsedAt": {
+                  "type": "number"
+                },
+                "llmConnection": {
+                  "type": "string"
+                },
+                "messageCount": {
+                  "type": "number"
+                },
+                "model": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "parentSessionId": {
+                  "type": "string"
+                },
+                "pendingPlanExecution": {
+                  "$ref": "#/definitions/PendingPlanExecution"
+                },
+                "permissionMode": {
+                  "$ref": "#/definitions/PermissionMode"
+                },
+                "prMonitors": {
+                  "additionalProperties": {
+                    "properties": {
+                      "autoFix": {
+                        "type": "boolean"
+                      },
+                      "lastFixAt": {
+                        "type": "number"
+                      },
+                      "lastFixSignature": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "object"
+                },
+                "preview": {
+                  "type": "string"
+                },
+                "previousPermissionMode": {
+                  "$ref": "#/definitions/PermissionMode"
+                },
+                "sdkCwd": {
+                  "type": "string"
+                },
+                "sdkSessionId": {
+                  "type": "string"
+                },
+                "thinkingLevel": {
+                  "$ref": "#/definitions/ThinkingLevel"
+                },
+                "tokenUsage": {
+                  "properties": {
+                    "cacheCreationTokens": {
+                      "type": "number"
+                    },
+                    "cacheReadTokens": {
+                      "type": "number"
+                    },
+                    "contextTokens": {
+                      "type": "number"
+                    },
+                    "contextUsage": {
+                      "properties": {
+                        "canCompact": {
+                          "type": "boolean"
+                        },
+                        "isEstimate": {
+                          "type": "boolean"
+                        },
+                        "isStale": {
+                          "type": "boolean"
+                        },
+                        "limitKind": {
+                          "enum": [
+                            "compaction",
+                            "context"
+                          ],
+                          "type": "string"
+                        },
+                        "limitTokens": {
+                          "type": "number"
+                        },
+                        "usedTokens": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "usedTokens",
+                        "limitKind",
+                        "isEstimate",
+                        "isStale",
+                        "canCompact"
+                      ],
+                      "type": "object"
+                    },
+                    "contextWindow": {
+                      "type": "number"
+                    },
+                    "costUsd": {
+                      "type": "number"
+                    },
+                    "inputTokens": {
+                      "type": "number"
+                    },
+                    "outputTokens": {
+                      "type": "number"
+                    },
+                    "totalTokens": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "inputTokens",
+                    "outputTokens",
+                    "totalTokens",
+                    "contextTokens",
+                    "costUsd"
+                  ],
+                  "type": "object"
+                },
+                "transferredSessionSummary": {
+                  "type": "string"
+                },
+                "transferredSessionSummaryApplied": {
+                  "type": "boolean"
+                },
+                "workingDirectory": {
+                  "type": "string"
+                },
+                "workspaceRootPath": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "createdAt",
+                "id",
+                "lastUsedAt",
+                "messageCount",
+                "tokenUsage",
+                "workspaceRootPath"
+              ],
+              "type": "object"
+            },
+            "messages": {
+              "items": {
+                "properties": {
+                  "annotations": {
+                    "items": {
+                      "properties": {
+                        "body": {
+                          "items": {
+                            "anyOf": [
+                              {
+                                "properties": {
+                                  "type": {
+                                    "const": "highlight",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "type"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "properties": {
+                                  "format": {
+                                    "enum": [
+                                      "plain",
+                                      "markdown"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  },
+                                  "type": {
+                                    "const": "note",
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "text"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "properties": {
+                                  "type": {
+                                    "const": "tag",
+                                    "type": "string"
+                                  },
+                                  "value": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "value"
+                                ],
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          "type": "array"
+                        },
+                        "createdAt": {
+                          "type": "number"
+                        },
+                        "createdBy": {
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "enum": [
+                                "user",
+                                "agent",
+                                "system"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id"
+                          ],
+                          "type": "object"
+                        },
+                        "deletedAt": {
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "intent": {
+                          "enum": [
+                            "highlight",
+                            "comment",
+                            "question"
+                          ],
+                          "type": "string"
+                        },
+                        "meta": {
+                          "additionalProperties": {},
+                          "type": "object"
+                        },
+                        "schemaVersion": {
+                          "const": 1,
+                          "type": "number"
+                        },
+                        "status": {
+                          "enum": [
+                            "pending",
+                            "acknowledged",
+                            "resolved",
+                            "dismissed"
+                          ],
+                          "type": "string"
+                        },
+                        "style": {
+                          "properties": {
+                            "color": {
+                              "type": "string"
+                            },
+                            "opacity": {
+                              "type": "number"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "target": {
+                          "properties": {
+                            "selectors": {
+                              "items": {
+                                "anyOf": [
+                                  {
+                                    "properties": {
+                                      "exact": {
+                                        "type": "string"
+                                      },
+                                      "prefix": {
+                                        "type": "string"
+                                      },
+                                      "suffix": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "const": "text-quote",
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "exact"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "properties": {
+                                      "end": {
+                                        "type": "number"
+                                      },
+                                      "start": {
+                                        "type": "number"
+                                      },
+                                      "textVersion": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "const": "text-position",
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "start",
+                                      "end"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "properties": {
+                                      "blockId": {
+                                        "type": "string"
+                                      },
+                                      "blockType": {
+                                        "enum": [
+                                          "paragraph",
+                                          "code",
+                                          "latex",
+                                          "mermaid",
+                                          "datatable",
+                                          "spreadsheet",
+                                          "image-preview",
+                                          "pdf-preview",
+                                          "html-preview"
+                                        ],
+                                        "type": "string"
+                                      },
+                                      "path": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "const": "block",
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "blockType",
+                                      "path"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "properties": {
+                                      "h": {
+                                        "type": "number"
+                                      },
+                                      "page": {
+                                        "type": "number"
+                                      },
+                                      "rotation": {
+                                        "type": "number"
+                                      },
+                                      "type": {
+                                        "const": "xywh",
+                                        "type": "string"
+                                      },
+                                      "unit": {
+                                        "enum": [
+                                          "pixel",
+                                          "percent"
+                                        ],
+                                        "type": "string"
+                                      },
+                                      "w": {
+                                        "type": "number"
+                                      },
+                                      "x": {
+                                        "type": "number"
+                                      },
+                                      "y": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "unit",
+                                      "x",
+                                      "y",
+                                      "w",
+                                      "h"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "properties": {
+                                      "columnKey": {
+                                        "type": "string"
+                                      },
+                                      "rowKey": {
+                                        "type": [
+                                          "string",
+                                          "number"
+                                        ]
+                                      },
+                                      "type": {
+                                        "const": "table-cell",
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "type",
+                                      "rowKey",
+                                      "columnKey"
+                                    ],
+                                    "type": "object"
+                                  }
+                                ]
+                              },
+                              "type": "array"
+                            },
+                            "source": {
+                              "properties": {
+                                "messageId": {
+                                  "type": "string"
+                                },
+                                "sessionId": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "sessionId",
+                                "messageId"
+                              ],
+                              "type": "object"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "selectors"
+                          ],
+                          "type": "object"
+                        },
+                        "threadRef": {
+                          "properties": {
+                            "sessionId": {
+                              "type": "string"
+                            },
+                            "threadId": {
+                              "type": "string"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "updatedAt": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "schemaVersion",
+                        "createdAt",
+                        "body",
+                        "target"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "attachments": {
+                    "items": {
+                      "$ref": "#/definitions/StoredAttachment"
+                    },
+                    "type": "array"
+                  },
+                  "badges": {
+                    "items": {
+                      "properties": {
+                        "collapsedLabel": {
+                          "type": "string"
+                        },
+                        "end": {
+                          "type": "number"
+                        },
+                        "filePath": {
+                          "type": "string"
+                        },
+                        "iconDataUrl": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "rawText": {
+                          "type": "string"
+                        },
+                        "start": {
+                          "type": "number"
+                        },
+                        "type": {
+                          "enum": [
+                            "skill",
+                            "context",
+                            "command",
+                            "file",
+                            "folder"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "label",
+                        "rawText",
+                        "start",
+                        "end"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "elapsedSeconds": {
+                    "type": "number"
+                  },
+                  "errorActions": {
+                    "items": {
+                      "properties": {
+                        "action": {
+                          "enum": [
+                            "retry",
+                            "settings",
+                            "open_url"
+                          ],
+                          "type": "string"
+                        },
+                        "key": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "label"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "errorCanRetry": {
+                    "type": "boolean"
+                  },
+                  "errorCode": {
+                    "type": "string"
+                  },
+                  "errorDetails": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "errorOriginal": {
+                    "type": "string"
+                  },
+                  "errorTitle": {
+                    "type": "string"
+                  },
+                  "hidden": {
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "infoLevel": {
+                    "enum": [
+                      "info",
+                      "warning",
+                      "error",
+                      "success"
+                    ],
+                    "type": "string"
+                  },
+                  "isBackground": {
+                    "type": "boolean"
+                  },
+                  "isError": {
+                    "type": "boolean"
+                  },
+                  "isIntermediate": {
+                    "type": "boolean"
+                  },
+                  "isQueued": {
+                    "type": "boolean"
+                  },
+                  "parentToolUseId": {
+                    "type": "string"
+                  },
+                  "planPath": {
+                    "type": "string"
+                  },
+                  "shellId": {
+                    "type": "string"
+                  },
+                  "statusType": {
+                    "enum": [
+                      "compacting",
+                      "compaction_complete",
+                      "retrying"
+                    ],
+                    "type": "string"
+                  },
+                  "taskId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "number"
+                  },
+                  "toolDisplayMeta": {
+                    "properties": {
+                      "category": {
+                        "enum": [
+                          "skill",
+                          "native"
+                        ],
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "displayName": {
+                        "type": "string"
+                      },
+                      "iconDataUrl": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "displayName"
+                    ],
+                    "type": "object"
+                  },
+                  "toolDisplayName": {
+                    "type": "string"
+                  },
+                  "toolDuration": {
+                    "type": "number"
+                  },
+                  "toolInput": {
+                    "additionalProperties": {},
+                    "type": "object"
+                  },
+                  "toolIntent": {
+                    "type": "string"
+                  },
+                  "toolName": {
+                    "type": "string"
+                  },
+                  "toolResult": {
+                    "type": "string"
+                  },
+                  "toolStatus": {
+                    "$ref": "#/definitions/ToolStatus"
+                  },
+                  "toolUseId": {
+                    "type": "string"
+                  },
+                  "turnId": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "$ref": "#/definitions/MessageRole"
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "content"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "header",
+            "messages"
+          ],
+          "type": "object"
+        },
+        "version": {
+          "const": 1,
+          "type": "number"
+        }
+      },
+      "required": [
+        "version",
+        "session",
+        "files"
+      ],
+      "type": "object"
+    },
+    "StoredAttachment": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "markdownPath": {
+          "type": "string"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "originalMimeType": {
+          "type": "string"
+        },
+        "originalSize": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resizedBase64": {
+          "type": "string"
+        },
+        "size": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "storedPath": {
+          "type": "string"
+        },
+        "thumbnailBase64": {
+          "type": "string"
+        },
+        "thumbnailPath": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "image",
+            "text",
+            "pdf",
+            "office",
+            "audio",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "wasResized": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name",
+        "mimeType",
+        "size",
+        "storedPath"
+      ],
+      "type": "object"
+    },
+    "ThinkingLevel": {
+      "enum": [
+        "off",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "type": "string"
+    },
+    "ToolStatus": {
+      "enum": [
+        "pending",
+        "executing",
+        "completed",
+        "error",
+        "backgrounded"
+      ],
+      "type": "string"
+    }
+  }
+}

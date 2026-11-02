@@ -1,0 +1,34 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/ClaudeOAuthIdentityDto",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ClaudeOAuthIdentityDto": {
+      "properties": {
+        "account": {
+          "properties": {
+            "emailAddress": {
+              "type": "string"
+            },
+            "uuid": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "organization": {
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "uuid": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

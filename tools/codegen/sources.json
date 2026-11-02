@@ -1,4 +1,46 @@
 {
   "backendRevision": "6e8ebc456b6b82441be09118ca11afca79b84836",
-  "roots": ["Message", "Session", "SessionEvent", "PermissionRequest", "CreateSessionOptions", "SendMessageOptions", "SessionCommand", "FileAttachment", "StoredAttachment", "Workspace", "MessageRole", "ToolStatus", "PermissionMode", "ThinkingLevel"]
+  "roots": [
+    "Message",
+    "Session",
+    "SessionEvent",
+    "PermissionRequest",
+    "CreateSessionOptions",
+    "SendMessageOptions",
+    "SessionCommand",
+    "FileAttachment",
+    "StoredAttachment",
+    "Workspace",
+    "MessageRole",
+    "ToolStatus",
+    "PermissionMode",
+    "ThinkingLevel",
+    "PermissionModeState",
+    "DirectoryListingResult",
+    "SessionFile",
+    "FileSearchResult",
+    "SkillFile",
+    "SessionSearchResult",
+    "UnreadSummary",
+    "WorkspaceSettings",
+    "BackgroundTaskOutput",
+    "StopBackgroundTaskResult",
+    "RefreshTitleResult",
+    "PendingPlanExecution",
+    "SessionBundle",
+    "SessionDraft",
+    "LlmConnection",
+    "LlmConnectionWithStatus",
+    "CustomEndpointConfig",
+    "ModelSelectionMode",
+    "ClaudeOAuthIdentityDto",
+    "LoadedSkill",
+    "ServerHealth"
+  ],
+  "schemaOnlyRoots": [
+    "LlmConnectionSetup",
+    "TestLlmConnectionParams",
+    "ClaudeOAuthResult",
+    "NetworkProxySettings"
+  ]
 }

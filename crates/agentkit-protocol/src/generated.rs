@@ -69,6 +69,77 @@ pub mod error {
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "kind")]
+pub enum BackgroundTaskOutput {
+    #[serde(rename = "text")]
+    Text {
+        text: ::std::string::String,
+        truncated: bool,
+    },
+    #[serde(rename = "agent")]
+    Agent {
+        #[serde(deserialize_with = "required_option")]
+        message: ::std::option::Option<::std::string::String>,
+        steps: ::std::vec::Vec<BackgroundTaskOutputStepsItem>,
+        truncated: bool,
+    },
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct BackgroundTaskOutputStepsItem {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub label: ::std::option::Option<::std::string::String>,
+    pub tool: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct ClaudeOAuthIdentityDto {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub account: ::std::option::Option<ClaudeOAuthIdentityDtoAccount>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub organization: ::std::option::Option<ClaudeOAuthIdentityDtoOrganization>,
+}
+impl ::std::default::Default for ClaudeOAuthIdentityDto {
+    fn default() -> Self {
+        Self {
+            account: Default::default(),
+            organization: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct ClaudeOAuthIdentityDtoAccount {
+    #[serde(
+        rename = "emailAddress",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub email_address: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub uuid: ::std::option::Option<::std::string::String>,
+}
+impl ::std::default::Default for ClaudeOAuthIdentityDtoAccount {
+    fn default() -> Self {
+        Self {
+            email_address: Default::default(),
+            uuid: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct ClaudeOAuthIdentityDtoOrganization {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub name: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub uuid: ::std::option::Option<::std::string::String>,
+}
+impl ::std::default::Default for ClaudeOAuthIdentityDtoOrganization {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+            uuid: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct CreateSessionOptions {
     #[serde(
         rename = "branchFromMessageId",
@@ -154,6 +225,168 @@ impl ::std::default::Default for CreateSessionOptions {
             thinking_level: Default::default(),
             working_directory: Default::default(),
         }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct CustomEndpointConfig {
+    pub api: CustomEndpointConfigApi,
+    #[serde(
+        rename = "maxTokens",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub max_tokens: ::std::option::Option<f64>,
+    #[serde(
+        rename = "supportsImages",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub supports_images: ::std::option::Option<bool>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum CustomEndpointConfigApi {
+    #[serde(rename = "openai-completions")]
+    OpenaiCompletions,
+    #[serde(rename = "anthropic-messages")]
+    AnthropicMessages,
+}
+impl ::std::fmt::Display for CustomEndpointConfigApi {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::OpenaiCompletions => f.write_str("openai-completions"),
+            Self::AnthropicMessages => f.write_str("anthropic-messages"),
+        }
+    }
+}
+impl ::std::str::FromStr for CustomEndpointConfigApi {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "openai-completions" => Ok(Self::OpenaiCompletions),
+            "anthropic-messages" => Ok(Self::AnthropicMessages),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for CustomEndpointConfigApi {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for CustomEndpointConfigApi {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for CustomEndpointConfigApi {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct DirectoryListingResult {
+    pub breadcrumbs: ::std::vec::Vec<DirectoryListingResultBreadcrumbsItem>,
+    #[serde(rename = "currentPath")]
+    pub current_path: ::std::string::String,
+    pub entries: ::std::vec::Vec<DirectoryListingResultEntriesItem>,
+    #[serde(rename = "parentPath")]
+    #[serde(deserialize_with = "required_option")]
+    pub parent_path: ::std::option::Option<::std::string::String>,
+    pub platform: DirectoryListingResultPlatform,
+    #[serde(rename = "totalEntries")]
+    pub total_entries: f64,
+    pub truncated: bool,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct DirectoryListingResultBreadcrumbsItem {
+    pub name: ::std::string::String,
+    pub path: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct DirectoryListingResultEntriesItem {
+    #[serde(rename = "isSymlink")]
+    pub is_symlink: bool,
+    pub name: ::std::string::String,
+    pub path: ::std::string::String,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum DirectoryListingResultPlatform {
+    #[serde(rename = "win32")]
+    Win32,
+    #[serde(rename = "darwin")]
+    Darwin,
+    #[serde(rename = "linux")]
+    Linux,
+}
+impl ::std::fmt::Display for DirectoryListingResultPlatform {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Win32 => f.write_str("win32"),
+            Self::Darwin => f.write_str("darwin"),
+            Self::Linux => f.write_str("linux"),
+        }
+    }
+}
+impl ::std::str::FromStr for DirectoryListingResultPlatform {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "win32" => Ok(Self::Win32),
+            "darwin" => Ok(Self::Darwin),
+            "linux" => Ok(Self::Linux),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for DirectoryListingResultPlatform {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for DirectoryListingResultPlatform {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for DirectoryListingResultPlatform {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
@@ -243,6 +476,910 @@ impl ::std::convert::TryFrom<&::std::string::String> for FileAttachmentType {
     }
 }
 impl ::std::convert::TryFrom<::std::string::String> for FileAttachmentType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct FileSearchResult {
+    pub name: ::std::string::String,
+    pub path: ::std::string::String,
+    #[serde(rename = "relativePath")]
+    pub relative_path: ::std::string::String,
+    #[serde(rename = "type")]
+    pub type_: FileSearchResultType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum FileSearchResultType {
+    #[serde(rename = "file")]
+    File,
+    #[serde(rename = "directory")]
+    Directory,
+}
+impl ::std::fmt::Display for FileSearchResultType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::File => f.write_str("file"),
+            Self::Directory => f.write_str("directory"),
+        }
+    }
+}
+impl ::std::str::FromStr for FileSearchResultType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "file" => Ok(Self::File),
+            "directory" => Ok(Self::Directory),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for FileSearchResultType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for FileSearchResultType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for FileSearchResultType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct LlmConnection {
+    #[serde(rename = "authType")]
+    pub auth_type: LlmConnectionAuthType,
+    #[serde(
+        rename = "baseUrl",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub base_url: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: f64,
+    #[serde(
+        rename = "customEndpoint",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub custom_endpoint: ::std::option::Option<CustomEndpointConfig>,
+    #[serde(
+        rename = "defaultModel",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub default_model: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "lastUsedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_used_at: ::std::option::Option<f64>,
+    #[serde(
+        rename = "midStreamBehavior",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub mid_stream_behavior: ::std::option::Option<LlmConnectionMidStreamBehavior>,
+    #[serde(
+        rename = "modelSelectionMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub model_selection_mode: ::std::option::Option<ModelSelectionMode>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub models: ::std::option::Option<::std::vec::Vec<LlmConnectionModelsItem>>,
+    pub name: ::std::string::String,
+    #[serde(
+        rename = "oauthAccountEmail",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_account_email: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "oauthAccountUuid",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_account_uuid: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "oauthOrganizationName",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_organization_name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "oauthOrganizationUuid",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_organization_uuid: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "oauthProfileVerifiedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_profile_verified_at: ::std::option::Option<f64>,
+    #[serde(
+        rename = "piAuthProvider",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pi_auth_provider: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "providerType")]
+    pub provider_type: LlmConnectionProviderType,
+    pub slug: ::std::string::String,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LlmConnectionAuthType {
+    #[serde(rename = "api_key")]
+    ApiKey,
+    #[serde(rename = "api_key_with_endpoint")]
+    ApiKeyWithEndpoint,
+    #[serde(rename = "oauth")]
+    Oauth,
+    #[serde(rename = "none")]
+    None,
+}
+impl ::std::fmt::Display for LlmConnectionAuthType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::ApiKey => f.write_str("api_key"),
+            Self::ApiKeyWithEndpoint => f.write_str("api_key_with_endpoint"),
+            Self::Oauth => f.write_str("oauth"),
+            Self::None => f.write_str("none"),
+        }
+    }
+}
+impl ::std::str::FromStr for LlmConnectionAuthType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "api_key" => Ok(Self::ApiKey),
+            "api_key_with_endpoint" => Ok(Self::ApiKeyWithEndpoint),
+            "oauth" => Ok(Self::Oauth),
+            "none" => Ok(Self::None),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LlmConnectionAuthType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for LlmConnectionAuthType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for LlmConnectionAuthType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LlmConnectionMidStreamBehavior {
+    #[serde(rename = "steer")]
+    Steer,
+    #[serde(rename = "queue")]
+    Queue,
+}
+impl ::std::fmt::Display for LlmConnectionMidStreamBehavior {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Steer => f.write_str("steer"),
+            Self::Queue => f.write_str("queue"),
+        }
+    }
+}
+impl ::std::str::FromStr for LlmConnectionMidStreamBehavior {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "steer" => Ok(Self::Steer),
+            "queue" => Ok(Self::Queue),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LlmConnectionMidStreamBehavior {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for LlmConnectionMidStreamBehavior {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for LlmConnectionMidStreamBehavior {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum LlmConnectionModelsItem {
+    Object {
+        #[serde(rename = "contextWindow")]
+        context_window: f64,
+        description: ::std::string::String,
+        #[serde(
+            rename = "descriptionKey",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        description_key: ::std::option::Option<::std::string::String>,
+        id: ::std::string::String,
+        name: ::std::string::String,
+        provider: LlmConnectionModelsItemObjectProvider,
+        #[serde(rename = "shortName")]
+        short_name: ::std::string::String,
+        #[serde(
+            rename = "supportsImages",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        supports_images: ::std::option::Option<bool>,
+        #[serde(
+            rename = "supportsThinking",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        supports_thinking: ::std::option::Option<bool>,
+        #[serde(
+            rename = "thinkingAlwaysOn",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        thinking_always_on: ::std::option::Option<bool>,
+    },
+    String(::std::string::String),
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LlmConnectionModelsItemObjectProvider {
+    #[serde(rename = "anthropic")]
+    Anthropic,
+    #[serde(rename = "pi")]
+    Pi,
+}
+impl ::std::fmt::Display for LlmConnectionModelsItemObjectProvider {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Anthropic => f.write_str("anthropic"),
+            Self::Pi => f.write_str("pi"),
+        }
+    }
+}
+impl ::std::str::FromStr for LlmConnectionModelsItemObjectProvider {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "anthropic" => Ok(Self::Anthropic),
+            "pi" => Ok(Self::Pi),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LlmConnectionModelsItemObjectProvider {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for LlmConnectionModelsItemObjectProvider {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for LlmConnectionModelsItemObjectProvider {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LlmConnectionProviderType {
+    #[serde(rename = "pi")]
+    Pi,
+    #[serde(rename = "pi_compat")]
+    PiCompat,
+}
+impl ::std::fmt::Display for LlmConnectionProviderType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pi => f.write_str("pi"),
+            Self::PiCompat => f.write_str("pi_compat"),
+        }
+    }
+}
+impl ::std::str::FromStr for LlmConnectionProviderType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pi" => Ok(Self::Pi),
+            "pi_compat" => Ok(Self::PiCompat),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LlmConnectionProviderType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for LlmConnectionProviderType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for LlmConnectionProviderType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct LlmConnectionWithStatus {
+    #[serde(
+        rename = "authError",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub auth_error: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "authType")]
+    pub auth_type: LlmConnectionWithStatusAuthType,
+    #[serde(
+        rename = "baseUrl",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub base_url: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: f64,
+    #[serde(
+        rename = "customEndpoint",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub custom_endpoint: ::std::option::Option<CustomEndpointConfig>,
+    #[serde(
+        rename = "defaultModel",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub default_model: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "isAuthenticated")]
+    pub is_authenticated: bool,
+    #[serde(
+        rename = "isDefault",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_default: ::std::option::Option<bool>,
+    #[serde(
+        rename = "lastUsedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_used_at: ::std::option::Option<f64>,
+    #[serde(
+        rename = "midStreamBehavior",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub mid_stream_behavior: ::std::option::Option<LlmConnectionWithStatusMidStreamBehavior>,
+    #[serde(
+        rename = "modelSelectionMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub model_selection_mode: ::std::option::Option<ModelSelectionMode>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub models: ::std::option::Option<::std::vec::Vec<LlmConnectionWithStatusModelsItem>>,
+    pub name: ::std::string::String,
+    #[serde(
+        rename = "oauthAccountEmail",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_account_email: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "oauthAccountUuid",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_account_uuid: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "oauthOrganizationName",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_organization_name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "oauthOrganizationUuid",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_organization_uuid: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "oauthProfileVerifiedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub oauth_profile_verified_at: ::std::option::Option<f64>,
+    #[serde(
+        rename = "piAuthProvider",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pi_auth_provider: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "providerType")]
+    pub provider_type: LlmConnectionWithStatusProviderType,
+    pub slug: ::std::string::String,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LlmConnectionWithStatusAuthType {
+    #[serde(rename = "api_key")]
+    ApiKey,
+    #[serde(rename = "api_key_with_endpoint")]
+    ApiKeyWithEndpoint,
+    #[serde(rename = "oauth")]
+    Oauth,
+    #[serde(rename = "none")]
+    None,
+}
+impl ::std::fmt::Display for LlmConnectionWithStatusAuthType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::ApiKey => f.write_str("api_key"),
+            Self::ApiKeyWithEndpoint => f.write_str("api_key_with_endpoint"),
+            Self::Oauth => f.write_str("oauth"),
+            Self::None => f.write_str("none"),
+        }
+    }
+}
+impl ::std::str::FromStr for LlmConnectionWithStatusAuthType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "api_key" => Ok(Self::ApiKey),
+            "api_key_with_endpoint" => Ok(Self::ApiKeyWithEndpoint),
+            "oauth" => Ok(Self::Oauth),
+            "none" => Ok(Self::None),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LlmConnectionWithStatusAuthType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for LlmConnectionWithStatusAuthType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for LlmConnectionWithStatusAuthType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LlmConnectionWithStatusMidStreamBehavior {
+    #[serde(rename = "steer")]
+    Steer,
+    #[serde(rename = "queue")]
+    Queue,
+}
+impl ::std::fmt::Display for LlmConnectionWithStatusMidStreamBehavior {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Steer => f.write_str("steer"),
+            Self::Queue => f.write_str("queue"),
+        }
+    }
+}
+impl ::std::str::FromStr for LlmConnectionWithStatusMidStreamBehavior {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "steer" => Ok(Self::Steer),
+            "queue" => Ok(Self::Queue),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LlmConnectionWithStatusMidStreamBehavior {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for LlmConnectionWithStatusMidStreamBehavior {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for LlmConnectionWithStatusMidStreamBehavior {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum LlmConnectionWithStatusModelsItem {
+    Object {
+        #[serde(rename = "contextWindow")]
+        context_window: f64,
+        description: ::std::string::String,
+        #[serde(
+            rename = "descriptionKey",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        description_key: ::std::option::Option<::std::string::String>,
+        id: ::std::string::String,
+        name: ::std::string::String,
+        provider: LlmConnectionWithStatusModelsItemObjectProvider,
+        #[serde(rename = "shortName")]
+        short_name: ::std::string::String,
+        #[serde(
+            rename = "supportsImages",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        supports_images: ::std::option::Option<bool>,
+        #[serde(
+            rename = "supportsThinking",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        supports_thinking: ::std::option::Option<bool>,
+        #[serde(
+            rename = "thinkingAlwaysOn",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        thinking_always_on: ::std::option::Option<bool>,
+    },
+    String(::std::string::String),
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LlmConnectionWithStatusModelsItemObjectProvider {
+    #[serde(rename = "anthropic")]
+    Anthropic,
+    #[serde(rename = "pi")]
+    Pi,
+}
+impl ::std::fmt::Display for LlmConnectionWithStatusModelsItemObjectProvider {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Anthropic => f.write_str("anthropic"),
+            Self::Pi => f.write_str("pi"),
+        }
+    }
+}
+impl ::std::str::FromStr for LlmConnectionWithStatusModelsItemObjectProvider {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "anthropic" => Ok(Self::Anthropic),
+            "pi" => Ok(Self::Pi),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LlmConnectionWithStatusModelsItemObjectProvider {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for LlmConnectionWithStatusModelsItemObjectProvider
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for LlmConnectionWithStatusModelsItemObjectProvider
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LlmConnectionWithStatusProviderType {
+    #[serde(rename = "pi")]
+    Pi,
+    #[serde(rename = "pi_compat")]
+    PiCompat,
+}
+impl ::std::fmt::Display for LlmConnectionWithStatusProviderType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pi => f.write_str("pi"),
+            Self::PiCompat => f.write_str("pi_compat"),
+        }
+    }
+}
+impl ::std::str::FromStr for LlmConnectionWithStatusProviderType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pi" => Ok(Self::Pi),
+            "pi_compat" => Ok(Self::PiCompat),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LlmConnectionWithStatusProviderType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for LlmConnectionWithStatusProviderType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for LlmConnectionWithStatusProviderType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct LoadedSkill {
+    pub content: ::std::string::String,
+    #[serde(
+        rename = "iconPath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub icon_path: ::std::option::Option<::std::string::String>,
+    pub metadata: LoadedSkillMetadata,
+    pub path: ::std::string::String,
+    pub slug: ::std::string::String,
+    pub source: LoadedSkillSource,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct LoadedSkillMetadata {
+    #[serde(
+        rename = "alwaysAllow",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub always_allow: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+    pub description: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub globs: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub icon: ::std::option::Option<::std::string::String>,
+    pub name: ::std::string::String,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LoadedSkillSource {
+    #[serde(rename = "global")]
+    Global,
+    #[serde(rename = "workspace")]
+    Workspace,
+    #[serde(rename = "project")]
+    Project,
+}
+impl ::std::fmt::Display for LoadedSkillSource {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Global => f.write_str("global"),
+            Self::Workspace => f.write_str("workspace"),
+            Self::Project => f.write_str("project"),
+        }
+    }
+}
+impl ::std::str::FromStr for LoadedSkillSource {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "global" => Ok(Self::Global),
+            "workspace" => Ok(Self::Workspace),
+            "project" => Ok(Self::Project),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LoadedSkillSource {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for LoadedSkillSource {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for LoadedSkillSource {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -1528,6 +2665,83 @@ impl ::std::convert::TryFrom<::std::string::String> for MessageToolDisplayMetaCa
     PartialEq,
     PartialOrd,
 )]
+pub enum ModelSelectionMode {
+    #[serde(rename = "automaticallySyncedFromProvider")]
+    AutomaticallySyncedFromProvider,
+    #[serde(rename = "userDefined3Tier")]
+    UserDefined3Tier,
+}
+impl ::std::fmt::Display for ModelSelectionMode {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::AutomaticallySyncedFromProvider => f.write_str("automaticallySyncedFromProvider"),
+            Self::UserDefined3Tier => f.write_str("userDefined3Tier"),
+        }
+    }
+}
+impl ::std::str::FromStr for ModelSelectionMode {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "automaticallySyncedFromProvider" => Ok(Self::AutomaticallySyncedFromProvider),
+            "userDefined3Tier" => Ok(Self::UserDefined3Tier),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for ModelSelectionMode {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for ModelSelectionMode {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for ModelSelectionMode {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct PendingPlanExecution {
+    #[serde(rename = "awaitingCompaction")]
+    pub awaiting_compaction: bool,
+    #[serde(
+        rename = "draftInputSnapshot",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub draft_input_snapshot: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "executionDispatched",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub execution_dispatched: ::std::option::Option<bool>,
+    #[serde(rename = "planPath")]
+    pub plan_path: ::std::string::String,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
 pub enum PermissionMode {
     #[serde(rename = "safe")]
     Safe,
@@ -1571,6 +2785,95 @@ impl ::std::convert::TryFrom<&::std::string::String> for PermissionMode {
     }
 }
 impl ::std::convert::TryFrom<::std::string::String> for PermissionMode {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct PermissionModeState {
+    #[serde(rename = "changedAt")]
+    pub changed_at: ::std::string::String,
+    #[serde(rename = "changedBy")]
+    pub changed_by: PermissionModeStateChangedBy,
+    #[serde(rename = "modeVersion")]
+    pub mode_version: f64,
+    #[serde(rename = "permissionMode")]
+    pub permission_mode: PermissionMode,
+    #[serde(
+        rename = "previousPermissionMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub previous_permission_mode: ::std::option::Option<PermissionMode>,
+    #[serde(
+        rename = "transitionDisplay",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub transition_display: ::std::option::Option<::std::string::String>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum PermissionModeStateChangedBy {
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "system")]
+    System,
+    #[serde(rename = "restore")]
+    Restore,
+    #[serde(rename = "unknown")]
+    Unknown,
+}
+impl ::std::fmt::Display for PermissionModeStateChangedBy {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::User => f.write_str("user"),
+            Self::System => f.write_str("system"),
+            Self::Restore => f.write_str("restore"),
+            Self::Unknown => f.write_str("unknown"),
+        }
+    }
+}
+impl ::std::str::FromStr for PermissionModeStateChangedBy {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "user" => Ok(Self::User),
+            "system" => Ok(Self::System),
+            "restore" => Ok(Self::Restore),
+            "unknown" => Ok(Self::Unknown),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for PermissionModeStateChangedBy {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for PermissionModeStateChangedBy {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for PermissionModeStateChangedBy {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -1707,6 +3010,14 @@ impl ::std::convert::TryFrom<::std::string::String> for PermissionRequestType {
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct RefreshTitleResult {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub error: ::std::option::Option<::std::string::String>,
+    pub success: bool,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub title: ::std::option::Option<::std::string::String>,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct SendMessageOptions {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub badges: ::std::option::Option<::std::vec::Vec<SendMessageOptionsBadgesItem>>,
@@ -1826,6 +3137,138 @@ impl ::std::convert::TryFrom<&::std::string::String> for SendMessageOptionsBadge
     }
 }
 impl ::std::convert::TryFrom<::std::string::String> for SendMessageOptionsBadgesItemType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct ServerHealth {
+    pub checks: ::std::vec::Vec<ServerHealthChecksItem>,
+    pub status: ServerHealthStatus,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct ServerHealthChecksItem {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub message: ::std::option::Option<::std::string::String>,
+    pub name: ::std::string::String,
+    pub status: ServerHealthChecksItemStatus,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum ServerHealthChecksItemStatus {
+    #[serde(rename = "pass")]
+    Pass,
+    #[serde(rename = "fail")]
+    Fail,
+}
+impl ::std::fmt::Display for ServerHealthChecksItemStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pass => f.write_str("pass"),
+            Self::Fail => f.write_str("fail"),
+        }
+    }
+}
+impl ::std::str::FromStr for ServerHealthChecksItemStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pass" => Ok(Self::Pass),
+            "fail" => Ok(Self::Fail),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for ServerHealthChecksItemStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for ServerHealthChecksItemStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for ServerHealthChecksItemStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum ServerHealthStatus {
+    #[serde(rename = "ok")]
+    Ok,
+    #[serde(rename = "degraded")]
+    Degraded,
+    #[serde(rename = "unhealthy")]
+    Unhealthy,
+}
+impl ::std::fmt::Display for ServerHealthStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Ok => f.write_str("ok"),
+            Self::Degraded => f.write_str("degraded"),
+            Self::Unhealthy => f.write_str("unhealthy"),
+        }
+    }
+}
+impl ::std::str::FromStr for ServerHealthStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "ok" => Ok(Self::Ok),
+            "degraded" => Ok(Self::Degraded),
+            "unhealthy" => Ok(Self::Unhealthy),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for ServerHealthStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for ServerHealthStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for ServerHealthStatus {
     type Error = self::error::ConversionError;
     fn try_from(
         value: ::std::string::String,
@@ -2065,6 +3508,1726 @@ pub struct SessionBoundPrsItem {
     pub number: f64,
     pub owner: ::std::string::String,
     pub repo: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundle {
+    #[serde(
+        rename = "branchInfo",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub branch_info: ::std::option::Option<SessionBundleBranchInfo>,
+    pub files: ::std::vec::Vec<SessionBundleFilesItem>,
+    pub session: SessionBundleSession,
+    pub version: SessionBundleVersion,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleBranchInfo {
+    #[serde(rename = "sdkCwd")]
+    pub sdk_cwd: ::std::string::String,
+    #[serde(rename = "sdkSessionId")]
+    pub sdk_session_id: ::std::string::String,
+    #[serde(rename = "sdkTurnId")]
+    pub sdk_turn_id: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleFilesItem {
+    #[serde(rename = "contentBase64")]
+    pub content_base64: ::std::string::String,
+    #[serde(rename = "relativePath")]
+    pub relative_path: ::std::string::String,
+    pub size: f64,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSession {
+    pub header: SessionBundleSessionHeader,
+    pub messages: ::std::vec::Vec<SessionBundleSessionMessagesItem>,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionHeader {
+    #[serde(
+        rename = "archivedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub archived_at: ::std::option::Option<f64>,
+    #[serde(
+        rename = "boundPrs",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub bound_prs: ::std::option::Option<::std::vec::Vec<SessionBundleSessionHeaderBoundPrsItem>>,
+    #[serde(
+        rename = "branchFromMessageId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub branch_from_message_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "branchFromSdkCwd",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub branch_from_sdk_cwd: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "branchFromSdkSessionId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub branch_from_sdk_session_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "branchFromSdkTurnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub branch_from_sdk_turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "branchFromSessionPath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub branch_from_session_path: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "codingMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub coding_mode: ::std::option::Option<bool>,
+    #[serde(
+        rename = "connectionLocked",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub connection_locked: ::std::option::Option<bool>,
+    #[serde(rename = "createdAt")]
+    pub created_at: f64,
+    #[serde(
+        rename = "hasUnread",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub has_unread: ::std::option::Option<bool>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub hidden: ::std::option::Option<bool>,
+    pub id: ::std::string::String,
+    #[serde(
+        rename = "isArchived",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_archived: ::std::option::Option<bool>,
+    #[serde(
+        rename = "isFlagged",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_flagged: ::std::option::Option<bool>,
+    #[serde(
+        rename = "lastFinalMessageId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_final_message_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "lastMessageAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_message_at: ::std::option::Option<f64>,
+    #[serde(
+        rename = "lastMessageRole",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_message_role: ::std::option::Option<SessionBundleSessionHeaderLastMessageRole>,
+    #[serde(
+        rename = "lastReadMessageId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_read_message_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "lastUsedAt")]
+    pub last_used_at: f64,
+    #[serde(
+        rename = "llmConnection",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub llm_connection: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "messageCount")]
+    pub message_count: f64,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub model: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "parentSessionId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub parent_session_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "pendingPlanExecution",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pending_plan_execution: ::std::option::Option<PendingPlanExecution>,
+    #[serde(
+        rename = "permissionMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub permission_mode: ::std::option::Option<PermissionMode>,
+    #[serde(
+        rename = "prMonitors",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pr_monitors: ::std::option::Option<
+        ::std::collections::BTreeMap<
+            ::std::string::String,
+            SessionBundleSessionHeaderPrMonitorsValue,
+        >,
+    >,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub preview: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "previousPermissionMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub previous_permission_mode: ::std::option::Option<PermissionMode>,
+    #[serde(
+        rename = "sdkCwd",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub sdk_cwd: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "sdkSessionId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub sdk_session_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "thinkingLevel",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thinking_level: ::std::option::Option<ThinkingLevel>,
+    #[serde(rename = "tokenUsage")]
+    pub token_usage: SessionBundleSessionHeaderTokenUsage,
+    #[serde(
+        rename = "transferredSessionSummary",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub transferred_session_summary: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "transferredSessionSummaryApplied",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub transferred_session_summary_applied: ::std::option::Option<bool>,
+    #[serde(
+        rename = "workingDirectory",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub working_directory: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "workspaceRootPath")]
+    pub workspace_root_path: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionHeaderBoundPrsItem {
+    #[serde(rename = "addedAt")]
+    pub added_at: f64,
+    pub host: ::std::string::String,
+    pub number: f64,
+    pub owner: ::std::string::String,
+    pub repo: ::std::string::String,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionHeaderLastMessageRole {
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "assistant")]
+    Assistant,
+    #[serde(rename = "plan")]
+    Plan,
+    #[serde(rename = "tool")]
+    Tool,
+    #[serde(rename = "error")]
+    Error,
+}
+impl ::std::fmt::Display for SessionBundleSessionHeaderLastMessageRole {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::User => f.write_str("user"),
+            Self::Assistant => f.write_str("assistant"),
+            Self::Plan => f.write_str("plan"),
+            Self::Tool => f.write_str("tool"),
+            Self::Error => f.write_str("error"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionHeaderLastMessageRole {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "user" => Ok(Self::User),
+            "assistant" => Ok(Self::Assistant),
+            "plan" => Ok(Self::Plan),
+            "tool" => Ok(Self::Tool),
+            "error" => Ok(Self::Error),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionBundleSessionHeaderLastMessageRole {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionBundleSessionHeaderLastMessageRole {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionBundleSessionHeaderLastMessageRole {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionHeaderPrMonitorsValue {
+    #[serde(
+        rename = "autoFix",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub auto_fix: ::std::option::Option<bool>,
+    #[serde(
+        rename = "lastFixAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_fix_at: ::std::option::Option<f64>,
+    #[serde(
+        rename = "lastFixSignature",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_fix_signature: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+}
+impl ::std::default::Default for SessionBundleSessionHeaderPrMonitorsValue {
+    fn default() -> Self {
+        Self {
+            auto_fix: Default::default(),
+            last_fix_at: Default::default(),
+            last_fix_signature: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionHeaderTokenUsage {
+    #[serde(
+        rename = "cacheCreationTokens",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub cache_creation_tokens: ::std::option::Option<f64>,
+    #[serde(
+        rename = "cacheReadTokens",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub cache_read_tokens: ::std::option::Option<f64>,
+    #[serde(rename = "contextTokens")]
+    pub context_tokens: f64,
+    #[serde(
+        rename = "contextUsage",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub context_usage: ::std::option::Option<SessionBundleSessionHeaderTokenUsageContextUsage>,
+    #[serde(
+        rename = "contextWindow",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub context_window: ::std::option::Option<f64>,
+    #[serde(rename = "costUsd")]
+    pub cost_usd: f64,
+    #[serde(rename = "inputTokens")]
+    pub input_tokens: f64,
+    #[serde(rename = "outputTokens")]
+    pub output_tokens: f64,
+    #[serde(rename = "totalTokens")]
+    pub total_tokens: f64,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionHeaderTokenUsageContextUsage {
+    #[serde(rename = "canCompact")]
+    pub can_compact: bool,
+    #[serde(rename = "isEstimate")]
+    pub is_estimate: bool,
+    #[serde(rename = "isStale")]
+    pub is_stale: bool,
+    #[serde(rename = "limitKind")]
+    pub limit_kind: SessionBundleSessionHeaderTokenUsageContextUsageLimitKind,
+    #[serde(
+        rename = "limitTokens",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub limit_tokens: ::std::option::Option<f64>,
+    #[serde(rename = "usedTokens")]
+    #[serde(deserialize_with = "required_option")]
+    pub used_tokens: ::std::option::Option<f64>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionHeaderTokenUsageContextUsageLimitKind {
+    #[serde(rename = "compaction")]
+    Compaction,
+    #[serde(rename = "context")]
+    Context,
+}
+impl ::std::fmt::Display for SessionBundleSessionHeaderTokenUsageContextUsageLimitKind {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Compaction => f.write_str("compaction"),
+            Self::Context => f.write_str("context"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionHeaderTokenUsageContextUsageLimitKind {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "compaction" => Ok(Self::Compaction),
+            "context" => Ok(Self::Context),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionBundleSessionHeaderTokenUsageContextUsageLimitKind {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionHeaderTokenUsageContextUsageLimitKind
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionHeaderTokenUsageContextUsageLimitKind
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItem {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub annotations:
+        ::std::option::Option<::std::vec::Vec<SessionBundleSessionMessagesItemAnnotationsItem>>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub attachments: ::std::option::Option<::std::vec::Vec<StoredAttachment>>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub badges: ::std::option::Option<::std::vec::Vec<SessionBundleSessionMessagesItemBadgesItem>>,
+    pub content: ::std::string::String,
+    #[serde(
+        rename = "elapsedSeconds",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub elapsed_seconds: ::std::option::Option<f64>,
+    #[serde(
+        rename = "errorActions",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub error_actions:
+        ::std::option::Option<::std::vec::Vec<SessionBundleSessionMessagesItemErrorActionsItem>>,
+    #[serde(
+        rename = "errorCanRetry",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub error_can_retry: ::std::option::Option<bool>,
+    #[serde(
+        rename = "errorCode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub error_code: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "errorDetails",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub error_details: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+    #[serde(
+        rename = "errorOriginal",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub error_original: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "errorTitle",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub error_title: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub hidden: ::std::option::Option<bool>,
+    pub id: ::std::string::String,
+    #[serde(
+        rename = "infoLevel",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub info_level: ::std::option::Option<SessionBundleSessionMessagesItemInfoLevel>,
+    #[serde(
+        rename = "isBackground",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_background: ::std::option::Option<bool>,
+    #[serde(
+        rename = "isError",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_error: ::std::option::Option<bool>,
+    #[serde(
+        rename = "isIntermediate",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_intermediate: ::std::option::Option<bool>,
+    #[serde(
+        rename = "isQueued",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub is_queued: ::std::option::Option<bool>,
+    #[serde(
+        rename = "parentToolUseId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub parent_tool_use_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "planPath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub plan_path: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "shellId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub shell_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "statusType",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub status_type: ::std::option::Option<SessionBundleSessionMessagesItemStatusType>,
+    #[serde(
+        rename = "taskId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub task_id: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub timestamp: ::std::option::Option<f64>,
+    #[serde(
+        rename = "toolDisplayMeta",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_display_meta: ::std::option::Option<SessionBundleSessionMessagesItemToolDisplayMeta>,
+    #[serde(
+        rename = "toolDisplayName",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_display_name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "toolDuration",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_duration: ::std::option::Option<f64>,
+    #[serde(
+        rename = "toolInput",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_input:
+        ::std::option::Option<::serde_json::Map<::std::string::String, ::serde_json::Value>>,
+    #[serde(
+        rename = "toolIntent",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_intent: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "toolName",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "toolResult",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_result: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "toolStatus",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_status: ::std::option::Option<ToolStatus>,
+    #[serde(
+        rename = "toolUseId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub tool_use_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "turnId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub turn_id: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: MessageRole,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItemAnnotationsItem {
+    pub body: ::std::vec::Vec<SessionBundleSessionMessagesItemAnnotationsItemBodyItem>,
+    #[serde(rename = "createdAt")]
+    pub created_at: f64,
+    #[serde(
+        rename = "createdBy",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub created_by: ::std::option::Option<SessionBundleSessionMessagesItemAnnotationsItemCreatedBy>,
+    #[serde(
+        rename = "deletedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub deleted_at: ::std::option::Option<f64>,
+    pub id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub intent: ::std::option::Option<SessionBundleSessionMessagesItemAnnotationsItemIntent>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub meta: ::std::option::Option<::serde_json::Map<::std::string::String, ::serde_json::Value>>,
+    #[serde(rename = "schemaVersion")]
+    pub schema_version: SessionBundleSessionMessagesItemAnnotationsItemSchemaVersion,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub status: ::std::option::Option<SessionBundleSessionMessagesItemAnnotationsItemStatus>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub style: ::std::option::Option<SessionBundleSessionMessagesItemAnnotationsItemStyle>,
+    pub target: SessionBundleSessionMessagesItemAnnotationsItemTarget,
+    #[serde(
+        rename = "threadRef",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thread_ref: ::std::option::Option<SessionBundleSessionMessagesItemAnnotationsItemThreadRef>,
+    #[serde(
+        rename = "updatedAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub updated_at: ::std::option::Option<f64>,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "type")]
+pub enum SessionBundleSessionMessagesItemAnnotationsItemBodyItem {
+    #[serde(rename = "highlight")]
+    Highlight,
+    #[serde(rename = "note")]
+    Note {
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        format:
+            ::std::option::Option<SessionBundleSessionMessagesItemAnnotationsItemBodyItemFormat>,
+        text: ::std::string::String,
+    },
+    #[serde(rename = "tag")]
+    Tag { value: ::std::string::String },
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemAnnotationsItemBodyItemFormat {
+    #[serde(rename = "plain")]
+    Plain,
+    #[serde(rename = "markdown")]
+    Markdown,
+}
+impl ::std::fmt::Display for SessionBundleSessionMessagesItemAnnotationsItemBodyItemFormat {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Plain => f.write_str("plain"),
+            Self::Markdown => f.write_str("markdown"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionMessagesItemAnnotationsItemBodyItemFormat {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "plain" => Ok(Self::Plain),
+            "markdown" => Ok(Self::Markdown),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str>
+    for SessionBundleSessionMessagesItemAnnotationsItemBodyItemFormat
+{
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemBodyItemFormat
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemBodyItemFormat
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItemAnnotationsItemCreatedBy {
+    pub id: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub type_: ::std::option::Option<SessionBundleSessionMessagesItemAnnotationsItemCreatedByType>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemAnnotationsItemCreatedByType {
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "agent")]
+    Agent,
+    #[serde(rename = "system")]
+    System,
+}
+impl ::std::fmt::Display for SessionBundleSessionMessagesItemAnnotationsItemCreatedByType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::User => f.write_str("user"),
+            Self::Agent => f.write_str("agent"),
+            Self::System => f.write_str("system"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionMessagesItemAnnotationsItemCreatedByType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "user" => Ok(Self::User),
+            "agent" => Ok(Self::Agent),
+            "system" => Ok(Self::System),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str>
+    for SessionBundleSessionMessagesItemAnnotationsItemCreatedByType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemCreatedByType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemCreatedByType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemAnnotationsItemIntent {
+    #[serde(rename = "highlight")]
+    Highlight,
+    #[serde(rename = "comment")]
+    Comment,
+    #[serde(rename = "question")]
+    Question,
+}
+impl ::std::fmt::Display for SessionBundleSessionMessagesItemAnnotationsItemIntent {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Highlight => f.write_str("highlight"),
+            Self::Comment => f.write_str("comment"),
+            Self::Question => f.write_str("question"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionMessagesItemAnnotationsItemIntent {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "highlight" => Ok(Self::Highlight),
+            "comment" => Ok(Self::Comment),
+            "question" => Ok(Self::Question),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionBundleSessionMessagesItemAnnotationsItemIntent {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemIntent
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemIntent
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Serialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct SessionBundleSessionMessagesItemAnnotationsItemSchemaVersion(f64);
+impl ::std::ops::Deref for SessionBundleSessionMessagesItemAnnotationsItemSchemaVersion {
+    type Target = f64;
+    fn deref(&self) -> &f64 {
+        &self.0
+    }
+}
+impl ::std::convert::From<SessionBundleSessionMessagesItemAnnotationsItemSchemaVersion> for f64 {
+    fn from(value: SessionBundleSessionMessagesItemAnnotationsItemSchemaVersion) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::TryFrom<f64> for SessionBundleSessionMessagesItemAnnotationsItemSchemaVersion {
+    type Error = self::error::ConversionError;
+    fn try_from(value: f64) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if ![1_f64].contains(&value) {
+            Err("invalid value".into())
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+impl<'de> ::serde::Deserialize<'de>
+    for SessionBundleSessionMessagesItemAnnotationsItemSchemaVersion
+{
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        Self::try_from(<f64>::deserialize(deserializer)?)
+            .map_err(|e| <D::Error as ::serde::de::Error>::custom(e.to_string()))
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemAnnotationsItemStatus {
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "acknowledged")]
+    Acknowledged,
+    #[serde(rename = "resolved")]
+    Resolved,
+    #[serde(rename = "dismissed")]
+    Dismissed,
+}
+impl ::std::fmt::Display for SessionBundleSessionMessagesItemAnnotationsItemStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pending => f.write_str("pending"),
+            Self::Acknowledged => f.write_str("acknowledged"),
+            Self::Resolved => f.write_str("resolved"),
+            Self::Dismissed => f.write_str("dismissed"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionMessagesItemAnnotationsItemStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pending" => Ok(Self::Pending),
+            "acknowledged" => Ok(Self::Acknowledged),
+            "resolved" => Ok(Self::Resolved),
+            "dismissed" => Ok(Self::Dismissed),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionBundleSessionMessagesItemAnnotationsItemStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemStatus
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemStatus
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItemAnnotationsItemStyle {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub color: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub opacity: ::std::option::Option<f64>,
+}
+impl ::std::default::Default for SessionBundleSessionMessagesItemAnnotationsItemStyle {
+    fn default() -> Self {
+        Self {
+            color: Default::default(),
+            opacity: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItemAnnotationsItemTarget {
+    pub selectors:
+        ::std::vec::Vec<SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItem>,
+    pub source: SessionBundleSessionMessagesItemAnnotationsItemTargetSource,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(tag = "type")]
+pub enum SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItem {
+    #[serde(rename = "text-quote")]
+    TextQuote {
+        exact: ::std::string::String,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        prefix: ::std::option::Option<::std::string::String>,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        suffix: ::std::option::Option<::std::string::String>,
+    },
+    #[serde(rename = "text-position")]
+    TextPosition {
+        end: f64,
+        start: f64,
+        #[serde(
+            rename = "textVersion",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        text_version: ::std::option::Option<::std::string::String>,
+    },
+    #[serde(rename = "block")]
+    Block {
+        #[serde(
+            rename = "blockId",
+            default,
+            skip_serializing_if = "::std::option::Option::is_none"
+        )]
+        block_id: ::std::option::Option<::std::string::String>,
+        #[serde(rename = "blockType")]
+        block_type: SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemBlockType,
+        path: ::std::string::String,
+    },
+    #[serde(rename = "xywh")]
+    Xywh {
+        h: f64,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        page: ::std::option::Option<f64>,
+        #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+        rotation: ::std::option::Option<f64>,
+        unit: SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemUnit,
+        w: f64,
+        x: f64,
+        y: f64,
+    },
+    #[serde(rename = "table-cell")]
+    TableCell {
+        #[serde(rename = "columnKey")]
+        column_key: ::std::string::String,
+        #[serde(rename = "rowKey")]
+        row_key: SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemRowKey,
+    },
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemBlockType {
+    #[serde(rename = "paragraph")]
+    Paragraph,
+    #[serde(rename = "code")]
+    Code,
+    #[serde(rename = "latex")]
+    Latex,
+    #[serde(rename = "mermaid")]
+    Mermaid,
+    #[serde(rename = "datatable")]
+    Datatable,
+    #[serde(rename = "spreadsheet")]
+    Spreadsheet,
+    #[serde(rename = "image-preview")]
+    ImagePreview,
+    #[serde(rename = "pdf-preview")]
+    PdfPreview,
+    #[serde(rename = "html-preview")]
+    HtmlPreview,
+}
+impl ::std::fmt::Display
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemBlockType
+{
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Paragraph => f.write_str("paragraph"),
+            Self::Code => f.write_str("code"),
+            Self::Latex => f.write_str("latex"),
+            Self::Mermaid => f.write_str("mermaid"),
+            Self::Datatable => f.write_str("datatable"),
+            Self::Spreadsheet => f.write_str("spreadsheet"),
+            Self::ImagePreview => f.write_str("image-preview"),
+            Self::PdfPreview => f.write_str("pdf-preview"),
+            Self::HtmlPreview => f.write_str("html-preview"),
+        }
+    }
+}
+impl ::std::str::FromStr
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemBlockType
+{
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "paragraph" => Ok(Self::Paragraph),
+            "code" => Ok(Self::Code),
+            "latex" => Ok(Self::Latex),
+            "mermaid" => Ok(Self::Mermaid),
+            "datatable" => Ok(Self::Datatable),
+            "spreadsheet" => Ok(Self::Spreadsheet),
+            "image-preview" => Ok(Self::ImagePreview),
+            "pdf-preview" => Ok(Self::PdfPreview),
+            "html-preview" => Ok(Self::HtmlPreview),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str>
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemBlockType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemBlockType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemBlockType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemRowKey {
+    Number(f64),
+    String(::std::string::String),
+}
+impl ::std::fmt::Display
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemRowKey
+{
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match self {
+            Self::Number(x) => x.fmt(f),
+            Self::String(x) => x.fmt(f),
+        }
+    }
+}
+impl ::std::convert::From<f64>
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemRowKey
+{
+    fn from(value: f64) -> Self {
+        Self::Number(value)
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemUnit {
+    #[serde(rename = "pixel")]
+    Pixel,
+    #[serde(rename = "percent")]
+    Percent,
+}
+impl ::std::fmt::Display
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemUnit
+{
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Pixel => f.write_str("pixel"),
+            Self::Percent => f.write_str("percent"),
+        }
+    }
+}
+impl ::std::str::FromStr
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemUnit
+{
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "pixel" => Ok(Self::Pixel),
+            "percent" => Ok(Self::Percent),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str>
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemUnit
+{
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemUnit
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionMessagesItemAnnotationsItemTargetSelectorsItemUnit
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItemAnnotationsItemTargetSource {
+    #[serde(rename = "messageId")]
+    pub message_id: ::std::string::String,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItemAnnotationsItemThreadRef {
+    #[serde(
+        rename = "sessionId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub session_id: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "threadId",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thread_id: ::std::option::Option<::std::string::String>,
+}
+impl ::std::default::Default for SessionBundleSessionMessagesItemAnnotationsItemThreadRef {
+    fn default() -> Self {
+        Self {
+            session_id: Default::default(),
+            thread_id: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItemBadgesItem {
+    #[serde(
+        rename = "collapsedLabel",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub collapsed_label: ::std::option::Option<::std::string::String>,
+    pub end: f64,
+    #[serde(
+        rename = "filePath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub file_path: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "iconDataUrl",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub icon_data_url: ::std::option::Option<::std::string::String>,
+    pub label: ::std::string::String,
+    #[serde(rename = "rawText")]
+    pub raw_text: ::std::string::String,
+    pub start: f64,
+    #[serde(rename = "type")]
+    pub type_: SessionBundleSessionMessagesItemBadgesItemType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemBadgesItemType {
+    #[serde(rename = "skill")]
+    Skill,
+    #[serde(rename = "context")]
+    Context,
+    #[serde(rename = "command")]
+    Command,
+    #[serde(rename = "file")]
+    File,
+    #[serde(rename = "folder")]
+    Folder,
+}
+impl ::std::fmt::Display for SessionBundleSessionMessagesItemBadgesItemType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Skill => f.write_str("skill"),
+            Self::Context => f.write_str("context"),
+            Self::Command => f.write_str("command"),
+            Self::File => f.write_str("file"),
+            Self::Folder => f.write_str("folder"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionMessagesItemBadgesItemType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "skill" => Ok(Self::Skill),
+            "context" => Ok(Self::Context),
+            "command" => Ok(Self::Command),
+            "file" => Ok(Self::File),
+            "folder" => Ok(Self::Folder),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionBundleSessionMessagesItemBadgesItemType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemBadgesItemType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionMessagesItemBadgesItemType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItemErrorActionsItem {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub action: ::std::option::Option<SessionBundleSessionMessagesItemErrorActionsItemAction>,
+    pub key: ::std::string::String,
+    pub label: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub url: ::std::option::Option<::std::string::String>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemErrorActionsItemAction {
+    #[serde(rename = "retry")]
+    Retry,
+    #[serde(rename = "settings")]
+    Settings,
+    #[serde(rename = "open_url")]
+    OpenUrl,
+}
+impl ::std::fmt::Display for SessionBundleSessionMessagesItemErrorActionsItemAction {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Retry => f.write_str("retry"),
+            Self::Settings => f.write_str("settings"),
+            Self::OpenUrl => f.write_str("open_url"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionMessagesItemErrorActionsItemAction {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "retry" => Ok(Self::Retry),
+            "settings" => Ok(Self::Settings),
+            "open_url" => Ok(Self::OpenUrl),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionBundleSessionMessagesItemErrorActionsItemAction {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemErrorActionsItemAction
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionMessagesItemErrorActionsItemAction
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemInfoLevel {
+    #[serde(rename = "info")]
+    Info,
+    #[serde(rename = "warning")]
+    Warning,
+    #[serde(rename = "error")]
+    Error,
+    #[serde(rename = "success")]
+    Success,
+}
+impl ::std::fmt::Display for SessionBundleSessionMessagesItemInfoLevel {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Info => f.write_str("info"),
+            Self::Warning => f.write_str("warning"),
+            Self::Error => f.write_str("error"),
+            Self::Success => f.write_str("success"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionMessagesItemInfoLevel {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "info" => Ok(Self::Info),
+            "warning" => Ok(Self::Warning),
+            "error" => Ok(Self::Error),
+            "success" => Ok(Self::Success),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionBundleSessionMessagesItemInfoLevel {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionBundleSessionMessagesItemInfoLevel {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionBundleSessionMessagesItemInfoLevel {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemStatusType {
+    #[serde(rename = "compacting")]
+    Compacting,
+    #[serde(rename = "compaction_complete")]
+    CompactionComplete,
+    #[serde(rename = "retrying")]
+    Retrying,
+}
+impl ::std::fmt::Display for SessionBundleSessionMessagesItemStatusType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Compacting => f.write_str("compacting"),
+            Self::CompactionComplete => f.write_str("compaction_complete"),
+            Self::Retrying => f.write_str("retrying"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionMessagesItemStatusType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "compacting" => Ok(Self::Compacting),
+            "compaction_complete" => Ok(Self::CompactionComplete),
+            "retrying" => Ok(Self::Retrying),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionBundleSessionMessagesItemStatusType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemStatusType
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionBundleSessionMessagesItemStatusType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionBundleSessionMessagesItemToolDisplayMeta {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub category: ::std::option::Option<SessionBundleSessionMessagesItemToolDisplayMetaCategory>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub description: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "displayName")]
+    pub display_name: ::std::string::String,
+    #[serde(
+        rename = "iconDataUrl",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub icon_data_url: ::std::option::Option<::std::string::String>,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionBundleSessionMessagesItemToolDisplayMetaCategory {
+    #[serde(rename = "skill")]
+    Skill,
+    #[serde(rename = "native")]
+    Native,
+}
+impl ::std::fmt::Display for SessionBundleSessionMessagesItemToolDisplayMetaCategory {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Skill => f.write_str("skill"),
+            Self::Native => f.write_str("native"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionBundleSessionMessagesItemToolDisplayMetaCategory {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "skill" => Ok(Self::Skill),
+            "native" => Ok(Self::Native),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionBundleSessionMessagesItemToolDisplayMetaCategory {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String>
+    for SessionBundleSessionMessagesItemToolDisplayMetaCategory
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String>
+    for SessionBundleSessionMessagesItemToolDisplayMetaCategory
+{
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Serialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct SessionBundleVersion(f64);
+impl ::std::ops::Deref for SessionBundleVersion {
+    type Target = f64;
+    fn deref(&self) -> &f64 {
+        &self.0
+    }
+}
+impl ::std::convert::From<SessionBundleVersion> for f64 {
+    fn from(value: SessionBundleVersion) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::TryFrom<f64> for SessionBundleVersion {
+    type Error = self::error::ConversionError;
+    fn try_from(value: f64) -> ::std::result::Result<Self, self::error::ConversionError> {
+        if ![1_f64].contains(&value) {
+            Err("invalid value".into())
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for SessionBundleVersion {
+    fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        Self::try_from(<f64>::deserialize(deserializer)?)
+            .map_err(|e| <D::Error as ::serde::de::Error>::custom(e.to_string()))
+    }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct SessionCodingModeChangedEvent {
@@ -3768,6 +6931,111 @@ pub struct SessionCurrentStatus {
     pub status_type: ::std::option::Option<::std::string::String>,
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionDraft {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub attachments: ::std::option::Option<::std::vec::Vec<SessionDraftAttachmentsItem>>,
+    pub text: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionDraftAttachmentsItem {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub content: ::std::option::Option<SessionDraftAttachmentsItemContent>,
+    pub name: ::std::string::String,
+    pub path: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionDraftAttachmentsItemContent {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub base64: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "mimeType")]
+    pub mime_type: ::std::string::String,
+    pub size: f64,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub text: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "thumbnailBase64",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thumbnail_base64: ::std::option::Option<::std::string::String>,
+    #[serde(rename = "type")]
+    pub type_: SessionDraftAttachmentsItemContentType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionDraftAttachmentsItemContentType {
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "pdf")]
+    Pdf,
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "office")]
+    Office,
+    #[serde(rename = "audio")]
+    Audio,
+    #[serde(rename = "unknown")]
+    Unknown,
+}
+impl ::std::fmt::Display for SessionDraftAttachmentsItemContentType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Image => f.write_str("image"),
+            Self::Pdf => f.write_str("pdf"),
+            Self::Text => f.write_str("text"),
+            Self::Office => f.write_str("office"),
+            Self::Audio => f.write_str("audio"),
+            Self::Unknown => f.write_str("unknown"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionDraftAttachmentsItemContentType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "image" => Ok(Self::Image),
+            "pdf" => Ok(Self::Pdf),
+            "text" => Ok(Self::Text),
+            "office" => Ok(Self::Office),
+            "audio" => Ok(Self::Audio),
+            "unknown" => Ok(Self::Unknown),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionDraftAttachmentsItemContentType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionDraftAttachmentsItemContentType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionDraftAttachmentsItemContentType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct SessionErrorEvent {
     #[serde(
         rename = "backgroundTasksAlive",
@@ -4085,6 +7353,75 @@ impl ::std::convert::From<SessionWorkingDirectoryChangedEvent> for SessionEvent 
 impl ::std::convert::From<SessionWorkingDirectoryErrorEvent> for SessionEvent {
     fn from(value: SessionWorkingDirectoryErrorEvent) -> Self {
         Self::WorkingDirectoryErrorEvent(value)
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionFile {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub children: ::std::option::Option<::std::vec::Vec<SessionFile>>,
+    pub name: ::std::string::String,
+    pub path: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub size: ::std::option::Option<f64>,
+    #[serde(rename = "type")]
+    pub type_: SessionFileType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SessionFileType {
+    #[serde(rename = "file")]
+    File,
+    #[serde(rename = "directory")]
+    Directory,
+}
+impl ::std::fmt::Display for SessionFileType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::File => f.write_str("file"),
+            Self::Directory => f.write_str("directory"),
+        }
+    }
+}
+impl ::std::str::FromStr for SessionFileType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "file" => Ok(Self::File),
+            "directory" => Ok(Self::Directory),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SessionFileType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SessionFileType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SessionFileType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
@@ -5775,6 +9112,22 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionRetryStateEventTy
     ) -> ::std::result::Result<Self, self::error::ConversionError> {
         value.parse()
     }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionSearchResult {
+    #[serde(rename = "matchCount")]
+    pub match_count: f64,
+    pub matches: ::std::vec::Vec<SessionSearchResultMatchesItem>,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SessionSearchResultMatchesItem {
+    #[serde(rename = "lineNumber")]
+    pub line_number: f64,
+    #[serde(rename = "sessionId")]
+    pub session_id: ::std::string::String,
+    pub snippet: ::std::string::String,
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct SessionSessionArchivedEvent {
@@ -8424,6 +11777,80 @@ impl ::std::convert::TryFrom<::std::string::String> for SessionWorkingDirectoryE
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct SkillFile {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub children: ::std::option::Option<::std::vec::Vec<SkillFile>>,
+    pub name: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub size: ::std::option::Option<f64>,
+    #[serde(rename = "type")]
+    pub type_: SkillFileType,
+}
+#[derive(
+    ::serde::Deserialize,
+    ::serde::Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum SkillFileType {
+    #[serde(rename = "file")]
+    File,
+    #[serde(rename = "directory")]
+    Directory,
+}
+impl ::std::fmt::Display for SkillFileType {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::File => f.write_str("file"),
+            Self::Directory => f.write_str("directory"),
+        }
+    }
+}
+impl ::std::str::FromStr for SkillFileType {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "file" => Ok(Self::File),
+            "directory" => Ok(Self::Directory),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for SkillFileType {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for SkillFileType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for SkillFileType {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct StopBackgroundTaskResult {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub error: ::std::option::Option<::std::string::String>,
+    pub success: bool,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct StoredAttachment {
     pub id: ::std::string::String,
     #[serde(
@@ -8696,6 +12123,15 @@ impl ::std::convert::TryFrom<::std::string::String> for ToolStatus {
     }
 }
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct UnreadSummary {
+    #[serde(rename = "byWorkspace")]
+    pub by_workspace: ::std::collections::BTreeMap<::std::string::String, f64>,
+    #[serde(rename = "hasUnreadByWorkspace")]
+    pub has_unread_by_workspace: ::std::collections::BTreeMap<::std::string::String, bool>,
+    #[serde(rename = "totalUnreadSessions")]
+    pub total_unread_sessions: f64,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct Workspace {
     #[serde(rename = "createdAt")]
     pub created_at: i64,
@@ -8716,6 +12152,130 @@ pub struct Workspace {
     #[serde(rename = "rootPath")]
     pub root_path: ::std::string::String,
     pub slug: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct WorkspaceSettings {
+    #[serde(
+        rename = "boundPrs",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub bound_prs: ::std::option::Option<::std::vec::Vec<WorkspaceSettingsBoundPrsItem>>,
+    #[serde(
+        rename = "chatStarters",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub chat_starters: ::std::option::Option<::std::vec::Vec<WorkspaceSettingsChatStartersItem>>,
+    #[serde(
+        rename = "codingMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub coding_mode: ::std::option::Option<bool>,
+    #[serde(
+        rename = "cyclablePermissionModes",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub cyclable_permission_modes: ::std::option::Option<::std::vec::Vec<PermissionMode>>,
+    #[serde(
+        rename = "defaultLlmConnection",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub default_llm_connection: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub model: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub name: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "permissionMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub permission_mode: ::std::option::Option<PermissionMode>,
+    #[serde(
+        rename = "prMonitors",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pr_monitors: ::std::option::Option<
+        ::std::collections::BTreeMap<::std::string::String, WorkspaceSettingsPrMonitorsValue>,
+    >,
+    #[serde(
+        rename = "thinkingLevel",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub thinking_level: ::std::option::Option<ThinkingLevel>,
+    #[serde(
+        rename = "workingDirectory",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub working_directory: ::std::option::Option<::std::string::String>,
+}
+impl ::std::default::Default for WorkspaceSettings {
+    fn default() -> Self {
+        Self {
+            bound_prs: Default::default(),
+            chat_starters: Default::default(),
+            coding_mode: Default::default(),
+            cyclable_permission_modes: Default::default(),
+            default_llm_connection: Default::default(),
+            model: Default::default(),
+            name: Default::default(),
+            permission_mode: Default::default(),
+            pr_monitors: Default::default(),
+            thinking_level: Default::default(),
+            working_directory: Default::default(),
+        }
+    }
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct WorkspaceSettingsBoundPrsItem {
+    #[serde(rename = "addedAt")]
+    pub added_at: f64,
+    pub host: ::std::string::String,
+    pub number: f64,
+    pub owner: ::std::string::String,
+    pub repo: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct WorkspaceSettingsChatStartersItem {
+    pub label: ::std::string::String,
+    pub prompt: ::std::string::String,
+}
+#[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
+pub struct WorkspaceSettingsPrMonitorsValue {
+    #[serde(
+        rename = "autoFix",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub auto_fix: ::std::option::Option<bool>,
+    #[serde(
+        rename = "lastFixAt",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_fix_at: ::std::option::Option<f64>,
+    #[serde(
+        rename = "lastFixSignature",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub last_fix_signature: ::std::option::Option<::std::vec::Vec<::std::string::String>>,
+}
+impl ::std::default::Default for WorkspaceSettingsPrMonitorsValue {
+    fn default() -> Self {
+        Self {
+            auto_fix: Default::default(),
+            last_fix_at: Default::default(),
+            last_fix_signature: Default::default(),
+        }
+    }
 }
 
 fn required_option<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>

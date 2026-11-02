@@ -1,0 +1,24 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/RefreshTitleResult",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "RefreshTitleResult": {
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "success": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "success"
+      ],
+      "type": "object"
+    }
+  }
+}

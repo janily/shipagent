@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyOverrides, nameEvents, extractConstants, verifySource } from './formal.mjs';
+import { applyOverrides, nameEvents, extractConstants, verifySource, assertInterfaceOverride } from './formal.mjs';
 
 test('overrides are guarded, scoped, and reject stale or duplicate paths', () => {
   const source = { Message: { properties: { timestamp: { type: 'number' }, elapsedSeconds: { type: 'number' } } } };
@@ -40,4 +40,12 @@ test('source guard rejects wrong revision, gitlink and dirty input', () => {
   assert.throws(() => verifySource('abc', 'def', 'abc', ''), /revision/i);
   assert.throws(() => verifySource('abc', 'abc', 'def', ''), /gitlink/i);
   assert.throws(() => verifySource('abc', 'abc', 'abc', ' M packages/core/src/types/message.ts'), /dirty/i);
+});
+
+test('reviewed inline-import rewrite rejects changed fields and types',()=>{
+  const source="export interface WorkspaceSettings { chatStarters?: import('../workspaces/types').ChatStarter[]; name?: string }";
+  const override='export interface WorkspaceSettings { chatStarters?: ChatStarter[]; name?: string }';
+  assert.doesNotThrow(()=>assertInterfaceOverride(source,override,'WorkspaceSettings'));
+  assert.throws(()=>assertInterfaceOverride(source.replace('name?: string','name: number'),override,'WorkspaceSettings'),/source changed/);
+  assert.throws(()=>assertInterfaceOverride(source.replace('../workspaces/types','../other/types'),override,'WorkspaceSettings'),/source changed/);
 });

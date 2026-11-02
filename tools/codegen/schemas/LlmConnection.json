@@ -1,0 +1,169 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/LlmConnection",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "CustomEndpointConfig": {
+      "properties": {
+        "api": {
+          "enum": [
+            "openai-completions",
+            "anthropic-messages"
+          ],
+          "type": "string"
+        },
+        "maxTokens": {
+          "type": "number"
+        },
+        "supportsImages": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "api"
+      ],
+      "type": "object"
+    },
+    "LlmConnection": {
+      "properties": {
+        "authType": {
+          "enum": [
+            "api_key",
+            "api_key_with_endpoint",
+            "oauth",
+            "none"
+          ],
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "number"
+        },
+        "customEndpoint": {
+          "$ref": "#/definitions/CustomEndpointConfig"
+        },
+        "defaultModel": {
+          "type": "string"
+        },
+        "lastUsedAt": {
+          "type": "number"
+        },
+        "midStreamBehavior": {
+          "enum": [
+            "steer",
+            "queue"
+          ],
+          "type": "string"
+        },
+        "modelSelectionMode": {
+          "$ref": "#/definitions/ModelSelectionMode"
+        },
+        "models": {
+          "items": {
+            "anyOf": [
+              {
+                "properties": {
+                  "contextWindow": {
+                    "type": "number"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "descriptionKey": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "provider": {
+                    "enum": [
+                      "anthropic",
+                      "pi"
+                    ],
+                    "type": "string"
+                  },
+                  "shortName": {
+                    "type": "string"
+                  },
+                  "supportsImages": {
+                    "type": "boolean"
+                  },
+                  "supportsThinking": {
+                    "type": "boolean"
+                  },
+                  "thinkingAlwaysOn": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "shortName",
+                  "description",
+                  "provider",
+                  "contextWindow"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "oauthAccountEmail": {
+          "type": "string"
+        },
+        "oauthAccountUuid": {
+          "type": "string"
+        },
+        "oauthOrganizationName": {
+          "type": "string"
+        },
+        "oauthOrganizationUuid": {
+          "type": "string"
+        },
+        "oauthProfileVerifiedAt": {
+          "type": "number"
+        },
+        "piAuthProvider": {
+          "type": "string"
+        },
+        "providerType": {
+          "enum": [
+            "pi",
+            "pi_compat"
+          ],
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug",
+        "name",
+        "providerType",
+        "authType",
+        "createdAt"
+      ],
+      "type": "object"
+    },
+    "ModelSelectionMode": {
+      "enum": [
+        "automaticallySyncedFromProvider",
+        "userDefined3Tier"
+      ],
+      "type": "string"
+    }
+  }
+}
