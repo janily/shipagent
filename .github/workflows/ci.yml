@@ -65,7 +65,7 @@ jobs:
           path: target/native-smoke.json
           if-no-files-found: warn
 
-  agent-contract:
+  contract:
     strategy:
       fail-fast: false
       matrix:
@@ -96,10 +96,14 @@ jobs:
       - run: node --test tools/fake-llm/server.test.mjs tools/perf/*.test.mjs tools/native-smoke/*.test.mjs
       - if: runner.os == 'Linux'
         run: python3 -m unittest discover -s tools/perf -p 'test_*.py'
-      - run: cargo xtask backend build
+      - run: cargo xtask backend build --contract
         env:
           AGENTKIT_USE_NPMJS: '1'
           GITHUB_TOKEN: ${{ github.token }}
+      - run: cargo test -p agentkit-client --test contract --locked -- --ignored
+        env:
+          AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
+          AGENTKIT_CONTRACT_SERVER: ${{ github.workspace }}/target/contract/${{ matrix.backend }}/transport.js
       - run: cargo test -p agentkit-sidecar --test agent_turn --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}

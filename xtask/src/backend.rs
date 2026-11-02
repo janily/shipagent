@@ -74,7 +74,7 @@ fn publish(staged: &Path, destination: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn build() -> Result<()> {
+pub fn build(with_contract: bool) -> Result<()> {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .context("Missing workspace root")?;
@@ -194,6 +194,33 @@ pub fn build() -> Result<()> {
             .current_dir(&source),
     )?;
     validate_artifacts(&built)?;
+    let contract = scratch.0.join("contract");
+    if with_contract {
+        fs::create_dir_all(&contract)?;
+        fs::copy(
+            repo.join("tools/contract/transport.ts"),
+            source.join("shipagent-contract.ts"),
+        )?;
+        checked(
+            Command::new(&bun)
+                .args([
+                    "build",
+                    "shipagent-contract.ts",
+                    "--target=bun",
+                    "--external=ws",
+                ])
+                .arg(format!(
+                    "--outfile={}",
+                    contract.join("transport.js").display()
+                ))
+                .env("PATH", &build_path)
+                .current_dir(&source),
+        )?;
+        ensure!(
+            contract.join("transport.js").is_file(),
+            "Missing contract fixture"
+        );
+    }
     // Retain upstream attribution alongside the distributable resources.
     for file in ["LICENSE", "NOTICE"] {
         fs::copy(source.join(file), built.join(file))?;
@@ -212,6 +239,12 @@ pub fn build() -> Result<()> {
     let destination = target.join("backend").join(format!("{platform}-{arch}"));
     fs::create_dir_all(destination.parent().context("Missing backend parent")?)?;
     publish(&built, &destination)?;
+    if with_contract {
+        let destination = target.join("contract").join(format!("{platform}-{arch}"));
+        fs::create_dir_all(destination.parent().context("Missing contract parent")?)?;
+        publish(&contract, &destination)?;
+        println!("Contract fixture ready: {}", destination.display());
+    }
     println!("Backend ready: {}", destination.display());
     Ok(())
 }

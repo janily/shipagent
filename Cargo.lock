@@ -144,6 +144,7 @@ name = "agentkit-client"
 version = "0.1.0"
 dependencies = [
  "agentkit-protocol",
+ "agentkit-sidecar",
  "async-channel",
  "async-net",
  "async-tungstenite",
@@ -153,6 +154,7 @@ dependencies = [
  "serde_json",
  "smol",
  "socket2",
+ "tempfile",
  "thiserror 2.0.21",
  "tracing",
  "url",

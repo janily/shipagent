@@ -22,6 +22,8 @@ uuid.workspace = true
 agentkit-protocol.workspace = true
 
 [dev-dependencies]
+agentkit-sidecar.workspace = true
+tempfile.workspace = true
 socket2.workspace = true
 
 [lints]
