@@ -1024,3 +1024,51 @@ fn grouped_facade_cannot_move_a_deferred_bound_write_to_a_new_socket() {
     client.close();
     assert!(!server.join().unwrap());
 }
+
+#[test]
+fn plan_dispatch_command_preserves_both_claim_outcomes() {
+    let (urls, recv) = std::sync::mpsc::channel();
+    let server = std::thread::spawn(move || {
+        smol::block_on(async {
+            let listener = async_net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            urls.send(format!("ws://{}", listener.local_addr().unwrap()))
+                .unwrap();
+            let (tcp, _) = listener.accept().await.unwrap();
+            let mut ws = async_tungstenite::accept_async(tcp).await.unwrap();
+            let _ = frame(&mut ws).await;
+            send(&mut ws, json!({"type":"handshake_ack","clientId":"plan","registeredChannels":["sessions:command"]})).await;
+            // Source contract: the first claim succeeds, repeated/not-ready claims return false.
+            for claimed in [true, false] {
+                let request = frame(&mut ws).await;
+                assert_eq!(request["channel"], "sessions:command");
+                assert_eq!(
+                    request["args"],
+                    json!(["s", {"type":"markPendingPlanExecutionDispatched"}])
+                );
+                send(
+                    &mut ws,
+                    json!({"type":"response","id":request["id"],"result":claimed}),
+                )
+                .await;
+            }
+            while ws.next().await.is_some() {}
+        });
+    });
+    let client = RpcClient::connect(ClientOptions::local(
+        recv.recv().unwrap(),
+        "key".into(),
+        "w".into(),
+    ));
+    smol::block_on(async {
+        for claimed in [true, false] {
+            let result = client
+                .sessions()
+                .command("s", &g::SessionCommand::MarkPendingPlanExecutionDispatched)
+                .await
+                .unwrap();
+            assert!(matches!(result, CommandResult::PlanDispatched(actual) if actual == claimed));
+        }
+    });
+    client.close();
+    server.join().unwrap();
+}
