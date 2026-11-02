@@ -109,3 +109,5 @@ node tools/native-smoke/run.mjs
 ```
 
 CI 中 macos-14 指 Apple Silicon arm64，windows-2022 指 x64；macOS Intel、Windows arm64 暂无本轮验证证据。Linux 本轮图形证据来自 X11/Xvfb，Wayland 实机仍待验证。
+
+T-1-04 真实客户端契约：先运行 `cargo xtask backend build --contract`，设置 `AGENTKIT_BACKEND_DIR` 及 `AGENTKIT_CONTRACT_SERVER` 后运行 `cargo test -p agentkit-client --test contract --locked -- --ignored`；完整命令和平台目录见 [契约说明](../tools/contract/README.md)。普通 cargo test 显式跳过这些进程测试；CI contract 三平台运行。

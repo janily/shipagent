@@ -11,11 +11,12 @@ fn main() -> anyhow::Result<()> {
     {
         [] | ["--help"] | ["-h"] => {
             println!(
-                "Usage: cargo xtask backend build\n       cargo xtask codegen\n       cargo xtask codegen --check\nBuild the pinned headless backend without WebUI. Requires Bun >=1.3.14 and uv."
+                "Usage: cargo xtask backend build [--contract]\n       cargo xtask codegen\n       cargo xtask codegen --check\nBuild the pinned headless backend without WebUI. Requires Bun >=1.3.14 and uv."
             );
             Ok(())
         }
-        ["backend", "build"] => backend::build(),
+        ["backend", "build"] => backend::build(false),
+        ["backend", "build", "--contract"] => backend::build(true),
         ["codegen"] => codegen::run(false),
         ["codegen", "--check"] => codegen::run(true),
         _ => anyhow::bail!("Unsupported command. Run cargo xtask --help."),

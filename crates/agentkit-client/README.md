@@ -32,3 +32,7 @@ Use `client.sessions()`, `workspaces()`, `drafts()`, `files()`, `skills()`, `con
 Secret-bearing requests/responses live in `api::secrets` with SecretString and redacted Debug. Generated types cover safe wire DTOs; four sensitive schemas are drift-audited without generating plaintext secret fields. OAuth methods only implement protocol calls; native consent/browser integration is separate. Pending P01/P02 channels remain unavailable until backend registration.
 
 WorkbenchApi delegates to these groups and validates generated DTOs before projecting into the temporary prototype UI model. See [verification](../../docs/verification-typed-api-2026-11-02.md) for coverage and upstream contract differences.
+
+## Real contracts (T-1-04)
+
+CI `contract` runs the explicit ignored client suite against the actual bundled sidecar and a separately built pinned WsRpcServer fixture, plus the full Agent turn. Reverse failures use `type:response` with `error`, as required by upstream onClientResponse. See [commands and exact scopes](../../tools/contract/README.md). Synthetic handlers are never shipped; native capability UI and complete application e2e journeys remain separate tasks.
