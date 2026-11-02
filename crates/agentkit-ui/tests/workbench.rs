@@ -233,3 +233,60 @@ fn enter_during_session_loading_does_not_consume_or_submit_the_draft(cx: &mut Te
     .unwrap();
     assert_eq!(*sent.borrow(), ["keep draft"]);
 }
+
+#[gpui_kit::test]
+fn stale_recovery_blocks_send_and_retains_draft_until_a_reload(cx: &mut TestAppContext) {
+    let (window, view) = open(cx);
+    let sent = Rc::new(RefCell::new(Vec::new()));
+    cx.update(|cx| {
+        let sent = sent.clone();
+        cx.subscribe(&view, move |_, intent: &WorkbenchIntent, _| {
+            if let WorkbenchIntent::Submit(text) = intent {
+                sent.borrow_mut().push(text.clone());
+            }
+        })
+        .detach();
+    });
+    cx.update_window(window, |_, window, cx| {
+        view.update(cx, |view, cx| {
+            view.connected("default".into(), Some("model".into()), cx);
+            view.show_session(
+                ChatState::new(Session {
+                    id: "s".into(),
+                    ..Session::default()
+                }),
+                cx,
+            );
+        });
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input("保留草稿", cx);
+        view.update(cx, |view, cx| {
+            view.show_error("offline".into(), true, cx);
+            view.transport_recovered(true, cx);
+        });
+        window.render_frame(cx);
+        window.click("send", cx);
+    })
+    .unwrap();
+    assert!(sent.borrow().is_empty());
+    cx.update_window(window, |_, window, cx| {
+        view.update(cx, |view, cx| view.transport_recovered(false, cx));
+        window.render_frame(cx);
+        window.click("send", cx);
+    })
+    .unwrap();
+    assert!(
+        sent.borrow().is_empty(),
+        "a later resume cannot clear stale recovery debt"
+    );
+    cx.update_window(window, |_, window, cx| {
+        view.update(cx, |view, cx| {
+            view.connected("default".into(), Some("model".into()), cx)
+        });
+        window.render_frame(cx);
+        window.click("send", cx);
+    })
+    .unwrap();
+    assert_eq!(*sent.borrow(), ["保留草稿"]);
+}

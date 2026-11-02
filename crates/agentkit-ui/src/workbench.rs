@@ -51,6 +51,7 @@ pub struct WorkbenchView {
     pub(crate) model: Option<String>,
     pub(crate) status_key: &'static str,
     pub(crate) ready: bool,
+    reload_required: bool,
     pub(crate) loading: bool,
     pub(crate) error: Option<String>,
     pub(crate) state: Option<ChatState>,
@@ -90,6 +91,7 @@ impl WorkbenchView {
             model: None,
             status_key: "ak.starting",
             ready: false,
+            reload_required: false,
             loading: false,
             error: None,
             state: None,
@@ -114,10 +116,27 @@ impl WorkbenchView {
         self.workspace = workspace.into();
         self.model = model;
         self.ready = true;
+        self.reload_required = false;
         self.status_key = "ak.connected";
         self.setup = self.model.is_none();
         self.error = None;
         cx.notify();
+    }
+    /// Recover transport availability; stale state requires an explicit reload.
+    pub fn transport_recovered(&mut self, full_refresh: bool, cx: &mut Context<Self>) {
+        self.reload_required |= full_refresh;
+        if self.reload_required {
+            self.show_error(
+                "连接已恢复，请重新加载会话以同步完整状态。".into(),
+                true,
+                cx,
+            );
+        } else {
+            self.ready = true;
+            self.error = None;
+            self.status_key = "ak.connected";
+            cx.notify();
+        }
     }
     /// Update sidebar summaries from the backend.
     pub fn set_sessions(&mut self, sessions: Vec<Session>, cx: &mut Context<Self>) {
