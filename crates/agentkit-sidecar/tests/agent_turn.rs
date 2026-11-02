@@ -126,6 +126,12 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                 .iter()
                 .any(|s| s.id == session.id)
         );
+        // With no pending plan the real backend declines the dispatch claim normally.
+        assert!(
+            matches!(typed.sessions().command(&session.id,
+            &agentkit_protocol::generated::SessionCommand::MarkPendingPlanExecutionDispatched
+        ).await.unwrap(), agentkit_client::api::types::CommandResult::PlanDispatched(false))
+        );
         let generated_snapshot = api.session_generated(&session.id).await.unwrap();
         assert_eq!(generated_snapshot.id, session.id);
         let mut state = ChatState::new(session);

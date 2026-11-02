@@ -85,6 +85,8 @@ pub enum CommandResult {
     Title(g::RefreshTitleResult),
     Path(CopyPathResult),
     Continued(ImportResult),
+    /// Whether this caller acquired the pending plan execution claim.
+    PlanDispatched(bool),
 }
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

@@ -65,11 +65,15 @@ impl Sessions<'_> {
         id: &str,
         command: &g::SessionCommand,
     ) -> Result<CommandResult, RpcError> {
-        let command = serde_json::to_value(command)?;
-        let kind = command["type"].as_str().unwrap_or("").to_owned();
-        let value: Value = execute(self.0, p::SESSIONS_COMMAND, vec![json!(id), command]).await?;
-        Ok(match kind.as_str() {
-            "refreshTitle" => {
+        let value: Value = execute(
+            self.0,
+            p::SESSIONS_COMMAND,
+            vec![json!(id), serde_json::to_value(command)?],
+        )
+        .await?;
+        use g::SessionCommand as C;
+        Ok(match command {
+            C::RefreshTitle => {
                 let result: g::RefreshTitleResult = serde_json::from_value(value)?;
                 if !result.success {
                     return Err(business_error(
@@ -80,15 +84,39 @@ impl Sessions<'_> {
                 }
                 CommandResult::Title(result)
             }
-            "copyPath" => {
+            C::CopyPath => {
                 let result: CopyPathResult = serde_json::from_value(value)?;
                 if !result.success {
                     return Err(business_error("Session path unavailable".into()));
                 }
                 CommandResult::Path(result)
             }
-            "continueInNewSession" => CommandResult::Continued(serde_json::from_value(value)?),
-            _ => {
+            C::ContinueInNewSession { .. } => {
+                CommandResult::Continued(serde_json::from_value(value)?)
+            }
+            C::MarkPendingPlanExecutionDispatched => {
+                CommandResult::PlanDispatched(serde_json::from_value(value)?)
+            }
+            C::Flag
+            | C::Unflag
+            | C::Archive
+            | C::Unarchive
+            | C::Rename { .. }
+            | C::MarkRead
+            | C::MarkUnread
+            | C::SetActiveViewing { .. }
+            | C::SetPermissionMode { .. }
+            | C::SetThinkingLevel { .. }
+            | C::SetCodingMode { .. }
+            | C::UpdateWorkingDirectory { .. }
+            | C::ShowInFinder
+            | C::SetConnection { .. }
+            | C::SetPendingPlanExecution { .. }
+            | C::MarkCompactionComplete
+            | C::ClearPendingPlanExecution
+            | C::AddAnnotation { .. }
+            | C::RemoveAnnotation { .. }
+            | C::UpdateAnnotation { .. } => {
                 let _: () = serde_json::from_value(value)?;
                 CommandResult::Empty
             }
