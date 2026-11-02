@@ -197,10 +197,19 @@ impl RpcClient {
         channel: &str,
         args: Vec<Value>,
     ) -> Result<T, RpcError> {
-        let first = self.invoke(channel, args.clone()).await;
+        self.invoke_read_timeout(channel, args, self.timeout).await
+    }
+    /// Explicit idempotent read with a channel-specific per-attempt deadline.
+    pub async fn invoke_read_timeout<T: DeserializeOwned>(
+        &self,
+        channel: &str,
+        args: Vec<Value>,
+        timeout: Duration,
+    ) -> Result<T, RpcError> {
+        let first = self.invoke_timeout(channel, args.clone(), timeout).await;
         if matches!(&first,Err(error) if matches!(error.protocol_code(),"CLIENT_REQUEST_TIMEOUT"|"REQUEST_TIMEOUT"))
         {
-            self.invoke(channel, args).await
+            self.invoke_timeout(channel, args, timeout).await
         } else {
             first
         }
@@ -372,11 +381,19 @@ impl RpcClient {
     }
     /// Change server binding, and update future handshakes only after its RPC succeeds.
     pub async fn switch_workspace(&self, id: &str) -> Result<(), RpcError> {
+        self.switch_workspace_timeout(id, self.timeout).await
+    }
+    /// Switch binding with a facade-selected deadline, updating binding on success.
+    pub async fn switch_workspace_timeout(
+        &self,
+        id: &str,
+        timeout: Duration,
+    ) -> Result<(), RpcError> {
         let _: Value = self
             .call(
                 agentkit_protocol::constants::channels::window::SWITCH_WORKSPACE,
                 vec![serde_json::json!(id)],
-                self.timeout,
+                timeout,
                 Some(id.into()),
             )
             .await?;

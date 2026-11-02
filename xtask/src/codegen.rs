@@ -46,6 +46,12 @@ pub(crate) fn run(check: bool) -> Result<()> {
         normalize_literals(&mut normalized);
         let schema: schemars::schema::RootSchema = serde_json::from_value(normalized)?;
         for (key, value) in schema.definitions {
+            if manifest["schemaOnlyRoots"]
+                .as_array()
+                .is_some_and(|roots| roots.iter().any(|v| v.as_str() == Some(&key)))
+            {
+                bail!("Secret schema-only type {key} is reachable from generated DTO {name}");
+            }
             if let Some(previous) = definitions.insert(key.clone(), value.clone())
                 && previous != value
             {
@@ -53,6 +59,15 @@ pub(crate) fn run(check: bool) -> Result<()> {
             }
         }
         outputs.push((format!("tools/codegen/schemas/{name}.json"), bytes));
+    }
+    if let Some(manual) = manifest["schemaOnlyRoots"].as_array() {
+        for name in manual {
+            let name = name.as_str().context("Expected schema-only root name")?;
+            outputs.push((
+                format!("tools/codegen/schemas/{name}.json"),
+                fs::read(temp.path().join(format!("{name}.json")))?,
+            ));
+        }
     }
     outputs.push(("tools/codegen/schemas/manifest.json".into(), manifest_bytes));
     let constants_path = temp.path().join("constants.rs");

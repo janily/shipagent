@@ -1,0 +1,14 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/ModelSelectionMode",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ModelSelectionMode": {
+      "enum": [
+        "automaticallySyncedFromProvider",
+        "userDefined3Tier"
+      ],
+      "type": "string"
+    }
+  }
+}

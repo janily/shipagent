@@ -1,0 +1,45 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/SessionSearchResult",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "SessionSearchResult": {
+      "properties": {
+        "matchCount": {
+          "type": "number"
+        },
+        "matches": {
+          "items": {
+            "properties": {
+              "lineNumber": {
+                "type": "number"
+              },
+              "sessionId": {
+                "type": "string"
+              },
+              "snippet": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "sessionId",
+              "lineNumber",
+              "snippet"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "sessionId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sessionId",
+        "matchCount",
+        "matches"
+      ],
+      "type": "object"
+    }
+  }
+}

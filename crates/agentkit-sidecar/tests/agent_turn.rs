@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 //! Real bundled backend + scripted local model + actual read tool.
-use agentkit_client::api::WorkbenchApi;
+use agentkit_client::{ClientOptions, RpcClient, api::WorkbenchApi};
 use agentkit_protocol::prototype::SessionEvent;
 use agentkit_sidecar::{SidecarConfig, SidecarHandle};
 use agentkit_store::{ChatState, RunState};
@@ -65,12 +65,67 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             .unwrap();
         initial.disable_browser().await.unwrap();
         initial.close();
+        let typed = RpcClient::connect(ClientOptions::local(
+            endpoint.url.clone(),
+            endpoint.token.clone(),
+            workspaces[0].id.clone(),
+        ));
+        assert!(!typed.service().versions().await.unwrap().node.is_empty());
+        typed.service().health().await.unwrap();
+        assert_eq!(
+            typed.workspaces().list().await.unwrap()[0].id,
+            workspaces[0].id
+        );
+        typed
+            .workspaces()
+            .settings(&workspaces[0].id)
+            .await
+            .unwrap()
+            .unwrap();
+        typed
+            .workspaces()
+            .permissions(&workspaces[0].id)
+            .await
+            .unwrap();
+        assert!(
+            !typed
+                .connections()
+                .list_with_status()
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        typed.settings().default_thinking().await.unwrap();
+        typed.settings().auto_compact_window().await.unwrap();
+        typed.settings().send_message_key().await.unwrap();
+        typed.settings().default_permissions().await.unwrap();
+        typed.settings().network_proxy().await.unwrap();
         let api = WorkbenchApi::connect(endpoint, workspaces[0].id.clone());
         let events = api.session_events();
         let session = api
             .create_session(&workspaces[0].id, temp.path().to_str())
             .await
             .unwrap();
+        let draft = agentkit_protocol::generated::SessionDraft {
+            text: "typed API persisted draft".into(),
+            attachments: None,
+        };
+        typed.drafts().set(&session.id, &draft).await.unwrap();
+        assert_eq!(
+            typed.drafts().get(&session.id).await.unwrap().unwrap().text,
+            draft.text
+        );
+        typed.drafts().delete(&session.id).await.unwrap();
+        assert!(typed.drafts().get(&session.id).await.unwrap().is_none());
+        assert!(
+            typed
+                .sessions()
+                .list()
+                .await
+                .unwrap()
+                .iter()
+                .any(|s| s.id == session.id)
+        );
         let generated_snapshot = api.session_generated(&session.id).await.unwrap();
         assert_eq!(generated_snapshot.id, session.id);
         let mut state = ChatState::new(session);
@@ -212,6 +267,7 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
         );
         assert_eq!(cancelled_state.status, RunState::Interrupted);
         assert!(!api.session(&cancelled_id).await.unwrap().is_processing);
+        typed.close();
         api.close();
         sidecar.shutdown(Duration::from_secs(5)).await.unwrap();
     });

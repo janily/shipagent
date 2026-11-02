@@ -1,0 +1,72 @@
+{
+  "$comment": "mkagent 6e8ebc456b6b82441be09118ca11afca79b84836; ts-json-schema-generator 2.9.0; effective schema with reviewed overrides",
+  "$ref": "#/definitions/SessionDraft",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "SessionDraft": {
+      "properties": {
+        "attachments": {
+          "items": {
+            "properties": {
+              "content": {
+                "properties": {
+                  "base64": {
+                    "type": "string"
+                  },
+                  "mimeType": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "number"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "thumbnailBase64": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": [
+                      "image",
+                      "pdf",
+                      "text",
+                      "office",
+                      "audio",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "mimeType",
+                  "size"
+                ],
+                "type": "object"
+              },
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "name"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "type": "object"
+    }
+  }
+}
