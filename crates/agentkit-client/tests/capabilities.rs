@@ -88,6 +88,10 @@ fn capability_errors_timeouts_panics_and_oversized_replies_are_correlated() {
             let mut codes = std::collections::BTreeMap::new();
             for _ in 0..5 {
                 let reply = frame(&mut ws).await;
+                assert_eq!(
+                    reply["type"], "response",
+                    "upstream correlates reverse failures only as responses"
+                );
                 codes.insert(
                     reply["id"].as_str().unwrap().to_owned(),
                     reply["error"]["code"].as_str().unwrap().to_owned(),

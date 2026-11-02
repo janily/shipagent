@@ -19,7 +19,8 @@ pub(crate) fn failure(
     Envelope {
         id: frame.id.clone(),
         channel: frame.channel.clone(),
-        kind: EnvelopeKind::Error,
+        // Upstream onClientResponse correlates reverse failures as response.error.
+        kind: EnvelopeKind::Response,
         error: Some(WireError {
             code,
             message: message.into(),
@@ -127,7 +128,8 @@ impl Dispatcher {
                 Err(error) => Envelope {
                     id: frame.id,
                     channel: frame.channel,
-                    kind: EnvelopeKind::Error,
+                    // Upstream onClientResponse correlates reverse failures as response.error.
+                    kind: EnvelopeKind::Response,
                     error: Some(error),
                     ..Envelope::default()
                 },
