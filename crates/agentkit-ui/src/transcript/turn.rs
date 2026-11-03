@@ -1,3 +1,5 @@
+#[path = "tool_details.rs"]
+mod tool_details;
 use super::*;
 use gpui_kit::component::marker::{Marker, MarkerContent, MarkerLoadingStyle};
 #[path = "activity.rs"]
@@ -10,6 +12,9 @@ pub struct TurnCard {
     scroll: Entity<MessageScrollerState>,
     expanded: Option<bool>,
     tools: HashSet<String>,
+    outputs: HashMap<String, (Entity<crate::tools::ToolOutputView>, Vec<Subscription>)>,
+    collapsed_groups: HashSet<String>,
+    refresh_outputs: bool,
     timer: Option<Task<()>>,
 }
 impl TurnCard {
@@ -26,8 +31,14 @@ impl TurnCard {
             scroll,
             expanded: None,
             tools: HashSet::new(),
+            outputs: HashMap::new(),
+            collapsed_groups: HashSet::new(),
+            refresh_outputs: false,
             timer: None,
         }
+    }
+    pub(super) fn invalidate_outputs(&mut self) {
+        self.refresh_outputs = true;
     }
     fn remeasure(&self, cx: &mut App) {
         self.scroll
@@ -47,7 +58,13 @@ pub fn turn_markdown(turn: &AssistantTurn) -> String {
         .join("\n\n")
 }
 impl Render for TurnCard {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if self.refresh_outputs {
+            for id in self.tools.iter().cloned().collect::<Vec<_>>() {
+                self.create_output(&id, window, cx);
+            }
+            self.refresh_outputs = false;
+        }
         let Some(cache) = self.cache.upgrade() else {
             return div().into_any_element();
         };
@@ -123,7 +140,14 @@ impl Render for TurnCard {
             );
         }
         if open {
-            body = body.child(activity::render(activities, &cache, &self.tools, cx));
+            body = body.child(activity::render(
+                activities,
+                &cache,
+                &self.tools,
+                &self.outputs,
+                &self.collapsed_groups,
+                cx,
+            ));
         }
         if matches!(phase, TurnPhase::Pending | TurnPhase::Awaiting) {
             body = body.child(

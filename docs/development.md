@@ -120,4 +120,6 @@ T-1-10 本地偏好与实例隔离见 [验证报告](verification-shell-2026-11-
 
 T-1-11 文案修改后运行 `cargo xtask i18n` 并提交生成资源；`cargo xtask i18n --check` 只读验证。资源位置、命名插值及AST策略见 [i18n管线](../tools/i18n/README.md)。
 
-T-1-12 对话组件、缓存/阶段与错误操作见 [验证报告](verification-chat-2026-11-03.md)。原生组件测试：`cargo test -p agentkit-ui --features samples --test transcript`；完整工具卡按 T-1-13 推进。
+T-1-12 对话组件、缓存/阶段与错误操作见 [验证报告](verification-chat-2026-11-03.md)。原生组件测试：`cargo test -p agentkit-ui --features samples --test transcript`。
+
+T-1-13 工具卡、Diff与完整只读内容见 [验证报告](verification-tools-2026-11-03.md)。原生组件测试：`cargo test -p agentkit-ui --features samples --test tools --locked`；长输出预览限制不改变会话中的原文。
