@@ -125,6 +125,28 @@ impl WorkbenchApi {
             )
             .await
     }
+    /// Branch once from an authoritative user message into a safe session.
+    pub async fn branch_session_generated(
+        &self,
+        workspace: &str,
+        session: &str,
+        message: &str,
+        directory: Option<&str>,
+    ) -> Result<g::Session, RpcError> {
+        self.client
+            .sessions()
+            .create(
+                workspace,
+                Some(&g::CreateSessionOptions {
+                    branch_from_session_id: Some(session.into()),
+                    branch_from_message_id: Some(message.into()),
+                    permission_mode: Some(g::PermissionMode::Safe),
+                    working_directory: directory.map(str::to_owned),
+                    ..Default::default()
+                }),
+            )
+            .await
+    }
     /// Send attachment-capable optimistic work once; uploads/picker remain controller concerns.
     pub async fn send_with_attachments(
         &self,

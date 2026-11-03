@@ -275,6 +275,20 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                 .iter()
                 .any(|message| message.content.contains("SHIPAGENT_TOOL_FIXTURE"))
         );
+        // The native user-row branch action must work against the pinned backend,
+        // not just construct a matching wire request.
+        let original_user = generated_persisted
+            .messages
+            .iter()
+            .find(|m| m.role == agentkit_protocol::generated::MessageRole::User)
+            .unwrap();
+        let branch = api
+            .branch_session_generated(&workspaces[0].id, &id, &original_user.id, None)
+            .await
+            .unwrap();
+        assert_ne!(branch.id, id);
+        assert_eq!(branch.workspace_id, workspaces[0].id);
+        assert!(branch.messages.iter().any(|m| m.id == original_user.id));
         assert!(!formal.session.is_processing);
         assert!(formal.streaming.is_none());
         let formal_answer = formal

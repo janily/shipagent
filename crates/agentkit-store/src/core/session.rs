@@ -44,6 +44,7 @@ pub struct PendingSend {
     was_processing: bool,
     terminal_epoch: u64,
     draft_revision: u64,
+    owns_draft: bool,
 }
 #[derive(Debug)]
 /// Mutable indexed cache around formal reducer and turns.
@@ -125,6 +126,24 @@ impl SessionModel {
         attachments: Vec<g::StoredAttachment>,
         ctx: &Context,
     ) -> Option<PendingSend> {
+        self.begin_owned_send(text, attachments, ctx, true)
+    }
+    /// Explicitly retry historical input without acquiring or restoring the current draft.
+    pub fn begin_resend(
+        &mut self,
+        text: String,
+        attachments: Vec<g::StoredAttachment>,
+        ctx: &Context,
+    ) -> Option<PendingSend> {
+        self.begin_owned_send(text, attachments, ctx, false)
+    }
+    fn begin_owned_send(
+        &mut self,
+        text: String,
+        attachments: Vec<g::StoredAttachment>,
+        ctx: &Context,
+        owns_draft: bool,
+    ) -> Option<PendingSend> {
         if (text.trim().is_empty() && attachments.is_empty())
             || ctx.message_id.is_empty()
             || self
@@ -136,7 +155,7 @@ impl SessionModel {
         {
             return None;
         }
-        if self.draft_attachments.is_empty() && self.draft.text == text {
+        if owns_draft && self.draft_attachments.is_empty() && self.draft.text == text {
             self.draft_attachments = attachments.clone();
         }
         let pending = PendingSend {
@@ -146,6 +165,7 @@ impl SessionModel {
             was_processing: self.state.session.is_processing,
             terminal_epoch: self.terminal_epoch,
             draft_revision: self.draft_revision,
+            owns_draft,
         };
         let mut msg = reducer::message(ctx, g::MessageRole::User, text);
         msg.is_pending = Some(true);
@@ -185,10 +205,13 @@ impl SessionModel {
                 if self.pending.is_empty() {
                     self.state.session.is_processing = self.authoritative_processing;
                 }
-                if self.draft.text.is_empty() {
+                if pending.owns_draft && self.draft.text.is_empty() {
                     self.draft.text = pending.text.clone();
                 }
-                if self.draft.text == pending.text && self.draft_attachments.is_empty() {
+                if pending.owns_draft
+                    && self.draft.text == pending.text
+                    && self.draft_attachments.is_empty()
+                {
                     self.draft_attachments = pending.attachments.clone();
                 }
                 self.regroup(0);
@@ -218,7 +241,8 @@ impl SessionModel {
     /// Whether an acknowledgement still owns the current draft, including restored queued input.
     pub fn draft_is_current(&self, id: &str) -> bool {
         self.pending.get(id).is_some_and(|p| {
-            p.draft_revision == self.draft_revision
+            p.owns_draft
+                && p.draft_revision == self.draft_revision
                 && self.draft.text == p.text
                 && self
                     .draft_attachments

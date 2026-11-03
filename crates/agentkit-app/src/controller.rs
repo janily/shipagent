@@ -1,3 +1,5 @@
+#[path = "chat_actions.rs"]
+mod chat_actions;
 #[cfg(feature = "perf")]
 #[path = "perf.rs"]
 mod perf;
@@ -323,6 +325,7 @@ pub(crate) struct WorkbenchController {
     _window_observers: Vec<Subscription>,
     _preference_monitor: Option<Task<()>>,
     _subscription: Subscription,
+    chat_dialog_subscription: Option<Subscription>,
 }
 impl WorkbenchController {
     pub(crate) fn new(
@@ -394,6 +397,7 @@ impl WorkbenchController {
             recording_sender,
             _recording_worker: recording_worker,
             _subscription: subscription,
+            chat_dialog_subscription: None,
             preferences,
             focus_handle: cx.focus_handle(),
             _window_observers: Vec::new(),
@@ -983,6 +987,12 @@ impl WorkbenchController {
             }
             _ => {}
         }
+        if let WorkbenchIntent::Chat(action) = &intent
+            && !matches!(action, agentkit_ui::transcript::ChatIntent::BranchFrom(_))
+        {
+            self.handle_chat(action.clone(), window, cx);
+            return;
+        }
         if let WorkbenchIntent::DraftChanged { session_id, text } = intent {
             if let Some(store) = self.stores.get(&session_id) {
                 store.update(cx, |s, _| s.model.set_draft(text));
@@ -1011,18 +1021,42 @@ impl WorkbenchController {
         }
         let intent_epoch = self.epoch;
         match intent {
-            WorkbenchIntent::Submit(text) => {
+            intent @ (WorkbenchIntent::Submit(_) | WorkbenchIntent::ResendMessage(_)) => {
                 let Some(store) = self.state.clone() else {
                     return;
+                };
+                let is_resend = matches!(intent, WorkbenchIntent::ResendMessage(_));
+                let (text, attachments) = match intent {
+                    WorkbenchIntent::Submit(text) => {
+                        (text, store.read(cx).model.draft_attachments.clone())
+                    }
+                    WorkbenchIntent::ResendMessage(id) => {
+                        let model = &store.read(cx).model;
+                        if model.busy() {
+                            return;
+                        }
+                        let Some(message) = model.state.session.messages.iter().find(|m| {
+                            m.id == id && m.role == agentkit_protocol::generated::MessageRole::User
+                        }) else {
+                            return;
+                        };
+                        (
+                            message.content.clone(),
+                            message.attachments.clone().unwrap_or_default(),
+                        )
+                    }
+                    _ => return,
                 };
                 let context = reduction_context();
                 let id = store.read(cx).model.state.session.id.clone();
                 let pending = store.update(cx, |s, cx| {
-                    let p = s.model.begin_send(
-                        text.clone(),
-                        s.model.draft_attachments.clone(),
-                        &context,
-                    );
+                    let p = if is_resend {
+                        s.model
+                            .begin_resend(text.clone(), attachments.clone(), &context)
+                    } else {
+                        s.model
+                            .begin_send(text.clone(), attachments.clone(), &context)
+                    };
                     if p.is_some() {
                         cx.emit(
                             agentkit_store::core::session::SessionStoreEvent::TurnsChanged {
@@ -1045,7 +1079,7 @@ impl WorkbenchController {
                         let clear_draft=accepted && store.read(cx).model.draft_is_current(&pending.id);
                         let failure=(!accepted).then(||result.as_ref().err().map(|e|e.to_string()).unwrap_or_else(||agentkit_ui::t!("ak.send_rejected")));
                         store.update(cx,|s,cx|{s.model.finish_send(&pending.id,accepted);s.model.last_error=failure.clone();if !accepted{cx.emit(agentkit_store::core::session::SessionStoreEvent::TurnsChanged{from_turn:0});}cx.notify();});
-                        if this.state.as_ref().is_some_and(|s|s.entity_id()==store.entity_id()) {this.view.update(cx,|v,cx| {v.submission_finished(&text,clear_draft,window,cx);if !accepted {v.restore_draft(&text,window,cx);v.show_error(failure.unwrap_or_default(),false,cx);}});}
+                        if this.state.as_ref().is_some_and(|s|s.entity_id()==store.entity_id()) {this.view.update(cx,|v,cx| {v.submission_finished(&text,clear_draft,window,cx);if !accepted {if !is_resend{v.restore_draft(&text,window,cx);}v.show_error(failure.unwrap_or_default(),false,cx);}});}
                     });
                 }));
             }
@@ -1064,11 +1098,35 @@ impl WorkbenchController {
                         }));
                 }
             }
-            WorkbenchIntent::NewSession | WorkbenchIntent::OpenSession(_) => {
+            WorkbenchIntent::NewSession
+            | WorkbenchIntent::OpenSession(_)
+            | WorkbenchIntent::Chat(agentkit_ui::transcript::ChatIntent::BranchFrom(_)) => {
                 if self.loading {
                     return;
                 }
                 self.save_draft(cx);
+                let branch = if let WorkbenchIntent::Chat(
+                    agentkit_ui::transcript::ChatIntent::BranchFrom(message_id),
+                ) = &intent
+                {
+                    let Some(store) = self.state.as_ref() else {
+                        return;
+                    };
+                    let session = &store.read(cx).model.state.session;
+                    if !session.messages.iter().any(|m| {
+                        m.id == *message_id
+                            && m.role == agentkit_protocol::generated::MessageRole::User
+                    }) {
+                        return;
+                    }
+                    Some((
+                        session.id.clone(),
+                        message_id.clone(),
+                        session.working_directory.clone(),
+                    ))
+                } else {
+                    None
+                };
                 let id = if let WorkbenchIntent::OpenSession(id) = intent {
                     Some(id)
                 } else {
@@ -1098,6 +1156,14 @@ impl WorkbenchController {
                     .push(cx.spawn_in(window, async move |weak, cx| {
                         let result = if let Some(id) = id {
                             api.session_generated(&id).await
+                        } else if let Some((session, message, directory)) = branch {
+                            api.branch_session_generated(
+                                &workspace,
+                                &session,
+                                &message,
+                                directory.as_deref(),
+                            )
+                            .await
                         } else {
                             api.create_session_generated(
                                 &workspace,
@@ -1223,7 +1289,8 @@ impl WorkbenchController {
             WorkbenchIntent::Reconnect
             | WorkbenchIntent::DraftChanged { .. }
             | WorkbenchIntent::LayoutChanged(_)
-            | WorkbenchIntent::CycleAppearance => {}
+            | WorkbenchIntent::CycleAppearance
+            | WorkbenchIntent::Chat(_) => {}
         }
     }
 }
