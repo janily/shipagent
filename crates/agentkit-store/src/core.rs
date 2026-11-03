@@ -251,3 +251,6 @@ impl ChatState {
         }
     }
 }
+
+/// Complete deterministic reducer ported from the pinned upstream event processor.
+pub mod reducer;

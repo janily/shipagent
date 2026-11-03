@@ -3,6 +3,7 @@
 use agentkit_client::{ClientOptions, RpcClient, api::WorkbenchApi};
 use agentkit_protocol::prototype::SessionEvent;
 use agentkit_sidecar::{SidecarConfig, SidecarHandle};
+use agentkit_store::core::reducer::{Context as ReductionContext, SessionState, process_decoded};
 use agentkit_store::{ChatState, RunState};
 use std::{
     io::{BufRead, BufReader},
@@ -134,6 +135,11 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
         );
         let generated_snapshot = api.session_generated(&session.id).await.unwrap();
         assert_eq!(generated_snapshot.id, session.id);
+        let mut formal = SessionState {
+            session: generated_snapshot,
+            streaming: None,
+        };
+        let mut reduction_index = 0;
         let mut state = ChatState::new(session);
         let id = state.session.id.clone();
         state.begin_send(
@@ -146,6 +152,7 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             .unwrap();
         assert!(ack.accepted);
         let mut kinds = Vec::new();
+        let mut observed_tool_result = None;
         let outcome = smol::future::race(
             async {
                 loop {
@@ -160,6 +167,23 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                     if event.session_id != id {
                         continue;
                     }
+                    if event.kind == "tool_result" {
+                        observed_tool_result = Some((
+                            event.payload["toolUseId"].clone(),
+                            event.payload["result"].clone(),
+                        ));
+                    }
+                    reduction_index += 1;
+                    let result = process_decoded(
+                        &formal,
+                        &generated_event,
+                        &ReductionContext {
+                            now_ms: 1700000000000 + reduction_index,
+                            message_id: format!("formal-live-{reduction_index}"),
+                        },
+                    )
+                    .unwrap();
+                    formal = result.state;
                     kinds.push(event.kind.clone());
                     if matches!(event.kind.as_str(), "error" | "typed_error") {
                         eprintln!("backend test error: {}", event.payload["error"]);
@@ -207,6 +231,44 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                 .iter()
                 .any(|message| message.content.contains("SHIPAGENT_TOOL_FIXTURE"))
         );
+        assert!(!formal.session.is_processing);
+        assert!(formal.streaming.is_none());
+        let formal_answer = formal
+            .session
+            .messages
+            .iter()
+            .find(|m| {
+                m.role == agentkit_protocol::generated::MessageRole::Assistant
+                    && m.content.contains("SHIPAGENT_TOOL_FIXTURE")
+            })
+            .unwrap();
+        assert!(
+            generated_persisted
+                .messages
+                .iter()
+                .any(|m| m.id == formal_answer.id && m.content == formal_answer.content),
+            "Formal reducer did not retain authoritative final message identity/content"
+        );
+        let formal_tool = formal
+            .session
+            .messages
+            .iter()
+            .find(|m| {
+                m.tool_result
+                    .as_ref()
+                    .is_some_and(|r| r.contains("SHIPAGENT_TOOL_FIXTURE"))
+            })
+            .unwrap();
+        assert_eq!(
+            formal_tool.tool_status,
+            Some(agentkit_protocol::generated::ToolStatus::Completed)
+        );
+        // Compact backend transcripts intentionally omit tool rows (SessionManager
+        // tool_result). Validate live tool identity/content against the actual wire
+        // event, and final assistant identity/content against durable history above.
+        let (tool_id, tool_result) = observed_tool_result.unwrap();
+        assert_eq!(tool_id.as_str(), formal_tool.tool_use_id.as_deref());
+        assert_eq!(tool_result.as_str(), formal_tool.tool_result.as_deref());
         let persisted = api.session(&id).await.unwrap();
         assert_eq!(
             persisted
@@ -228,6 +290,10 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             .await
             .unwrap();
         let cancelled_id = cancelled.id.clone();
+        let mut formal_cancelled = SessionState {
+            session: api.session_generated(&cancelled_id).await.unwrap(),
+            streaming: None,
+        };
         let mut cancelled_state = ChatState::new(cancelled);
         cancelled_state.begin_send("Read proof.txt again".into(), "cancel-user".into());
         assert!(
@@ -248,6 +314,17 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                     if event.session_id != cancelled_id {
                         continue;
                     }
+                    reduction_index += 1;
+                    formal_cancelled = process_decoded(
+                        &formal_cancelled,
+                        &generated_event,
+                        &ReductionContext {
+                            now_ms: 1700000000000 + reduction_index,
+                            message_id: format!("formal-live-{reduction_index}"),
+                        },
+                    )
+                    .unwrap()
+                    .state;
                     cancelled_state.apply(&event);
                     if event.kind == "text_delta" && !requested {
                         api.cancel(&cancelled_id).await.unwrap();
@@ -272,6 +349,8 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             "No interrupted event after cancelling the real stream"
         );
         assert_eq!(cancelled_state.status, RunState::Interrupted);
+        assert!(!formal_cancelled.session.is_processing);
+        assert!(formal_cancelled.streaming.is_none());
         assert!(!api.session(&cancelled_id).await.unwrap().is_processing);
         typed.close();
         api.close();

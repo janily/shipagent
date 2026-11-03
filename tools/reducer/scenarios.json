@@ -1,0 +1,1185 @@
+[
+  {
+    "title": "text accumulation fallback and intermediate boundaries",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "text_delta",
+        "delta": "part",
+        "turnId": "t"
+      },
+      {
+        "sessionId": "s",
+        "type": "text_delta",
+        "delta": "ial",
+        "turnId": "t"
+      },
+      {
+        "sessionId": "s",
+        "type": "text_complete",
+        "text": "",
+        "turnId": "t",
+        "isIntermediate": true,
+        "timestamp": 0,
+        "messageId": "a"
+      },
+      {
+        "sessionId": "s",
+        "type": "text_complete",
+        "text": "second thought",
+        "turnId": "t",
+        "isIntermediate": true
+      },
+      {
+        "sessionId": "s",
+        "type": "text_complete",
+        "text": "answer",
+        "turnId": "t",
+        "isIntermediate": false,
+        "messageId": "answer",
+        "parentToolUseId": "parent"
+      }
+    ]
+  },
+  {
+    "title": "fallback to existing completed assistant text",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [
+          {
+            "id": "old",
+            "role": "assistant",
+            "content": "retain",
+            "timestamp": 1,
+            "turnId": "t",
+            "isStreaming": true
+          }
+        ],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "text_complete",
+        "text": "",
+        "turnId": "t",
+        "timestamp": 0,
+        "messageId": ""
+      }
+    ]
+  },
+  {
+    "title": "duplicate authoritative id does not append or change badge",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [
+          {
+            "id": "same",
+            "role": "assistant",
+            "content": "persisted",
+            "timestamp": 1,
+            "turnId": "old"
+          }
+        ],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "text_complete",
+        "text": "duplicate",
+        "messageId": "same",
+        "turnId": "new"
+      }
+    ]
+  },
+  {
+    "title": "tool inferred errors persisted output and parent orphan completion",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "tool_start",
+        "toolUseId": "parent",
+        "toolName": "Task",
+        "toolInput": {},
+        "timestamp": 0
+      },
+      {
+        "sessionId": "s",
+        "type": "tool_start",
+        "toolUseId": "child",
+        "toolName": "Read",
+        "toolInput": {},
+        "parentToolUseId": "parent"
+      },
+      {
+        "sessionId": "s",
+        "type": "tool_result",
+        "toolUseId": "parent",
+        "toolName": "Task",
+        "result": " [ERROR] Output has been saved to /tmp/output",
+        "isError": true
+      },
+      {
+        "sessionId": "s",
+        "type": "tool_result",
+        "toolUseId": "missing",
+        "toolName": "Bash",
+        "result": "error: not found"
+      },
+      {
+        "sessionId": "s",
+        "type": "tool_result",
+        "toolUseId": "missing2",
+        "toolName": "Bash",
+        "result": "Error: Full output saved to file"
+      }
+    ]
+  },
+  {
+    "title": "background lifecycle keeps ownership until task completed",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "tool_start",
+        "toolUseId": "agent",
+        "toolName": "Agent",
+        "toolInput": {},
+        "toolIntent": "inspect",
+        "toolDisplayName": "Inspector"
+      },
+      {
+        "sessionId": "s",
+        "type": "task_backgrounded",
+        "toolUseId": "agent",
+        "taskId": "task"
+      },
+      {
+        "sessionId": "s",
+        "type": "task_progress",
+        "toolUseId": "agent",
+        "elapsedSeconds": 2.5
+      },
+      {
+        "sessionId": "s",
+        "type": "tool_result",
+        "toolUseId": "agent",
+        "toolName": "Agent",
+        "result": "agentId: task"
+      },
+      {
+        "sessionId": "s",
+        "type": "complete",
+        "backgroundTasksAlive": true
+      },
+      {
+        "sessionId": "s",
+        "type": "task_completed",
+        "taskId": "task",
+        "status": "completed",
+        "summary": "done"
+      },
+      {
+        "sessionId": "s",
+        "type": "task_completed",
+        "taskId": "task",
+        "status": "failed",
+        "summary": ""
+      },
+      {
+        "sessionId": "s",
+        "type": "task_completed",
+        "taskId": "task",
+        "status": "stopped"
+      }
+    ]
+  },
+  {
+    "title": "shell backgrounding and absent task updates",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "tool_start",
+        "toolUseId": "shell",
+        "toolName": "Bash",
+        "toolInput": {
+          "command": "sleep 1"
+        }
+      },
+      {
+        "sessionId": "s",
+        "type": "shell_backgrounded",
+        "toolUseId": "shell",
+        "shellId": "shell-1"
+      },
+      {
+        "sessionId": "s",
+        "type": "task_backgrounded",
+        "toolUseId": "absent",
+        "taskId": "absent"
+      },
+      {
+        "sessionId": "s",
+        "type": "shell_backgrounded",
+        "toolUseId": "absent",
+        "shellId": "absent"
+      },
+      {
+        "sessionId": "s",
+        "type": "task_progress",
+        "toolUseId": "absent",
+        "elapsedSeconds": 1
+      },
+      {
+        "sessionId": "s",
+        "type": "task_completed",
+        "taskId": "absent",
+        "status": "completed"
+      },
+      {
+        "sessionId": "s",
+        "type": "complete",
+        "hasUnread": false
+      }
+    ]
+  },
+  {
+    "title": "status compaction and information transitions",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "status",
+        "statusType": "compacting",
+        "message": "compacting"
+      },
+      {
+        "sessionId": "s",
+        "type": "status",
+        "message": "working"
+      },
+      {
+        "sessionId": "s",
+        "type": "info",
+        "message": "ready",
+        "statusType": "compaction_complete",
+        "level": "success",
+        "timestamp": 15
+      },
+      {
+        "sessionId": "s",
+        "type": "info",
+        "message": "note",
+        "level": "warning",
+        "timestamp": 0
+      }
+    ]
+  },
+  {
+    "title": "metadata and deferred effects preserve all fields",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "session_flagged"
+      },
+      {
+        "sessionId": "s",
+        "type": "session_unflagged"
+      },
+      {
+        "sessionId": "s",
+        "type": "session_archived"
+      },
+      {
+        "sessionId": "s",
+        "type": "session_unarchived"
+      },
+      {
+        "sessionId": "s",
+        "type": "name_changed",
+        "name": "new"
+      },
+      {
+        "sessionId": "s",
+        "type": "name_changed"
+      },
+      {
+        "sessionId": "s",
+        "type": "title_regenerating",
+        "isRegenerating": true
+      },
+      {
+        "sessionId": "s",
+        "type": "title_generated",
+        "title": "generated"
+      },
+      {
+        "sessionId": "s",
+        "type": "async_operation",
+        "isOngoing": true
+      },
+      {
+        "sessionId": "s",
+        "type": "working_directory_changed",
+        "workingDirectory": "/tmp"
+      },
+      {
+        "sessionId": "s",
+        "type": "working_directory_error",
+        "error": "denied"
+      },
+      {
+        "sessionId": "s",
+        "type": "coding_mode_changed",
+        "codingMode": true
+      },
+      {
+        "sessionId": "s",
+        "type": "coding_mode_changed",
+        "codingMode": false
+      },
+      {
+        "sessionId": "s",
+        "type": "permission_mode_changed",
+        "permissionMode": "ask",
+        "previousPermissionMode": "safe",
+        "modeVersion": 2,
+        "changedAt": "2026-01-01",
+        "changedBy": "user",
+        "transitionDisplay": "ask"
+      },
+      {
+        "sessionId": "s",
+        "type": "session_model_changed",
+        "model": "custom"
+      },
+      {
+        "sessionId": "s",
+        "type": "session_model_changed",
+        "model": null
+      },
+      {
+        "sessionId": "s",
+        "type": "connection_changed",
+        "connectionSlug": "local",
+        "supportsBranching": false
+      },
+      {
+        "sessionId": "s",
+        "type": "connection_changed",
+        "connectionSlug": "other"
+      },
+      {
+        "sessionId": "s",
+        "type": "permission_request",
+        "request": {
+          "requestId": "r",
+          "sessionId": "s",
+          "toolName": "Bash",
+          "description": "Execute command",
+          "command": "echo ok"
+        }
+      },
+      {
+        "sessionId": "s",
+        "type": "plan_submitted",
+        "message": {
+          "id": "plan",
+          "role": "plan",
+          "content": "plan",
+          "timestamp": 1
+        }
+      },
+      {
+        "sessionId": "s",
+        "type": "plan_submitted",
+        "message": {
+          "id": "plan",
+          "role": "plan",
+          "content": "duplicate",
+          "timestamp": 1
+        }
+      },
+      {
+        "sessionId": "s",
+        "type": "session_created"
+      },
+      {
+        "sessionId": "s",
+        "type": "session_deleted"
+      },
+      {
+        "sessionId": "s",
+        "type": "shell_killed",
+        "shellId": "sh"
+      },
+      {
+        "sessionId": "s",
+        "type": "task_activity",
+        "taskId": "task",
+        "summary": "live"
+      },
+      {
+        "sessionId": "s",
+        "type": "workflow_agent_completed",
+        "workflowId": "flow",
+        "agentId": "agent"
+      }
+    ]
+  },
+  {
+    "title": "queued user fallback timestamp window and accepted transitions",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [
+          {
+            "id": "optimistic",
+            "role": "user",
+            "content": "follow",
+            "timestamp": 100,
+            "isPending": true
+          }
+        ],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "user_message",
+        "status": "queued",
+        "message": {
+          "id": "backend",
+          "role": "user",
+          "content": "follow",
+          "timestamp": 101
+        }
+      },
+      {
+        "sessionId": "s",
+        "type": "user_message",
+        "status": "accepted",
+        "message": {
+          "id": "backend",
+          "role": "user",
+          "content": "follow",
+          "timestamp": 103
+        }
+      },
+      {
+        "sessionId": "s",
+        "type": "user_message",
+        "status": "queued",
+        "message": {
+          "id": "backend",
+          "role": "user",
+          "content": "follow",
+          "timestamp": 102
+        }
+      },
+      {
+        "sessionId": "s",
+        "type": "user_message",
+        "status": "processing",
+        "message": {
+          "id": "fresh",
+          "role": "user",
+          "content": "different",
+          "timestamp": 10000
+        }
+      }
+    ]
+  },
+  {
+    "title": "plain failure does not overwrite completed tools",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [
+          {
+            "id": "run",
+            "role": "tool",
+            "content": "",
+            "timestamp": 1,
+            "toolUseId": "run",
+            "toolStatus": "executing"
+          },
+          {
+            "id": "done",
+            "role": "tool",
+            "content": "",
+            "timestamp": 1,
+            "toolStatus": "completed"
+          },
+          {
+            "id": "err",
+            "role": "tool",
+            "content": "",
+            "timestamp": 1,
+            "toolStatus": "error"
+          },
+          {
+            "id": "has-result",
+            "role": "tool",
+            "content": "",
+            "timestamp": 1,
+            "toolStatus": "executing",
+            "toolResult": "partial"
+          }
+        ],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "error",
+        "error": "failed",
+        "timestamp": 10
+      }
+    ]
+  },
+  {
+    "title": "turnless deltas preserve streaming parent and fall back by identity",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [
+          {
+            "id": "a",
+            "role": "assistant",
+            "content": "prefix",
+            "timestamp": 1,
+            "turnId": "t",
+            "isStreaming": true
+          }
+        ],
+        "lastMessageAt": 1,
+        "isProcessing": true
+      },
+      "streaming": {
+        "content": "prefix",
+        "turnId": "t",
+        "parentToolUseId": "parent"
+      }
+    },
+    "events": [
+      {
+        "type": "text_delta",
+        "sessionId": "s",
+        "delta": " suffix"
+      },
+      {
+        "type": "text_complete",
+        "sessionId": "s",
+        "text": "",
+        "parentToolUseId": "parent"
+      }
+    ]
+  },
+  {
+    "title": "typed errors keep structured retry metadata and map display actions",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 1,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "type": "typed_error",
+        "sessionId": "s",
+        "timestamp": 0,
+        "error": {
+          "code": "network_error",
+          "title": "",
+          "message": "offline",
+          "canRetry": false,
+          "details": [
+            "detail"
+          ],
+          "originalError": "original",
+          "actions": [
+            {
+              "key": "r",
+              "label": "Retry",
+              "action": "retry",
+              "command": "not copied into display action"
+            },
+            {
+              "key": "u",
+              "label": "Help",
+              "url": "https://example.com"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "title": "repeated tool starts refresh metadata without duplicating identity",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "tool_start",
+        "toolName": "Read",
+        "toolUseId": "same",
+        "toolInput": {
+          "path": "a"
+        },
+        "timestamp": 10
+      },
+      {
+        "sessionId": "s",
+        "type": "tool_start",
+        "toolName": "Read",
+        "toolUseId": "same",
+        "toolInput": {
+          "path": "b"
+        },
+        "toolIntent": "updated",
+        "toolDisplayName": "Read b",
+        "timestamp": 20
+      },
+      {
+        "sessionId": "s",
+        "type": "complete"
+      }
+    ]
+  },
+  {
+    "title": "completion clears queued users and repairs unfinished tools",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [
+          {
+            "id": "u",
+            "role": "user",
+            "content": "queued",
+            "timestamp": 1,
+            "isQueued": true
+          },
+          {
+            "id": "t",
+            "role": "tool",
+            "content": "",
+            "timestamp": 2,
+            "toolUseId": "tool",
+            "toolStatus": "executing"
+          }
+        ],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "complete",
+        "hasUnread": false
+      }
+    ]
+  },
+  {
+    "title": "plan payloads retain their generated message role",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "plan_submitted",
+        "message": {
+          "id": "plan",
+          "role": "plan",
+          "content": "plan",
+          "timestamp": 1
+        }
+      },
+      {
+        "sessionId": "s",
+        "type": "plan_submitted",
+        "message": {
+          "id": "error",
+          "role": "error",
+          "content": "error",
+          "timestamp": 2
+        }
+      }
+    ]
+  },
+  {
+    "title": "parent completion repairs child tools with missing results",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [
+          {
+            "id": "p",
+            "role": "tool",
+            "content": "",
+            "timestamp": 1,
+            "toolName": "Task",
+            "toolUseId": "parent",
+            "toolStatus": "executing"
+          },
+          {
+            "id": "c",
+            "role": "tool",
+            "content": "",
+            "timestamp": 1,
+            "toolUseId": "child",
+            "parentToolUseId": "parent",
+            "toolStatus": "executing"
+          },
+          {
+            "id": "child-result-0",
+            "role": "tool",
+            "content": "",
+            "timestamp": 1,
+            "toolUseId": "child-0",
+            "parentToolUseId": "parent",
+            "toolStatus": "executing",
+            "toolResult": ""
+          },
+          {
+            "id": "child-result-1",
+            "role": "tool",
+            "content": "",
+            "timestamp": 1,
+            "toolUseId": "child-1",
+            "parentToolUseId": "parent",
+            "toolStatus": "executing",
+            "toolResult": "partial output"
+          }
+        ],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "sessionId": "s",
+        "type": "tool_result",
+        "toolName": "Task",
+        "toolUseId": "parent",
+        "result": "done"
+      }
+    ]
+  },
+  {
+    "title": "interrupt resets pending assistant flags without discarding partial text",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [
+          {
+            "id": "a",
+            "role": "assistant",
+            "content": "partial",
+            "timestamp": 1,
+            "isPending": true,
+            "isStreaming": true
+          }
+        ],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "type": "interrupted",
+        "sessionId": "s"
+      }
+    ]
+  },
+  {
+    "title": "plan dispatch preserves a user payload and missing annotations target is ignored",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "type": "plan_submitted",
+        "sessionId": "s",
+        "message": {
+          "id": "u",
+          "role": "user",
+          "content": "execute",
+          "timestamp": 1
+        }
+      },
+      {
+        "type": "message_annotations_updated",
+        "sessionId": "s",
+        "messageId": "absent",
+        "annotations": []
+      }
+    ]
+  },
+  {
+    "title": "empty turn identity must not overwrite completed history",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [
+          {
+            "id": "old",
+            "role": "assistant",
+            "content": "old answer",
+            "timestamp": 1,
+            "turnId": ""
+          }
+        ],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "type": "text_complete",
+        "sessionId": "s",
+        "text": "new answer",
+        "turnId": ""
+      }
+    ]
+  },
+  {
+    "title": "tool error prefixes use ECMAScript whitespace rules",
+    "state": {
+      "session": {
+        "id": "s",
+        "workspaceId": "w",
+        "workspaceName": "W",
+        "messages": [],
+        "lastMessageAt": 10,
+        "isProcessing": true
+      },
+      "streaming": null
+    },
+    "events": [
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "0",
+        "result": "\tError: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "1",
+        "result": "\nError: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "2",
+        "result": "\u000bError: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "3",
+        "result": "\fError: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "4",
+        "result": "\rError: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "5",
+        "result": " Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "6",
+        "result": "\u00a0Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "7",
+        "result": "\u1680Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "8",
+        "result": "\u2000Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "9",
+        "result": "\u2001Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "10",
+        "result": "\u2002Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "11",
+        "result": "\u2003Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "12",
+        "result": "\u2004Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "13",
+        "result": "\u2005Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "14",
+        "result": "\u2006Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "15",
+        "result": "\u2007Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "16",
+        "result": "\u2008Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "17",
+        "result": "\u2009Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "18",
+        "result": "\u200aError: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "19",
+        "result": "\u2028Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "20",
+        "result": "\u2029Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "21",
+        "result": "\u202fError: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "22",
+        "result": "\u205fError: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "23",
+        "result": "\u3000Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "24",
+        "result": "\ufeffError: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "25",
+        "result": "\u0085Error: failed"
+      },
+      {
+        "type": "tool_result",
+        "sessionId": "s",
+        "toolName": "Read",
+        "toolUseId": "26",
+        "result": "\u180eError: failed"
+      }
+    ]
+  }
+]

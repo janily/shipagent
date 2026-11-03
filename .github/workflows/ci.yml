@@ -119,11 +119,21 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@1.99.1
         with:
-          components: rustfmt
+          components: rustfmt, llvm-tools-preview
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts --prefix tools/codegen
       - run: node --test tools/codegen/*.test.mjs
+      - run: node tools/reducer/oracle.mjs --check
       - run: cargo xtask codegen --check
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov@0.6.21
+      - run: cargo llvm-cov -p agentkit-store --tests --json --output-path target/reducer-coverage.json
+      - run: node tools/reducer/coverage.mjs target/reducer-coverage.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reducer-coverage
+          path: target/reducer-coverage.json
