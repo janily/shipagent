@@ -16,6 +16,10 @@ fn project<T: Serialize, U: DeserializeOwned>(value: T) -> Result<U, RpcError> {
     Ok(serde_json::from_value(serde_json::to_value(value)?)?)
 }
 impl WorkbenchApi {
+    /// Replace the local sidecar generation; pending calls are rejected without replay.
+    pub fn replace_endpoint(&self, endpoint: Endpoint) {
+        self.client.replace_endpoint(endpoint);
+    }
     /// Open one workspace-bound connection.
     pub fn connect(endpoint: Endpoint, workspace_id: String) -> Self {
         Self {
@@ -100,6 +104,10 @@ impl WorkbenchApi {
     /// Cancel once; writes are never automatically retried.
     pub async fn cancel(&self, session: &str) -> Result<(), RpcError> {
         self.client.sessions().cancel(session, None).await
+    }
+    /// Cancel quietly before orderly shutdown, without retrying the mutation.
+    pub async fn cancel_for_shutdown(&self, session: &str) -> Result<(), RpcError> {
+        self.client.sessions().cancel(session, Some(true)).await
     }
     /// Send an explicit user's decision and verify the backend accepted the response.
     pub async fn respond_permission(

@@ -1,67 +1,230 @@
-//! Nonblocking local backend startup and explicit shutdown prototype (T-0-03).
-//! Automatic restart, persistent logs and Windows Job Objects follow T-1-05/T-3-01.
+//! Nonblocking local backend supervision, bounded diagnostics and process-tree ownership.
 #![deny(missing_docs)]
+mod actor;
+mod environment;
+mod launch;
+mod output;
+mod process;
 use agentkit_protocol::Endpoint;
-use rand::RngCore;
-use secrecy::ExposeSecret;
 use std::{
-    io::{BufRead, BufReader},
     path::PathBuf,
-    process::{Child, Command, Stdio},
     sync::{
-        Arc,
+        Arc, Mutex, MutexGuard,
         atomic::{AtomicBool, Ordering},
     },
-    time::{Duration, Instant},
+    time::Duration,
 };
 
-/// Headless backend launch configuration.
-#[derive(Clone, Debug)]
+/// Headless backend launch configuration. Reserved transport variables are always owned by the supervisor.
+#[derive(Clone)]
 pub struct SidecarConfig {
     /// Directory containing server.js, vendor/bun and resources.
     pub backend_dir: PathBuf,
     /// Isolated CONFIG_DIR, never shared with another running backend.
     pub config_dir: PathBuf,
+    /// Diagnostic directory, defaults to CONFIG_DIR/logs.
+    pub log_dir: PathBuf,
     /// Readiness deadline, default 15 seconds.
     pub ready_timeout: Duration,
     /// Application version sent to the backend.
     pub app_version: String,
+    /// Additional environment, applied before protected launch variables; never included in Debug.
+    pub extra_env: Vec<(String, String)>,
+    /// Allowed unexpected exits in a rolling 60-second window, default three.
+    pub max_restarts: u32,
+}
+impl std::fmt::Debug for SidecarConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SidecarConfig")
+            .field("backend_dir", &self.backend_dir)
+            .field("config_dir", &self.config_dir)
+            .field("extra_env", &"[REDACTED]")
+            .finish_non_exhaustive()
+    }
 }
 impl SidecarConfig {
-    /// Configure a local sidecar with documented startup defaults.
+    /// Configure documented local-backend defaults.
     pub fn new(backend_dir: PathBuf, config_dir: PathBuf) -> Self {
         Self {
             backend_dir,
+            log_dir: config_dir.join("logs"),
             config_dir,
             ready_timeout: Duration::from_secs(15),
             app_version: env!("CARGO_PKG_VERSION").into(),
+            extra_env: vec![],
+            max_restarts: 3,
         }
     }
 }
-/// Startup or shutdown failure. Errors never include raw backend output.
-#[derive(Debug, thiserror::Error)]
+/// Startup, supervision or shutdown failure. Display never includes captured backend output.
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum SidecarError {
     /// Runtime or entry point does not exist.
     #[error("Missing backend artifact: {0}")]
     MissingRuntime(PathBuf),
     /// Process or pipe operation failed.
     #[error("Backend process operation failed: {0}")]
-    Io(#[from] std::io::Error),
+    Io(Arc<std::io::Error>),
     /// No readiness line within the configured deadline.
     #[error("Backend readiness timed out")]
     ReadyTimeout,
-    /// Backend exited before becoming ready.
+    /// Backend exited before becoming ready; tail is bounded and sanitized.
     #[error("Backend exited before becoming ready")]
-    ExitedEarly,
-    /// Another backend holds this configuration directory's lock.
+    ExitedEarly {
+        /// OS exit code, absent after a signal.
+        code: Option<i32>,
+        /// Last 64KiB of sanitized stderr.
+        stderr_tail: String,
+    },
+    /// Another backend holds the profile lock; never automatically retried.
     #[error("Another backend is using this data directory")]
-    AlreadyRunning,
+    AlreadyRunning {
+        /// Owner PID when reported by upstream; unknown is never invented as zero.
+        pid: Option<u32>,
+    },
     /// A readiness line did not contain a safe local endpoint.
     #[error("Invalid backend readiness endpoint")]
     InvalidEndpoint,
+    /// More than the configured number of crashes occurred in 60 seconds.
+    #[error("Backend restart limit exceeded")]
+    RestartLimit,
+    /// Supervisor was shut down or its handle was dropped.
+    #[error("Backend supervisor stopped")]
+    Stopped,
 }
-/// Interpret a readiness line; ordinary output and token lines are discarded.
-/// Only a loopback, nonzero-port ws URL without embedded credentials is accepted.
+impl From<std::io::Error> for SidecarError {
+    fn from(value: std::io::Error) -> Self {
+        Self::Io(Arc::new(value))
+    }
+}
+/// Broadcast lifecycle events. Each subscription receives its own copy.
+#[derive(Clone, Debug)]
+pub enum SidecarEvent {
+    /// An unexpected exit, emitted before retry/fatal classification.
+    Exited {
+        /// OS exit code, absent after a signal.
+        code: Option<i32>,
+        /// Last 64KiB of sanitized stderr.
+        stderr_tail: String,
+    },
+    /// Automatic or explicit restart reached readiness with a fresh token.
+    Restarted {
+        /// Replace the client's endpoint; never replay pending writes.
+        endpoint: Endpoint,
+    },
+    /// Supervision stopped retrying; explicit restart may be requested later.
+    Fatal {
+        /// Sanitized terminal error.
+        reason: SidecarError,
+    },
+}
+pub(crate) fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+    mutex.lock().unwrap_or_else(|e| e.into_inner())
+}
+#[derive(Default)]
+pub(crate) struct Bus {
+    subscribers: Vec<async_channel::Sender<SidecarEvent>>,
+    last: Option<SidecarEvent>,
+}
+pub(crate) struct Shared {
+    stop: AtomicBool,
+    endpoint: Mutex<Endpoint>,
+    bus: Mutex<Bus>,
+    error: Mutex<Option<SidecarError>>,
+}
+impl Shared {
+    fn emit(&self, event: SidecarEvent) {
+        let mut bus = lock(&self.bus);
+        bus.last = Some(event.clone());
+        bus.subscribers
+            .retain(|send| send.try_send(event.clone()).is_ok());
+    }
+}
+pub(crate) type Reply<T> = async_channel::Sender<Result<T, SidecarError>>;
+pub(crate) enum Control {
+    Restart(Reply<Endpoint>),
+    Shutdown(Duration, Option<Reply<()>>),
+}
+/// One owner handle; all child IO and lifecycle transitions execute on a dedicated background thread.
+pub struct SidecarHandle {
+    send: std::sync::mpsc::Sender<Control>,
+    shared: Arc<Shared>,
+    closed: bool,
+}
+impl SidecarHandle {
+    /// Launch the supervisor and await initial readiness without blocking the caller's thread.
+    pub async fn start(config: SidecarConfig) -> Result<Self, SidecarError> {
+        let shared = Arc::new(Shared {
+            stop: AtomicBool::new(false),
+            endpoint: Mutex::new(Endpoint {
+                url: String::new(),
+                token: String::new().into(),
+            }),
+            bus: Mutex::new(Bus::default()),
+            error: Mutex::new(None),
+        });
+        let (send, commands) = std::sync::mpsc::channel();
+        let (ready, receiver) = async_channel::bounded(1);
+        let worker_shared = shared.clone();
+        let handle = Self {
+            send,
+            shared,
+            closed: false,
+        };
+        std::thread::Builder::new()
+            .name("agentkit-sidecar".into())
+            .spawn(move || actor::run(config, commands, ready, worker_shared))?;
+        receiver.recv().await.map_err(|_| SidecarError::Stopped)??;
+        Ok(handle)
+    }
+    /// Last ready endpoint; may be disconnected during restart. Observe events for replacement.
+    pub fn endpoint(&self) -> Endpoint {
+        lock(&self.shared.endpoint).clone()
+    }
+    /// Independent event receiver, seeded with the latest event to avoid missing a fast exit.
+    pub fn events(&self) -> async_channel::Receiver<SidecarEvent> {
+        let (send, receive) = async_channel::unbounded();
+        let mut bus = lock(&self.shared.bus);
+        if let Some(event) = &bus.last {
+            let _ = send.try_send(event.clone());
+        }
+        bus.subscribers.push(send);
+        receive
+    }
+    /// Most recent terminal supervision error, cleared when explicit restart begins.
+    pub fn last_error(&self) -> Option<SidecarError> {
+        lock(&self.shared.error).clone()
+    }
+    /// Explicit restart. Healthy restarts do not consume the rolling crash budget.
+    pub async fn restart(&self) -> Result<Endpoint, SidecarError> {
+        let (send, receive) = async_channel::bounded(1);
+        self.send
+            .send(Control::Restart(send))
+            .map_err(|_| SidecarError::Stopped)?;
+        receive.recv().await.map_err(|_| SidecarError::Stopped)?
+    }
+    /// Stop supervising, cancel backoff and terminate/reap the current process tree.
+    pub async fn shutdown(mut self, grace: Duration) -> Result<(), SidecarError> {
+        let (send, receive) = async_channel::bounded(1);
+        self.shared.stop.store(true, Ordering::Release);
+        self.send
+            .send(Control::Shutdown(grace, Some(send)))
+            .map_err(|_| SidecarError::Stopped)?;
+        self.closed = true;
+        receive.recv().await.map_err(|_| SidecarError::Stopped)?
+    }
+}
+impl Drop for SidecarHandle {
+    fn drop(&mut self) {
+        if !self.closed {
+            self.shared.stop.store(true, Ordering::Release);
+            let _ = self
+                .send
+                .send(Control::Shutdown(Duration::from_secs(1), None));
+        }
+    }
+}
+/// Parse only a loopback, nonzero-port readiness URL without credentials/query/fragment.
 pub fn parse_ready_line(line: &str) -> Result<Option<String>, SidecarError> {
     let Some(raw) = line.strip_prefix("MKAGENT_SERVER_URL=") else {
         return Ok(None);
@@ -79,211 +242,4 @@ pub fn parse_ready_line(line: &str) -> Result<Option<String>, SidecarError> {
         return Err(SidecarError::InvalidEndpoint);
     }
     Ok(Some(raw.into()))
-}
-/// Owns a backend process. All startup and shutdown IO runs off the GUI thread.
-pub struct SidecarHandle {
-    child: Option<Child>,
-    endpoint: Endpoint,
-}
-impl SidecarHandle {
-    /// Start and await readiness on a background worker.
-    pub async fn start(config: SidecarConfig) -> Result<Self, SidecarError> {
-        smol::unblock(move || spawn(config)).await
-    }
-    /// Obtain the memory-only loopback endpoint and redacted token.
-    pub fn endpoint(&self) -> Endpoint {
-        self.endpoint.clone()
-    }
-    /// Terminate the Unix process group, allowing graceful shutdown before killing it.
-    /// Windows prototype terminates its direct child; Job Object coverage is not yet implemented.
-    pub async fn shutdown(mut self, grace: Duration) -> Result<(), SidecarError> {
-        if let Some(child) = self.child.take() {
-            smol::unblock(move || terminate(child, grace)).await?;
-        }
-        Ok(())
-    }
-}
-impl Drop for SidecarHandle {
-    fn drop(&mut self) {
-        if let Some(child) = self.child.take() {
-            // Never block a GUI thread when a handle is abandoned.
-            let _ = std::thread::Builder::new()
-                .name("agentkit-backend-cleanup".into())
-                .spawn(move || {
-                    let _ = terminate(child, Duration::from_secs(1));
-                });
-        }
-    }
-}
-fn spawn(config: SidecarConfig) -> Result<SidecarHandle, SidecarError> {
-    let root = config
-        .backend_dir
-        .canonicalize()
-        .map_err(|_| SidecarError::MissingRuntime(config.backend_dir.clone()))?;
-    let runtime = root
-        .join("vendor/bun")
-        .join(if cfg!(windows) { "bun.exe" } else { "bun" });
-    for path in [&runtime, &root.join("server.js")] {
-        if !path.is_file() {
-            return Err(SidecarError::MissingRuntime(path.clone()));
-        }
-    }
-    std::fs::create_dir_all(&config.config_dir)?;
-    let config_dir = config.config_dir.canonicalize()?;
-    let mut random = [0u8; 32];
-    rand::rng().fill_bytes(&mut random);
-    let token: secrecy::SecretString = random
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect::<String>()
-        .into();
-    let platform = match std::env::consts::OS {
-        "macos" => "darwin",
-        "windows" => "win32",
-        other => other,
-    };
-    let arch = if cfg!(target_arch = "aarch64") {
-        "arm64"
-    } else {
-        "x64"
-    };
-    let mut paths = vec![
-        root.join("resources/bin"),
-        root.join(format!("resources/bin/{platform}-{arch}")),
-        root.join("vendor/bun"),
-    ];
-    paths.extend(std::env::split_paths(
-        &std::env::var_os("PATH").unwrap_or_default(),
-    ));
-    let mut command = Command::new(runtime);
-    command
-        .arg(root.join("server.js"))
-        .current_dir(&root)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .env("CONFIG_DIR", config_dir)
-        .env("MKAGENT_SERVER_TOKEN", token.expose_secret())
-        .env("MKAGENT_RPC_HOST", "127.0.0.1")
-        .env("MKAGENT_RPC_PORT", "0")
-        .env("MKAGENT_VERSION", config.app_version)
-        .env("MKAGENT_IS_PACKAGED", "true")
-        .env("MKAGENT_BUNDLED_ASSETS_ROOT", &root)
-        .env("MKAGENT_APP_ROOT", &root)
-        .env("MKAGENT_RESOURCES_PATH", root.join("resources"))
-        .env(
-            "MKAGENT_UV",
-            root.join(format!(
-                "resources/bin/{platform}-{arch}/{}",
-                if cfg!(windows) { "uv.exe" } else { "uv" }
-            )),
-        )
-        .env("MKAGENT_SCRIPTS", root.join("resources/scripts"))
-        .env(
-            "PATH",
-            std::env::join_paths(paths).map_err(std::io::Error::other)?,
-        );
-    for name in [
-        "MKAGENT_WEBUI_DIR",
-        "MKAGENT_RPC_TLS_CERT",
-        "MKAGENT_RPC_TLS_KEY",
-        "MKAGENT_RPC_TLS_CA",
-        "MKAGENT_HEALTH_PORT",
-    ] {
-        command.env_remove(name);
-    }
-    #[cfg(unix)]
-    {
-        use std::os::unix::process::CommandExt;
-        command.process_group(0);
-    }
-    let mut child = command.spawn()?;
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| std::io::Error::other("Missing backend stdout"))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| std::io::Error::other("Missing backend stderr"))?;
-    let occupied = Arc::new(AtomicBool::new(false));
-    let occupied_worker = occupied.clone();
-    std::thread::spawn(move || {
-        for line in BufReader::new(stderr).lines().map_while(Result::ok) {
-            if line.contains("Another server instance is already running") {
-                occupied_worker.store(true, Ordering::Relaxed);
-            }
-        }
-    });
-    let (send, receive) = std::sync::mpsc::sync_channel(1);
-    std::thread::spawn(move || {
-        let mut sent = false;
-        for line in BufReader::new(stdout).lines().map_while(Result::ok) {
-            if !sent {
-                match parse_ready_line(&line) {
-                    Ok(None) => {}
-                    result => {
-                        let _ = send.send(result);
-                        sent = true;
-                    }
-                }
-            }
-            // Drain the pipe without forwarding raw text or authentication lines to logs.
-        }
-    });
-    match receive.recv_timeout(config.ready_timeout) {
-        Ok(Ok(Some(url))) => Ok(SidecarHandle {
-            child: Some(child),
-            endpoint: Endpoint { url, token },
-        }),
-        result => {
-            let _ = terminate(child, Duration::from_millis(200));
-            if occupied.load(Ordering::Relaxed) {
-                return Err(SidecarError::AlreadyRunning);
-            }
-            match result {
-                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => Err(SidecarError::ReadyTimeout),
-                Ok(Err(error)) => Err(error),
-                _ => Err(SidecarError::ExitedEarly),
-            }
-        }
-    }
-}
-fn terminate(mut child: Child, grace: Duration) -> Result<(), SidecarError> {
-    #[cfg(unix)]
-    {
-        let _ = Command::new("/bin/kill")
-            .args(["-TERM", "--", &format!("-{}", child.id())])
-            .status();
-    }
-    #[cfg(not(unix))]
-    {
-        let _ = child.kill();
-    }
-    let deadline = Instant::now() + grace;
-    while Instant::now() < deadline {
-        if child.try_wait()?.is_some() {
-            #[cfg(unix)]
-            {
-                let _ = Command::new("/bin/kill")
-                    .args(["-KILL", "--", &format!("-{}", child.id())])
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .status();
-            }
-            return Ok(());
-        }
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    #[cfg(unix)]
-    {
-        let _ = Command::new("/bin/kill")
-            .args(["-KILL", "--", &format!("-{}", child.id())])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status();
-    }
-    let _ = child.kill();
-    child.wait()?;
-    Ok(())
 }

@@ -8,7 +8,7 @@ pub(crate) fn validate_perf() -> Result<()> {
 use crate::Brand;
 use agentkit_client::{ConnectionState, Endpoint, api::WorkbenchApi};
 use agentkit_protocol::prototype::{Session, SessionEvent, Workspace};
-use agentkit_sidecar::{SidecarConfig, SidecarHandle};
+use agentkit_sidecar::{SidecarConfig, SidecarEvent, SidecarHandle};
 use agentkit_store::ChatState;
 use agentkit_ui::{WorkbenchIntent, WorkbenchView};
 use anyhow::{Context as _, Result};
@@ -20,15 +20,31 @@ use std::{
     time::Duration,
 };
 
+fn sidecar_message(error: &agentkit_sidecar::SidecarError) -> String {
+    use agentkit_sidecar::SidecarError as E;
+    let key = match error {
+        E::MissingRuntime(_) => "ak.sidecar_missing_runtime",
+        E::Io(_) => "ak.sidecar_io",
+        E::ReadyTimeout => "ak.sidecar_ready_timeout",
+        E::ExitedEarly { .. } => "ak.sidecar_exited_early",
+        E::AlreadyRunning { .. } => "ak.sidecar_occupied",
+        E::InvalidEndpoint => "ak.sidecar_invalid_endpoint",
+        E::RestartLimit => "ak.sidecar_restart_limit",
+        E::Stopped => "ak.sidecar_stopped",
+    };
+    agentkit_ui::tr(key)
+}
 pub(crate) type StartupSlot = Rc<RefCell<Option<Task<()>>>>;
 pub(crate) type RuntimeSlot = Rc<RefCell<Option<Running>>>;
 pub(crate) struct Running {
     api: WorkbenchApi,
     sidecar: Option<SidecarHandle>,
+    lifecycle: Option<smol::Task<()>>,
     session_id: Option<String>,
 }
 impl Running {
-    pub(crate) async fn shutdown_for_exit(self) {
+    pub(crate) async fn shutdown_for_exit(mut self) {
+        self.lifecycle.take();
         // GPUI allows only 200 ms in on_app_quit. Close transport first and
         // reserve time to kill and reap the owned process group.
         self.api.close();
@@ -36,9 +52,10 @@ impl Running {
             let _ = sidecar.shutdown(Duration::from_millis(60)).await;
         }
     }
-    pub(crate) async fn shutdown(self) {
+    pub(crate) async fn shutdown(mut self) {
+        self.lifecycle.take();
         if let Some(id) = &self.session_id {
-            let _ = smol::future::race(self.api.cancel(id), async {
+            let _ = smol::future::race(self.api.cancel_for_shutdown(id), async {
                 smol::Timer::after(Duration::from_millis(500)).await;
                 Ok(())
             })
@@ -90,7 +107,18 @@ async fn bootstrap(brand: Brand) -> Result<Started> {
                     .context("User profile directory unavailable")?;
                 PathBuf::from(home).join(&brand.data_dir_name)
             };
-            let handle = SidecarHandle::start(SidecarConfig::new(backend, config)).await?;
+            let config = SidecarConfig::new(backend, config);
+            #[cfg(target_os = "macos")]
+            let config = {
+                let mut config = config;
+                if let Some(home) = std::env::var_os("HOME") {
+                    config.log_dir = PathBuf::from(home)
+                        .join("Library/Logs")
+                        .join(&brand.bundle_id);
+                }
+                config
+            };
+            let handle = SidecarHandle::start(config).await?;
             let endpoint = handle.endpoint();
             sidecar = Some(handle);
             endpoint
@@ -99,6 +127,19 @@ async fn bootstrap(brand: Brand) -> Result<Started> {
     };
     match initialize(endpoint).await {
         Ok(mut started) => {
+            if let Some(handle) = &sidecar {
+                let events = handle.events();
+                let api = started.running.api.clone();
+                started.running.lifecycle = Some(smol::spawn(async move {
+                    while let Ok(event) = events.recv().await {
+                        match event {
+                            SidecarEvent::Restarted { endpoint } => api.replace_endpoint(endpoint),
+                            SidecarEvent::Fatal { .. } => api.close(),
+                            SidecarEvent::Exited { .. } => {}
+                        }
+                    }
+                }));
+            }
             started.running.sidecar = sidecar;
             Ok(started)
         }
@@ -142,6 +183,7 @@ async fn initialize(endpoint: Endpoint) -> Result<Started> {
     let running = Running {
         api,
         sidecar: None,
+        lifecycle: None,
         session_id: Some(session.id.clone()),
     };
     Ok(Started {
@@ -244,9 +286,16 @@ impl WorkbenchController {
             let mut result = Some(result);
             let _ = weak.update_in(cx, |this, window, cx| match result.take() {
                 Some(Ok(started)) => this.started(started, window, cx),
-                Some(Err(error)) => this
-                    .view
-                    .update(cx, |view, cx| view.show_error(error.to_string(), true, cx)),
+                Some(Err(error)) => this.view.update(cx, |view, cx| {
+                    view.show_error(
+                        error
+                            .downcast_ref::<agentkit_sidecar::SidecarError>()
+                            .map(sidecar_message)
+                            .unwrap_or_else(|| error.to_string()),
+                        true,
+                        cx,
+                    )
+                }),
                 None => {}
             });
             if let Some(Ok(started)) = result {
@@ -340,6 +389,14 @@ impl WorkbenchController {
                         .unwrap_or_else(|| "Backend reconnecting".into());
                     if weak
                         .update_in(cx, |this, _, cx| {
+                            let message = this
+                                .runtime
+                                .borrow()
+                                .as_ref()
+                                .and_then(|runtime| runtime.sidecar.as_ref())
+                                .and_then(SidecarHandle::last_error)
+                                .map(|error| sidecar_message(&error))
+                                .unwrap_or(message);
                             if recovered {
                                 let requires_reload = snapshot.refresh_epoch > this.transport_epoch;
                                 if !requires_reload {
@@ -620,5 +677,16 @@ mod transport_policy_tests {
             reason: "auth".into(),
         };
         assert!(!transport_is_current(&snapshot, 1));
+    }
+}
+
+#[cfg(test)]
+mod sidecar_localization_tests {
+    #[test]
+    fn terminal_sidecar_errors_use_the_selected_ui_language() {
+        agentkit_ui::set_locale("zh-CN");
+        let message = super::sidecar_message(&agentkit_sidecar::SidecarError::RestartLimit);
+        agentkit_ui::set_locale("en");
+        assert_eq!(message, "后端多次退出，已停止自动重启。请重试或查看日志。");
     }
 }

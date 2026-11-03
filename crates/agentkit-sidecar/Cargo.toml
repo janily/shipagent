@@ -13,6 +13,8 @@ rand.workspace = true
 secrecy.workspace = true
 thiserror.workspace = true
 url.workspace = true
+async-channel.workspace = true
+tracing.workspace = true
 
 [lints]
 workspace = true
@@ -22,3 +24,10 @@ agentkit-store.workspace = true
 agentkit-client.workspace = true
 tempfile.workspace = true
 serde_json.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.30", default-features = false, features = ["signal", "process"] }
+process-wrap = { version = "=8.2.1", default-features = false, features = ["std", "process-session"] }
+
+[target.'cfg(windows)'.dependencies]
+command-group = "=5.0.1"

@@ -43,6 +43,14 @@
     "theme": "Toggle theme",
     "no_model": "Add a model connection first",
     "unknown_model": "Default model",
-    "permission_wait": "Waiting for approval"
+    "permission_wait": "Waiting for approval",
+    "sidecar_missing_runtime": "Backend files are missing. Reinstall the application.",
+    "sidecar_io": "The backend could not start or stop. Check the log and try again.",
+    "sidecar_ready_timeout": "The backend did not become ready in time. Please retry.",
+    "sidecar_exited_early": "The backend exited during startup. Check the log and retry.",
+    "sidecar_occupied": "Another backend is using this data directory. Close it before retrying.",
+    "sidecar_invalid_endpoint": "The backend reported an invalid local address. Please retry.",
+    "sidecar_restart_limit": "The backend exited repeatedly. Automatic restart stopped; retry or check the log.",
+    "sidecar_stopped": "The backend supervisor has stopped."
   }
 }

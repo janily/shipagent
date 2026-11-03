@@ -104,6 +104,9 @@ jobs:
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
           AGENTKIT_CONTRACT_SERVER: ${{ github.workspace }}/target/contract/${{ matrix.backend }}/transport.js
+      - run: cargo test -p agentkit-sidecar --test manager --locked -- --ignored --skip owned_supervisor_fixture --skip shell_probe_fixture
+        env:
+          AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
       - run: cargo test -p agentkit-sidecar --test agent_turn --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
