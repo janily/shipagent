@@ -1,0 +1,1602 @@
+[
+  {
+    "title": "status and compaction retain card continuity",
+    "calls": [
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "s",
+              "role": "status",
+              "timestamp": 1,
+              "content": "compacting",
+              "statusType": "compacting"
+            },
+            {
+              "id": "i",
+              "role": "info",
+              "timestamp": 2,
+              "content": "ready",
+              "statusType": "compaction_complete"
+            },
+            {
+              "id": "f",
+              "role": "assistant",
+              "timestamp": 3,
+              "content": "answer"
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "i",
+              "role": "info",
+              "timestamp": 1,
+              "content": "done",
+              "statusType": "compaction_complete"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "explicit interruption marks running rows and active todos",
+    "calls": [
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "todo",
+              "role": "tool",
+              "timestamp": 1,
+              "content": "",
+              "toolName": "TodoWrite",
+              "toolInput": {
+                "todos": [
+                  {
+                    "content": "test",
+                    "status": "in_progress",
+                    "activeForm": "Testing"
+                  },
+                  {
+                    "content": "later",
+                    "status": "pending"
+                  }
+                ]
+              },
+              "toolResult": "updated"
+            },
+            {
+              "id": "text",
+              "role": "assistant",
+              "timestamp": 2,
+              "content": "partial",
+              "isPending": true
+            },
+            {
+              "id": "stop",
+              "role": "info",
+              "timestamp": 3,
+              "content": "stopped"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "completion promotes intermediate text but preserves user and plan boundaries",
+    "calls": [
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "text",
+              "role": "assistant",
+              "timestamp": 1,
+              "content": "intermediate",
+              "isIntermediate": true
+            },
+            {
+              "id": "u",
+              "role": "user",
+              "timestamp": 2,
+              "content": "next"
+            },
+            {
+              "id": "e",
+              "role": "error",
+              "timestamp": 3,
+              "content": "error"
+            },
+            {
+              "id": "w",
+              "role": "warning",
+              "timestamp": 4,
+              "content": "warning"
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "text",
+              "role": "assistant",
+              "timestamp": 1,
+              "content": "intermediate",
+              "isIntermediate": true
+            },
+            {
+              "id": "tool",
+              "role": "tool",
+              "timestamp": 2,
+              "content": "",
+              "toolStatus": "completed"
+            }
+          ],
+          {
+            "isSessionProcessing": false
+          }
+        ]
+      },
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [],
+          {
+            "isSessionProcessing": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "tool status priorities and error wrapper cleanup",
+    "calls": [
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "0",
+              "role": "tool",
+              "timestamp": 0,
+              "content": "fallback",
+              "toolName": "Read"
+            },
+            {
+              "id": "1",
+              "role": "tool",
+              "timestamp": 1,
+              "content": "fallback",
+              "toolName": "Read",
+              "toolStatus": "pending"
+            },
+            {
+              "id": "2",
+              "role": "tool",
+              "timestamp": 2,
+              "content": "fallback",
+              "toolName": "Read",
+              "toolStatus": "completed"
+            },
+            {
+              "id": "3",
+              "role": "tool",
+              "timestamp": 3,
+              "content": "fallback",
+              "toolName": "Read",
+              "toolStatus": "backgrounded",
+              "toolResult": "ack"
+            },
+            {
+              "id": "4",
+              "role": "tool",
+              "timestamp": 4,
+              "content": "fallback",
+              "toolName": "Read",
+              "toolResult": ""
+            },
+            {
+              "id": "5",
+              "role": "tool",
+              "timestamp": 5,
+              "content": "fallback",
+              "toolName": "Read",
+              "isError": true,
+              "toolResult": "<ERROR><tool_use_error>[ERROR]\ufefffailed</tool_use_error></ERROR>"
+            },
+            {
+              "id": "6",
+              "role": "tool",
+              "timestamp": 6,
+              "content": "fallback",
+              "toolName": "Read",
+              "isError": true,
+              "errorCode": "response_too_large",
+              "toolResult": "saved"
+            },
+            {
+              "id": "7",
+              "role": "tool",
+              "timestamp": 7,
+              "content": "fallback",
+              "toolName": "Read",
+              "isError": true,
+              "toolResult": "<tool_<error>use_error>failed</tool_use_error>"
+            },
+            {
+              "id": "8",
+              "role": "tool",
+              "timestamp": 8,
+              "content": "fallback",
+              "toolName": "Read",
+              "isError": true
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "nesting depth survives late parents and caps cycles",
+    "calls": [
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "child",
+              "role": "tool",
+              "timestamp": 1,
+              "content": "",
+              "toolUseId": "c",
+              "parentToolUseId": "p"
+            },
+            {
+              "id": "parent",
+              "role": "tool",
+              "timestamp": 2,
+              "content": "",
+              "toolUseId": "p",
+              "parentToolUseId": "c"
+            },
+            {
+              "id": "orphan",
+              "role": "assistant",
+              "timestamp": 3,
+              "content": "",
+              "isIntermediate": true,
+              "parentToolUseId": "missing"
+            },
+            {
+              "id": "f",
+              "role": "assistant",
+              "timestamp": 4,
+              "content": "done"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "continued groups derive running error and completed status",
+    "calls": [
+      {
+        "handler": "groupActivitiesByParent",
+        "args": [
+          [
+            {
+              "id": "r",
+              "type": "tool",
+              "status": "pending",
+              "timestamp": 1,
+              "parentId": "earlier"
+            },
+            {
+              "id": "e",
+              "type": "tool",
+              "status": "error",
+              "timestamp": 1,
+              "parentId": "failed"
+            },
+            {
+              "id": "b",
+              "type": "tool",
+              "status": "backgrounded",
+              "timestamp": 1,
+              "parentId": "background"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "agent IDs use first matching regex capture and numeric task usage",
+    "calls": [
+      {
+        "handler": "groupActivitiesByParent",
+        "args": [
+          [
+            {
+              "id": "p",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "Task",
+              "toolUseId": "p",
+              "content": "agentId: ??? then agentId:\ufeffreal-1"
+            },
+            {
+              "id": "out",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "TaskOutput",
+              "toolInput": {
+                "task_id": "real-1"
+              },
+              "content": "{\"duration_ms\": 0, \"usage\": {\"input_tokens\": 0, \"output_tokens\": 2}}"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "task outputs ignore invalid or empty usage payloads",
+    "calls": [
+      {
+        "handler": "groupActivitiesByParent",
+        "args": [
+          [
+            {
+              "id": "p",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "Agent",
+              "toolUseId": "p",
+              "content": "agentId: x"
+            },
+            {
+              "id": "o0",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "TaskOutput",
+              "toolInput": {
+                "task_id": "x"
+              },
+              "content": "not json"
+            },
+            {
+              "id": "o1",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "TaskOutput",
+              "toolInput": {
+                "task_id": "x"
+              },
+              "content": "null"
+            },
+            {
+              "id": "o2",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "TaskOutput",
+              "toolInput": {
+                "task_id": "x"
+              },
+              "content": "{}"
+            },
+            {
+              "id": "o3",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "TaskOutput",
+              "toolInput": {
+                "task_id": "x"
+              },
+              "content": "{\"duration_ms\":\"bad\",\"usage\":{}}"
+            },
+            {
+              "id": "o4",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "TaskOutput",
+              "toolInput": {
+                "task_id": "x"
+              },
+              "content": ""
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "empty tool identities and non task ancestry stay standalone",
+    "calls": [
+      {
+        "handler": "groupActivitiesByParent",
+        "args": [
+          [
+            {
+              "id": "p",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "Read",
+              "toolUseId": "p"
+            },
+            {
+              "id": "c",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "parentId": "p"
+            },
+            {
+              "id": "t",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "toolName": "Task",
+              "toolUseId": ""
+            },
+            {
+              "id": "orphan",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "parentId": ""
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "todo extraction chooses latest valid input and stable equal timestamps",
+    "calls": [
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "a",
+              "role": "tool",
+              "timestamp": 1,
+              "content": "",
+              "toolName": "TodoWrite",
+              "toolResult": "updated",
+              "toolInput": {
+                "todos": []
+              }
+            },
+            {
+              "id": "b",
+              "role": "tool",
+              "timestamp": 1,
+              "content": "",
+              "toolName": "TodoWrite",
+              "toolResult": "updated",
+              "toolInput": {
+                "todos": [
+                  {
+                    "content": "later equal",
+                    "status": "completed"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "f",
+              "role": "assistant",
+              "timestamp": 2,
+              "content": "done"
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "a",
+              "role": "tool",
+              "timestamp": 1,
+              "content": "",
+              "toolName": "TodoWrite",
+              "toolResult": "updated",
+              "toolInput": {
+                "todos": "not array"
+              }
+            },
+            {
+              "id": "f",
+              "role": "assistant",
+              "timestamp": 2,
+              "content": "done"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "summaries intent and selectors preserve empty and active states",
+    "calls": [
+      {
+        "handler": "getTurnIntent",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [
+              {
+                "id": "r",
+                "type": "tool",
+                "status": "running",
+                "timestamp": 1
+              },
+              {
+                "id": "c",
+                "type": "tool",
+                "status": "completed",
+                "timestamp": 1
+              },
+              {
+                "id": "e",
+                "type": "tool",
+                "status": "error",
+                "timestamp": 1
+              },
+              {
+                "id": "b",
+                "type": "tool",
+                "status": "backgrounded",
+                "timestamp": 1
+              }
+            ],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1,
+            "intent": ""
+          }
+        ]
+      },
+      {
+        "handler": "hasPendingActivities",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [
+              {
+                "id": "r",
+                "type": "tool",
+                "status": "running",
+                "timestamp": 1
+              },
+              {
+                "id": "c",
+                "type": "tool",
+                "status": "completed",
+                "timestamp": 1
+              },
+              {
+                "id": "e",
+                "type": "tool",
+                "status": "error",
+                "timestamp": 1
+              },
+              {
+                "id": "b",
+                "type": "tool",
+                "status": "backgrounded",
+                "timestamp": 1
+              }
+            ],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1,
+            "intent": ""
+          }
+        ]
+      },
+      {
+        "handler": "hasErrorActivities",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [
+              {
+                "id": "r",
+                "type": "tool",
+                "status": "running",
+                "timestamp": 1
+              },
+              {
+                "id": "c",
+                "type": "tool",
+                "status": "completed",
+                "timestamp": 1
+              },
+              {
+                "id": "e",
+                "type": "tool",
+                "status": "error",
+                "timestamp": 1
+              },
+              {
+                "id": "b",
+                "type": "tool",
+                "status": "backgrounded",
+                "timestamp": 1
+              }
+            ],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1,
+            "intent": ""
+          }
+        ]
+      },
+      {
+        "handler": "getActivitySummary",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [
+              {
+                "id": "r",
+                "type": "tool",
+                "status": "running",
+                "timestamp": 1
+              },
+              {
+                "id": "c",
+                "type": "tool",
+                "status": "completed",
+                "timestamp": 1
+              },
+              {
+                "id": "e",
+                "type": "tool",
+                "status": "error",
+                "timestamp": 1
+              },
+              {
+                "id": "b",
+                "type": "tool",
+                "status": "backgrounded",
+                "timestamp": 1
+              }
+            ],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1,
+            "intent": ""
+          }
+        ]
+      },
+      {
+        "handler": "getTurnIntent",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1
+          }
+        ]
+      },
+      {
+        "handler": "hasPendingActivities",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1
+          }
+        ]
+      },
+      {
+        "handler": "hasErrorActivities",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1
+          }
+        ]
+      },
+      {
+        "handler": "getActivitySummary",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1
+          }
+        ]
+      },
+      {
+        "handler": "getTurnIntent",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [
+              {
+                "id": "i",
+                "type": "tool",
+                "status": "completed",
+                "timestamp": 1,
+                "intent": "find intent"
+              }
+            ],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1
+          }
+        ]
+      },
+      {
+        "handler": "getTurnIntent",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1,
+            "intent": "explicit"
+          }
+        ]
+      },
+      {
+        "handler": "getLastAssistantTurn",
+        "args": [
+          []
+        ]
+      },
+      {
+        "handler": "getLastAssistantTurn",
+        "args": [
+          [
+            {
+              "type": "user",
+              "message": {
+                "id": "u",
+                "role": "user",
+                "timestamp": 2,
+                "content": ""
+              },
+              "timestamp": 2
+            },
+            {
+              "type": "assistant",
+              "turnId": "t",
+              "activities": [],
+              "isStreaming": false,
+              "isComplete": false,
+              "timestamp": 1
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "getLastAssistantTurn",
+        "args": [
+          [
+            {
+              "type": "assistant",
+              "turnId": "t",
+              "activities": [],
+              "isStreaming": false,
+              "isComplete": false,
+              "timestamp": 1
+            },
+            {
+              "type": "system",
+              "message": {
+                "id": "i",
+                "role": "info",
+                "timestamp": 2,
+                "content": ""
+              },
+              "timestamp": 2
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "getLastAssistantTurn",
+        "args": [
+          [
+            {
+              "type": "assistant",
+              "turnId": "t",
+              "activities": [],
+              "isStreaming": true,
+              "isComplete": false,
+              "timestamp": 1
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "getLastUserMessageTime",
+        "args": [
+          []
+        ]
+      },
+      {
+        "handler": "getLastUserMessageTime",
+        "args": [
+          [
+            {
+              "type": "user",
+              "message": {
+                "id": "u",
+                "role": "user",
+                "timestamp": 2,
+                "content": ""
+              },
+              "timestamp": 2
+            },
+            {
+              "type": "assistant",
+              "turnId": "t",
+              "activities": [],
+              "isStreaming": false,
+              "isComplete": false,
+              "timestamp": 1
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "getLastUserMessageTime",
+        "args": [
+          [
+            {
+              "type": "assistant",
+              "turnId": "t",
+              "activities": [],
+              "isStreaming": false,
+              "isComplete": false,
+              "timestamp": 1
+            },
+            {
+              "type": "system",
+              "message": {
+                "id": "i",
+                "role": "info",
+                "timestamp": 2,
+                "content": ""
+              },
+              "timestamp": 2
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "getLastUserMessageTime",
+        "args": [
+          [
+            {
+              "type": "assistant",
+              "turnId": "t",
+              "activities": [],
+              "isStreaming": true,
+              "isComplete": false,
+              "timestamp": 1
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "isLastTurnStreaming",
+        "args": [
+          []
+        ]
+      },
+      {
+        "handler": "isLastTurnStreaming",
+        "args": [
+          [
+            {
+              "type": "user",
+              "message": {
+                "id": "u",
+                "role": "user",
+                "timestamp": 2,
+                "content": ""
+              },
+              "timestamp": 2
+            },
+            {
+              "type": "assistant",
+              "turnId": "t",
+              "activities": [],
+              "isStreaming": false,
+              "isComplete": false,
+              "timestamp": 1
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "isLastTurnStreaming",
+        "args": [
+          [
+            {
+              "type": "assistant",
+              "turnId": "t",
+              "activities": [],
+              "isStreaming": false,
+              "isComplete": false,
+              "timestamp": 1
+            },
+            {
+              "type": "system",
+              "message": {
+                "id": "i",
+                "role": "info",
+                "timestamp": 2,
+                "content": ""
+              },
+              "timestamp": 2
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "isLastTurnStreaming",
+        "args": [
+          [
+            {
+              "type": "assistant",
+              "turnId": "t",
+              "activities": [],
+              "isStreaming": true,
+              "isComplete": false,
+              "timestamp": 1
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "duration and token formatting retain JS rounding and invalid guards",
+    "calls": [
+      {
+        "handler": "formatDuration",
+        "args": [
+          0
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          1
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          500
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          999
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          1000
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          1150
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          1250
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          1500
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          9999
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          10000
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          15500
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          59950
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          60000
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          60500
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          119900
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          120000
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          1e+24
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          -1
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          {
+            "$number": "NaN"
+          }
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          {
+            "$number": "Infinity"
+          }
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          {
+            "$number": "-Infinity"
+          }
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          0
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          1
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          500
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          999
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          1000
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          1150
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          1250
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          1500
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          9999
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          10000
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          15500
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          59950
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          60000
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          60500
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          119900
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          120000
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          1e+24
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          -1
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          {
+            "$number": "NaN"
+          }
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          {
+            "$number": "Infinity"
+          }
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          {
+            "$number": "-Infinity"
+          }
+        ]
+      },
+      {
+        "handler": "formatDuration",
+        "args": [
+          {
+            "$number": "-0"
+          }
+        ]
+      },
+      {
+        "handler": "formatTokens",
+        "args": [
+          {
+            "$number": "-0"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "total counts and last children include groups and undefined parents",
+    "calls": [
+      {
+        "handler": "countTotalActivities",
+        "args": [
+          []
+        ]
+      },
+      {
+        "handler": "countTotalActivities",
+        "args": [
+          [
+            {
+              "id": "a",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1
+            },
+            {
+              "type": "group",
+              "parent": {
+                "id": "p",
+                "type": "tool",
+                "status": "completed",
+                "timestamp": 1,
+                "toolName": "Task"
+              },
+              "children": [
+                {
+                  "id": "c",
+                  "type": "tool",
+                  "status": "completed",
+                  "timestamp": 1
+                }
+              ]
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "computeLastChildSet",
+        "args": [
+          [
+            {
+              "id": "a",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "depth": 1
+            },
+            {
+              "id": "b",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "depth": 2
+            },
+            {
+              "id": "c",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "depth": 0
+            },
+            {
+              "id": "d",
+              "type": "tool",
+              "status": "completed",
+              "timestamp": 1,
+              "depth": -1
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "getAssistantTurnUiKey",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1,
+            "response": {
+              "text": "",
+              "isStreaming": false,
+              "messageId": ""
+            }
+          },
+          2
+        ]
+      }
+    ]
+  },
+  {
+    "title": "background pending and failed rows preserve phase predicates",
+    "calls": [
+      {
+        "handler": "hasPendingActivities",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [
+              {
+                "id": "a",
+                "type": "tool",
+                "status": "pending",
+                "timestamp": 1
+              }
+            ],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1
+          }
+        ]
+      },
+      {
+        "handler": "hasPendingActivities",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [
+              {
+                "id": "a",
+                "type": "tool",
+                "status": "backgrounded",
+                "timestamp": 1
+              }
+            ],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1
+          }
+        ]
+      },
+      {
+        "handler": "hasPendingActivities",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [
+              {
+                "id": "a",
+                "type": "tool",
+                "status": "completed",
+                "timestamp": 1
+              }
+            ],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1
+          }
+        ]
+      },
+      {
+        "handler": "hasPendingActivities",
+        "args": [
+          {
+            "type": "assistant",
+            "turnId": "t",
+            "activities": [
+              {
+                "id": "a",
+                "type": "tool",
+                "status": "error",
+                "timestamp": 1
+              }
+            ],
+            "isStreaming": false,
+            "isComplete": false,
+            "timestamp": 1
+          }
+        ]
+      },
+      {
+        "handler": "groupActivitiesByParent",
+        "args": [
+          [
+            {
+              "id": "p",
+              "type": "tool",
+              "status": "backgrounded",
+              "timestamp": 1,
+              "toolName": "Task",
+              "toolUseId": "p",
+              "content": "agentId: background"
+            },
+            {
+              "id": "r",
+              "type": "tool",
+              "status": "running",
+              "timestamp": 1,
+              "toolName": "Task",
+              "toolUseId": "r"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "standalone failures complete an open card and interruptions handle absent todos",
+    "calls": [
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "tool",
+              "role": "tool",
+              "timestamp": 1,
+              "content": ""
+            },
+            {
+              "id": "end",
+              "role": "error",
+              "timestamp": 2,
+              "content": ""
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "tool",
+              "role": "tool",
+              "timestamp": 1,
+              "content": ""
+            },
+            {
+              "id": "end",
+              "role": "warning",
+              "timestamp": 2,
+              "content": ""
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "tool",
+              "role": "tool",
+              "timestamp": 1,
+              "content": ""
+            },
+            {
+              "id": "end",
+              "role": "info",
+              "timestamp": 2,
+              "content": ""
+            }
+          ]
+        ]
+      },
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "todo",
+              "role": "tool",
+              "timestamp": 1,
+              "content": "",
+              "toolName": "TodoWrite",
+              "toolResult": "updated",
+              "toolInput": {
+                "todos": []
+              }
+            },
+            {
+              "id": "i",
+              "role": "info",
+              "timestamp": 2,
+              "content": ""
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "title": "standalone plan opens and completes a card without prior activities",
+    "calls": [
+      {
+        "handler": "groupMessagesByTurn",
+        "args": [
+          [
+            {
+              "id": "plan",
+              "role": "plan",
+              "content": "# Plan",
+              "timestamp": 1,
+              "turnId": ""
+            }
+          ]
+        ]
+      }
+    ]
+  }
+]
