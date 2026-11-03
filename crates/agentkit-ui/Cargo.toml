@@ -17,6 +17,7 @@ required-features = ["samples"]
 [dependencies]
 agentkit-protocol.workspace = true
 serde_json.workspace = true
+serde.workspace = true
 secrecy.workspace = true
 agentkit-store = { workspace = true, features = ["entities"] }
 gpui-kit.workspace = true

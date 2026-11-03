@@ -363,7 +363,13 @@ pub(super) fn finish_if_terminal(
                 eprintln!("Benchmark report could not be written");
             }
             let _ = weak.update_in(cx, |this, _, cx| {
-                crate::orderly_quit(&this.runtime, &this.startup, &this.quitting, cx)
+                crate::orderly_quit(
+                    &this.runtime,
+                    &this.startup,
+                    &this.quitting,
+                    &this.preferences,
+                    cx,
+                )
             });
         }));
 }

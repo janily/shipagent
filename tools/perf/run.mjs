@@ -36,8 +36,8 @@ try {
    model=createFakeLlm({fixturePath:join(root,'fixture','proof.txt'),perf:{tokens:options.tokens,rate:50,disconnectAfter:options.scenario==='disconnect'?50:null}});
    await new Promise(resolve=>model.server.listen(0,'127.0.0.1',resolve));
    const env={...process.env};
-   for(const key of Object.keys(env))if(/API_KEY|ACCESS_TOKEN|AUTH_TOKEN|PASSWORD|SECRET/.test(key)||key.startsWith('AGENTKIT_REMOTE_'))delete env[key];
-   Object.assign(env,{AGENTKIT_PERF_ROOT:root,AGENTKIT_PERF_CRASH_AFTER_MS:options.scenario==='crash'?'2000':'0',AGENTKIT_PERF_FOCUS_X11:options.focus==='xdotool'?'1':'0',AGENTKIT_PERF_MODEL_URL:`http://127.0.0.1:${model.server.address().port}/v1`,AGENTKIT_CONFIG_DIR:join(root,'data'),AGENTKIT_WORKING_DIR:join(root,'fixture'),AGENTKIT_BACKEND_DIR:resolve(options.backend)});
+   for(const key of Object.keys(env))if(/API_KEY|ACCESS_TOKEN|AUTH_TOKEN|PASSWORD|SECRET/.test(key)||key.startsWith('AGENTKIT_REMOTE_')||key==='AGENTKIT_RECORD_EVENTS')delete env[key];
+   Object.assign(env,{AGENTKIT_PERF_ROOT:root,AGENTKIT_PERF_CRASH_AFTER_MS:options.scenario==='crash'?'2000':'0',AGENTKIT_PERF_FOCUS_X11:options.focus==='xdotool'?'1':'0',AGENTKIT_PERF_MODEL_URL:`http://127.0.0.1:${model.server.address().port}/v1`,AGENTKIT_CONFIG_DIR:join(root,'data'),AGENTKIT_APP_DATA_DIR:join(root,'client'),AGENTKIT_WORKING_DIR:join(root,'fixture'),AGENTKIT_BACKEND_DIR:resolve(options.backend)});
    child=spawn('python3',[supervisor,resolve(options.binary)],{env,stdio:['ignore','pipe','pipe']});
    child.stdout.on('data',chunk=>{if(supervisorWire.length<65536)supervisorWire+=chunk.toString();});
    child.stderr.resume();

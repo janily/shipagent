@@ -21,6 +21,8 @@ pub struct AppState {
     pub theme: String,
     /// Count of sessions marked unread.
     pub unread: f64,
+    /// Observed running background tasks across open session caches.
+    pub background_tasks: usize,
     /// Safe connection catalog, including authentication availability.
     pub connections: Vec<g::LlmConnectionWithStatus>,
 }

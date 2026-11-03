@@ -1,0 +1,151 @@
+use super::*;
+impl WorkbenchView {
+    pub(crate) fn render_shell(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let width = f32::from(window.bounds().size.width);
+        let left = self.shell.sidebar_visible(width);
+        let right = self.shell.right_visible() && !self.shell.right_is_sheet(width);
+        let sidebar = self.sidebar(cx);
+        let center = self.center(cx);
+        let panel = self.right_panel(cx);
+        let weak = cx.weak_entity();
+        let columns = h_resizable("workbench-columns")
+            .with_state(&self.panel_sizes)
+            .child(
+                resizable_panel()
+                    .visible(left)
+                    .size(px(self.shell.sidebar_width))
+                    .fixed()
+                    .size_range(px(240.)..px(420.))
+                    .child(sidebar),
+            )
+            .child(
+                resizable_panel()
+                    .size_range(px(320.)..px(16384.))
+                    .child(center),
+            )
+            .child(
+                resizable_panel()
+                    .visible(right)
+                    .size(px(self.shell.right_width))
+                    .fixed()
+                    .size_range(px(280.)..px(560.))
+                    .child(panel),
+            )
+            .on_resize(move |sizes, _, cx| {
+                let values = sizes.read(cx).sizes().clone();
+                let _ = weak.update(cx, |v, cx| {
+                    if left && let Some(w) = values.first() {
+                        v.shell.sidebar_width = f32::from(*w);
+                    }
+                    if right && let Some(w) = values.get(2) {
+                        v.shell.right_width = f32::from(*w);
+                    }
+                    v.shell.validate();
+                    v.persist_shell(cx);
+                    cx.notify();
+                });
+            });
+        let version = self
+            .app_state
+            .as_ref()
+            .and_then(|s| s.read(cx).server_version.clone())
+            .unwrap_or_else(|| "—".into());
+        let tasks = self
+            .app_state
+            .as_ref()
+            .map_or(0, |s| s.read(cx).background_tasks);
+        v_flex()
+            .size_full()
+            .bg(cx.theme().background)
+            .text_color(cx.theme().foreground)
+            .text_size(px(14.))
+            .child(
+                TitleBar::new().h_10().child(
+                    h_flex()
+                        .flex_1()
+                        .items_center()
+                        .gap_2()
+                        .child(
+                            Button::new("toggle-sidebar")
+                                .ghost()
+                                .icon(IconName::PanelLeft)
+                                .accessibility_label(tr("ak.toggle_sidebar"))
+                                .on_click(
+                                    cx.listener(|v, _, window, cx| v.toggle_sidebar(window, cx)),
+                                ),
+                        )
+                        .child(
+                            div()
+                                .flex_1()
+                                .text_center()
+                                .text_sm()
+                                .text_color(cx.theme().muted_foreground)
+                                .child(format!("{} — {}", self.app_name, self.workspace)),
+                        )
+                        .child(
+                            Button::new("toggle-focus")
+                                .ghost()
+                                .label(tr("ak.focus_mode"))
+                                .accessibility_label(tr("ak.focus_mode"))
+                                .on_click(
+                                    cx.listener(|v, _, window, cx| v.toggle_focus_mode(window, cx)),
+                                ),
+                        )
+                        .child(
+                            Button::new("toggle-right-panel")
+                                .ghost()
+                                .icon(IconName::PanelRight)
+                                .accessibility_label(tr("ak.context_panel"))
+                                .on_click(
+                                    cx.listener(|v, _, window, cx| {
+                                        v.toggle_right_panel(window, cx)
+                                    }),
+                                ),
+                        ),
+                ),
+            )
+            .child(div().flex_1().min_h_0().child(columns))
+            .child(
+                StatusBar::new()
+                    .bg(cx.theme().sidebar)
+                    .h_6()
+                    .py_0()
+                    .left(
+                        div()
+                            .id("connection-status")
+                            .role(Role::Status)
+                            .aria_label(tr(self.status_key))
+                            .child(tr(self.status_key))
+                            .test_support(),
+                    )
+                    .child(
+                        div()
+                            .id("background-task-count")
+                            .role(Role::Status)
+                            .aria_label(format!("{} {tasks}", tr("ak.tasks")))
+                            .child(format!("{} {tasks}", tr("ak.tasks")))
+                            .test_support(),
+                    )
+                    .right(div().text_xs().child(format!(
+                        "{} · {} {version}",
+                        self.model.clone().unwrap_or_else(|| tr("ak.no_model")),
+                        tr("ak.backend")
+                    )))
+                    .when(!self.preferences_writable, |bar| {
+                        bar.right(
+                            div()
+                                .id("preferences-status")
+                                .role(Role::Alert)
+                                .aria_label(tr("ak.prefs_readonly"))
+                                .child(tr("ak.prefs_readonly"))
+                                .test_support(),
+                        )
+                    }),
+            )
+            .into_any_element()
+    }
+}

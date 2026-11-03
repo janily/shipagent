@@ -1,8 +1,12 @@
 use crate::tr;
+#[path = "shell.rs"]
+mod shell;
+use crate::layout::ShellPreferences;
 use agentkit_store::{
     core::session::SessionStoreEvent,
     entities::{AppState, SessionListStore, SessionStore, WorkspaceStore},
 };
+use gpui_kit::component::resizable::ResizableState;
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
     input::{Input, InputEvent, InputState, TextareaState},
@@ -52,10 +56,20 @@ pub enum WorkbenchIntent {
     },
     /// Retry backend startup or connection after failure.
     Reconnect,
+    /// Persist a user shell layout change locally.
+    LayoutChanged(ShellPreferences),
+    /// Cycle system/light/dark appearance in the application layer.
+    CycleAppearance,
 }
 /// Native fixed-layout prototype backed by actual conversation state.
 pub struct WorkbenchView {
     pub(crate) app_name: SharedString,
+    shell: ShellPreferences,
+    panel_sizes: Entity<ResizableState>,
+    sheet_kind: Option<bool>,
+    sidebar_sheet: bool,
+    overlay: Option<Entity<shell::ShellOverlay>>,
+    preferences_writable: bool,
     pub(crate) workspace: SharedString,
     pub(crate) model: Option<String>,
     pub(crate) status_key: &'static str,
@@ -104,6 +118,12 @@ impl WorkbenchView {
             });
         Self {
             app_name,
+            shell: ShellPreferences::default(),
+            panel_sizes: cx.new(|_| ResizableState::default()),
+            sheet_kind: None,
+            sidebar_sheet: false,
+            overlay: None,
+            preferences_writable: true,
             workspace: tr("ak.app").into(),
             model: None,
             status_key: "ak.starting",
@@ -239,6 +259,13 @@ impl WorkbenchView {
                 this.sync_rows(cx);
                 cx.notify();
             }));
+        if self.setup {
+            self.base_url
+                .update(cx, |input, cx| input.focus(window, cx));
+        } else {
+            self.composer
+                .update(cx, |input, cx| input.focus(window, cx));
+        }
         self.loading = false;
         self.submitting = false;
         self.permission_busy = false;
@@ -510,242 +537,7 @@ impl WorkbenchView {
     }
 }
 impl Render for WorkbenchView {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let busy = self.busy(cx);
-        let title = self
-            .state
-            .as_ref()
-            .and_then(|s| s.read(cx).model.state.session.name.clone())
-            .unwrap_or_else(|| self.app_name.to_string());
-        let sidebar = v_flex()
-            .w(px(280.))
-            .flex_shrink_0()
-            .h_full()
-            .bg(cx.theme().sidebar)
-            .border_r_1()
-            .border_color(cx.theme().border)
-            .p_3()
-            .gap_3()
-            .child(
-                div()
-                    .h_9()
-                    .flex()
-                    .items_center()
-                    .px_3()
-                    .rounded_md()
-                    .bg(cx.theme().background)
-                    .border_1()
-                    .border_color(cx.theme().border)
-                    .child(self.workspace.clone()),
-            )
-            .child(
-                Button::new("new-session")
-                    .primary()
-                    .w_full()
-                    .label(tr("ak.new"))
-                    .disabled(!self.ready || self.loading)
-                    .on_click(cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::NewSession))),
-            )
-            .child(
-                div()
-                    .text_xs()
-                    .text_color(cx.theme().muted_foreground)
-                    .child(tr("ak.sessions")),
-            )
-            .child(
-                v_flex()
-                    .id("session-list")
-                    .flex_1()
-                    .overflow_y_scroll()
-                    .gap_1()
-                    .children(
-                        self.sessions
-                            .as_ref()
-                            .map(|s| s.read(cx).model.sessions.clone())
-                            .unwrap_or_default()
-                            .iter()
-                            .map(|session| {
-                                let id = session.id.clone();
-                                let active = self
-                                    .state
-                                    .as_ref()
-                                    .is_some_and(|s| s.read(cx).model.state.session.id == id);
-                                Button::new(SharedString::from(format!("session:{id}")))
-                                    .ghost()
-                                    .w_full()
-                                    .justify_start()
-                                    .label({
-                                        let pending = self.sessions.as_ref().is_some_and(|list| {
-                                            list.read(cx)
-                                                .model
-                                                .awaiting
-                                                .get(&id)
-                                                .is_some_and(|r| !r.is_empty())
-                                        });
-                                        let plan = self.sessions.as_ref().is_some_and(|list| {
-                                            list.read(cx).model.plans.contains(&id)
-                                        });
-                                        let name = session
-                                            .name
-                                            .clone()
-                                            .or(session.preview.clone())
-                                            .unwrap_or_else(|| tr("ak.new"));
-                                        format!(
-                                            "{}{}{}{}",
-                                            if session.is_processing { "• " } else { "" },
-                                            if pending {
-                                                format!("{} · ", tr("ak.permission_wait"))
-                                            } else {
-                                                String::new()
-                                            },
-                                            if plan {
-                                                format!("{} · ", tr("ak.plan"))
-                                            } else {
-                                                String::new()
-                                            },
-                                            name
-                                        )
-                                    })
-                                    .disabled(!self.ready || self.loading)
-                                    .when(active, |button| button.bg(cx.theme().sidebar_accent))
-                                    .on_click(cx.listener(move |_, _, _, cx| {
-                                        cx.emit(WorkbenchIntent::OpenSession(id.clone()))
-                                    }))
-                            }),
-                    ),
-            )
-            .child(
-                Button::new("model-settings")
-                    .ghost()
-                    .label(tr("ak.settings"))
-                    .disabled(busy)
-                    .on_click(cx.listener(|this, _, _, cx| {
-                        this.setup = true;
-                        cx.notify();
-                    })),
-            )
-            .child(
-                Button::new("toggle-theme")
-                    .ghost()
-                    .label(tr("ak.theme"))
-                    .on_click(|_, window, cx| {
-                        let mode = if cx.theme().mode.is_dark() {
-                            ThemeMode::Light
-                        } else {
-                            ThemeMode::Dark
-                        };
-                        Theme::change(mode, Some(window), cx);
-                    }),
-            );
-        let content = if self.setup {
-            h_flex()
-                .id("endpoint-scroll")
-                .flex_1()
-                .min_h_0()
-                .justify_center()
-                .overflow_y_scroll()
-                .child(self.endpoint_form(cx))
-                .into_any_element()
-        } else {
-            self.chat_body(cx)
-        };
-        v_flex()
-            .size_full()
-            .bg(cx.theme().background)
-            .text_color(cx.theme().foreground)
-            .text_size(px(14.))
-            .child(
-                TitleBar::new().child(
-                    h_flex()
-                        .flex_1()
-                        .justify_center()
-                        .child(self.app_name.clone()),
-                ),
-            )
-            .child(
-                h_flex().flex_1().min_h_0().child(sidebar).child(
-                    v_flex()
-                        .flex_1()
-                        .min_w_0()
-                        .h_full()
-                        .child(
-                            h_flex()
-                                .h(px(48.))
-                                .px_6()
-                                .border_b_1()
-                                .border_color(cx.theme().border)
-                                .justify_between()
-                                .child(div().font_semibold().child(title))
-                                .child(
-                                    div()
-                                        .text_xs()
-                                        .text_color(cx.theme().muted_foreground)
-                                        .child(
-                                            self.state
-                                                .as_ref()
-                                                .and_then(|s| {
-                                                    s.read(cx)
-                                                        .model
-                                                        .state
-                                                        .session
-                                                        .working_directory
-                                                        .clone()
-                                                })
-                                                .unwrap_or_default(),
-                                        ),
-                                ),
-                        )
-                        .when_some(self.error.clone(), |view, error| {
-                            view.child(
-                                h_flex()
-                                    .px_6()
-                                    .py_2()
-                                    .gap_3()
-                                    .bg(cx.theme().muted)
-                                    .child(
-                                        div()
-                                            .id("session-error")
-                                            .role(Role::Alert)
-                                            .aria_label(error.clone())
-                                            .flex_1()
-                                            .text_color(cx.theme().danger)
-                                            .child(error)
-                                            .test_support(),
-                                    )
-                                    .when(!self.ready, |view| {
-                                        view.child(
-                                            Button::new("retry")
-                                                .outline()
-                                                .label(tr("ak.retry"))
-                                                .on_click(cx.listener(|_, _, _, cx| {
-                                                    cx.emit(WorkbenchIntent::Reconnect)
-                                                })),
-                                        )
-                                    }),
-                            )
-                        })
-                        .child(content),
-                ),
-            )
-            .child(
-                h_flex()
-                    .h(px(24.))
-                    .px_4()
-                    .border_t_1()
-                    .border_color(cx.theme().border)
-                    .bg(cx.theme().sidebar)
-                    .justify_between()
-                    .text_xs()
-                    .text_color(cx.theme().muted_foreground)
-                    .child(
-                        div()
-                            .id("connection-status")
-                            .role(Role::Status)
-                            .aria_label(tr(self.status_key))
-                            .child(tr(self.status_key))
-                            .test_support(),
-                    )
-                    .child(self.model.clone().unwrap_or_else(|| tr("ak.no_model"))),
-            )
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        self.render_shell(window, cx)
     }
 }
