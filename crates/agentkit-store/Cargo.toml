@@ -6,7 +6,12 @@ license.workspace = true
 repository.workspace = true
 publish = false
 
+[features]
+default = []
+entities = ["dep:gpui-kit"]
+
 [dependencies]
+gpui-kit = { workspace = true, optional = true }
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 serde.workspace = true
 thiserror.workspace = true

@@ -199,6 +199,7 @@ version = "0.1.0"
 dependencies = [
  "agentkit-protocol",
  "chrono",
+ "gpui-kit",
  "serde",
  "serde_json",
  "thiserror 2.0.21",

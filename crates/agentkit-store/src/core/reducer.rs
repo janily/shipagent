@@ -2,6 +2,8 @@
 mod helpers;
 mod session;
 mod text;
+pub(crate) use helpers::message;
+pub(crate) use text::delta_at;
 mod tool;
 use agentkit_protocol::{DecodedSessionEvent, generated as g};
 use helpers::*;
@@ -151,7 +153,7 @@ fn unchanged(state: &SessionState) -> ProcessResult {
     }
 }
 
-fn event_session(event: &g::SessionEvent) -> &str {
+pub(crate) fn event_session(event: &g::SessionEvent) -> &str {
     match event {
         g::SessionEvent::AsyncOperationEvent(e) => &e.session_id,
         g::SessionEvent::CodingModeChangedEvent(e) => &e.session_id,

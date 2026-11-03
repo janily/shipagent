@@ -111,7 +111,7 @@ pub struct Activity {
     pub is_background: Option<bool>,
 }
 impl Activity {
-    pub(super) fn new(
+    pub(crate) fn new(
         id: String,
         kind: ActivityType,
         status: ActivityStatus,

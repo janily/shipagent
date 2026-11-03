@@ -18,7 +18,7 @@ pub(super) fn time(value: Option<f64>, fallback: i64) -> Result<i64, ReducerErro
         _ => Err(ReducerError::InvalidTimestamp),
     }
 }
-pub(super) fn message(ctx: &Context, role: g::MessageRole, content: String) -> g::Message {
+pub(crate) fn message(ctx: &Context, role: g::MessageRole, content: String) -> g::Message {
     g::Message {
         annotations: None,
         attachments: None,
