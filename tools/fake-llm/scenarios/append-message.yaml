@@ -1,0 +1,5 @@
+{
+  "name": "append-message",
+  "prompt": "Complete isolated fixture append-message.",
+  "chunk_ms": 100
+}

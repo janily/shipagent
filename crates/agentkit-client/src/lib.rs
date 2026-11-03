@@ -1,6 +1,8 @@
 //! Local WebSocket RPC client with reconnect, replay metadata and bounded IO.
 #![deny(missing_docs)]
 mod capability;
+/// Opt-in, background-only event recording for local development.
+pub mod recording;
 mod state;
 mod transport;
 use agentkit_protocol::{Envelope, EnvelopeKind, WireError};

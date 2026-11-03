@@ -6,3 +6,6 @@ pub use core::{ChatState, RunState};
 /// Optional native entity wrappers; the default store remains GPUI-independent.
 #[cfg(feature = "entities")]
 pub mod entities;
+
+/// Recorded-wire replay support shared by offline tests and the development recorder.
+pub mod fixtures;

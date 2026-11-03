@@ -1,0 +1,3 @@
+{"message":{"content":"Complete isolated fixture cancel.","id":"msg-1793683427899-vcsiaf","role":"user","timestamp":1793683427899},"sessionId":"261103-still-river","status":"accepted","type":"user_message"}
+{"delta":"F","sessionId":"261103-still-river","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"backgroundTasksAlive":false,"sessionId":"261103-still-river","type":"interrupted"}

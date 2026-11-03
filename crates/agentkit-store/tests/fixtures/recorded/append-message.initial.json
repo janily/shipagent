@@ -1,0 +1,24 @@
+{
+  "261103-polished-amber": {
+    "createdAt": 1793683432661,
+    "id": "261103-polished-amber",
+    "isProcessing": false,
+    "lastMessageAt": 1793683432661,
+    "messageCount": 0,
+    "messages": [],
+    "name": "Fixture append-message",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-polished-amber",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "contextTokens": 0.0,
+      "costUsd": 0.0,
+      "inputTokens": 0.0,
+      "outputTokens": 0.0,
+      "totalTokens": 0.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_e74aee6b",
+    "workspaceName": "Default"
+  }
+}

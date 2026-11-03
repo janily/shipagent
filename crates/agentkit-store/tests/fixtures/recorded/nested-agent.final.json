@@ -1,0 +1,154 @@
+{
+  "261103-clever-crystal": {
+    "createdAt": 1793683408154,
+    "hasUnread": true,
+    "id": "261103-clever-crystal",
+    "isProcessing": false,
+    "lastFinalMessageId": "7167a809-6cba-42cc-b0e9-d6896e81d4c7",
+    "lastMessageAt": 1793683408156,
+    "lastMessageRole": "assistant",
+    "messageCount": 0,
+    "messages": [
+      {
+        "content": "[nested:1] Complete fixture child.",
+        "id": "msg-1793683408156-m54vix",
+        "role": "user",
+        "timestamp": 1793683408156
+      },
+      {
+        "content": "Fixture answer 中文。",
+        "id": "7167a809-6cba-42cc-b0e9-d6896e81d4c7",
+        "isIntermediate": false,
+        "role": "assistant",
+        "timestamp": 1793683408846,
+        "turnId": "pi-turn-1__m0"
+      }
+    ],
+    "name": "Fixture child 1",
+    "parentSessionId": "261103-coral-steel",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-clever-crystal",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "cacheCreationTokens": 0.0,
+      "cacheReadTokens": 0.0,
+      "contextTokens": 0.0,
+      "contextUsage": {
+        "canCompact": true,
+        "isEstimate": true,
+        "isStale": false,
+        "limitKind": "compaction",
+        "limitTokens": 114688.0,
+        "usedTokens": 510.0
+      },
+      "costUsd": 0.0,
+      "inputTokens": 500.0,
+      "outputTokens": 20.0,
+      "totalTokens": 520.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_7198e1bd",
+    "workspaceName": "Default"
+  },
+  "261103-coral-steel": {
+    "createdAt": 1793683407433,
+    "hasUnread": true,
+    "id": "261103-coral-steel",
+    "isProcessing": false,
+    "lastFinalMessageId": "44acc75d-5d6d-451f-9cd6-320acd802698",
+    "lastMessageAt": 1793683407437,
+    "lastMessageRole": "assistant",
+    "messageCount": 0,
+    "messages": [
+      {
+        "content": "Complete isolated fixture nested-agent.",
+        "id": "msg-1793683407437-tln05z",
+        "role": "user",
+        "timestamp": 1793683407437
+      },
+      {
+        "content": "Fixture answer 中文。",
+        "id": "44acc75d-5d6d-451f-9cd6-320acd802698",
+        "isIntermediate": false,
+        "role": "assistant",
+        "timestamp": 1793683408195,
+        "turnId": "pi-turn-1__m0"
+      }
+    ],
+    "name": "Fixture nested-agent",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-coral-steel",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "cacheCreationTokens": 0.0,
+      "cacheReadTokens": 0.0,
+      "contextTokens": 0.0,
+      "contextUsage": {
+        "canCompact": true,
+        "isEstimate": true,
+        "isStale": false,
+        "limitKind": "compaction",
+        "limitTokens": 114688.0,
+        "usedTokens": 510.0
+      },
+      "costUsd": 0.0,
+      "inputTokens": 500.0,
+      "outputTokens": 20.0,
+      "totalTokens": 520.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_7198e1bd",
+    "workspaceName": "Default"
+  },
+  "261103-still-flood": {
+    "createdAt": 1793683408802,
+    "hasUnread": true,
+    "id": "261103-still-flood",
+    "isProcessing": false,
+    "lastFinalMessageId": "ae76d50f-76b9-48bd-b930-f50cba9bafd0",
+    "lastMessageAt": 1793683408804,
+    "lastMessageRole": "assistant",
+    "messageCount": 0,
+    "messages": [
+      {
+        "content": "[nested:2] Complete fixture child.",
+        "id": "msg-1793683408804-dpj2vg",
+        "role": "user",
+        "timestamp": 1793683408804
+      },
+      {
+        "content": "Fixture answer 中文。",
+        "id": "ae76d50f-76b9-48bd-b930-f50cba9bafd0",
+        "isIntermediate": false,
+        "role": "assistant",
+        "timestamp": 1793683409471,
+        "turnId": "pi-turn-1__m0"
+      }
+    ],
+    "name": "Fixture child 2",
+    "parentSessionId": "261103-clever-crystal",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-still-flood",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "cacheCreationTokens": 0.0,
+      "cacheReadTokens": 0.0,
+      "contextTokens": 0.0,
+      "contextUsage": {
+        "canCompact": true,
+        "isEstimate": true,
+        "isStale": false,
+        "limitKind": "compaction",
+        "limitTokens": 114688.0,
+        "usedTokens": 510.0
+      },
+      "costUsd": 0.0,
+      "inputTokens": 500.0,
+      "outputTokens": 10.0,
+      "totalTokens": 510.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_7198e1bd",
+    "workspaceName": "Default"
+  }
+}

@@ -1,0 +1,4 @@
+# Fixture provenance hashes cover exact bytes across all checkout platforms.
+/crates/agentkit-store/tests/fixtures/recorded/* text eol=lf
+/tools/fixtures/*.mjs text eol=lf
+/tools/fake-llm/scenarios/*.yaml text eol=lf

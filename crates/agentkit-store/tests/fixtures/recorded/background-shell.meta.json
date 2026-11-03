@@ -1,0 +1,34 @@
+{
+  "backendSha256": {
+    "pi": "f0ad2034ff3dde2ba345eb52a81308f186ce239eb4b2142e9cf0740d7e4cf481",
+    "server": "b710e488fbdfb7a57def1c76990ec69c4057b5ed01ef379515baa5f7d87a5fa9"
+  },
+  "evidence": {
+    "eventCounts": {
+      "complete": 2,
+      "shell_backgrounded": 1,
+      "task_completed": 1,
+      "text_complete": 2,
+      "text_delta": 36,
+      "tool_result": 1,
+      "tool_start": 1,
+      "usage_update": 11,
+      "user_message": 2
+    },
+    "maxOverlappingTools": 1,
+    "sessions": 1
+  },
+  "files": {
+    "events": "82851d8f615c2b5341577a4cff4bab032cd90441be8b28833776f8318f99e2c3",
+    "final": "5fe6fe429058ed9550a19dbf051edb880aca26bdf1f4020e861984b61126b028",
+    "initial": "5c37d3e23156e493997c52e333ee078e3b67dd7f2889c682e43e0253e792c695"
+  },
+  "modelSha256": "4f7a01a3f8cde7de91d7de71bccdaccb66db059cd41c8ffa62ee51938413813e",
+  "platform": "linux",
+  "projectionVersion": 1,
+  "scenario": "background-shell",
+  "scenarioSha256": "a15d53638c26813cd50e323a57cee0b45eee62a0efaed74df2224290cc9faf18",
+  "schemaVersion": 1,
+  "upstreamCommit": "6e8ebc456b6b82441be09118ca11afca79b84836",
+  "upstreamTag": "v0.2.6"
+}

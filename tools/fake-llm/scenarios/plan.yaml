@@ -1,0 +1,5 @@
+{
+  "name": "plan",
+  "prompt": "Complete isolated fixture plan.",
+  "chunk_ms": 1
+}

@@ -1,0 +1,5 @@
+{
+  "name": "retry",
+  "prompt": "Complete isolated fixture retry.",
+  "chunk_ms": 1
+}

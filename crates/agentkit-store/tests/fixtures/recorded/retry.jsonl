@@ -1,0 +1,32 @@
+{"message":{"content":"Complete isolated fixture retry.","id":"msg-1793683441035-f0z4e5","role":"user","timestamp":1793683441035},"sessionId":"261103-calm-dolphin","status":"accepted","type":"user_message"}
+{"sessionId":"261103-calm-dolphin","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":5446},"inputTokens":0},"type":"usage_update"}
+{"sessionId":"261103-calm-dolphin","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":5446},"inputTokens":0},"type":"usage_update"}
+{"sessionId":"261103-calm-dolphin","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":5446},"inputTokens":0},"type":"usage_update"}
+{"message":"Service Error. Retrying in 2s (attempt 1/4)...","phase":"backoff","sessionId":"261103-calm-dolphin","type":"retry"}
+{"phase":"active","sessionId":"261103-calm-dolphin","type":"retry"}
+{"delta":"F","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"i","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"x","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"t","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"u","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"a","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"n","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"s","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"w","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"中","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"文","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"。","sessionId":"261103-calm-dolphin","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"messageId":"bb1efbb0-ba3f-4fbf-868e-9ca9c5ce8c7a","sessionId":"261103-calm-dolphin","text":"Fixture answer 中文。","timestamp":1793683445022,"turnId":"pi-turn-1__m0","type":"text_complete"}
+{"sessionId":"261103-calm-dolphin","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"phase":"end","sessionId":"261103-calm-dolphin","type":"retry"}
+{"message":"Recovered after 1 retry","sessionId":"261103-calm-dolphin","type":"info"}
+{"sessionId":"261103-calm-dolphin","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261103-calm-dolphin","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261103-calm-dolphin","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"backgroundTasksAlive":false,"hasUnread":true,"sessionId":"261103-calm-dolphin","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":10,"totalTokens":510},"type":"complete"}

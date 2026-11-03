@@ -1,0 +1,24 @@
+{
+  "261103-still-river": {
+    "createdAt": 1793683427895,
+    "id": "261103-still-river",
+    "isProcessing": false,
+    "lastMessageAt": 1793683427895,
+    "messageCount": 0,
+    "messages": [],
+    "name": "Fixture cancel",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-still-river",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "contextTokens": 0.0,
+      "costUsd": 0.0,
+      "inputTokens": 0.0,
+      "outputTokens": 0.0,
+      "totalTokens": 0.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_facad13b",
+    "workspaceName": "Default"
+  }
+}

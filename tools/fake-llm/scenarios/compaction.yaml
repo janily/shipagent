@@ -1,0 +1,5 @@
+{
+  "name": "compaction",
+  "prompt": "Complete isolated fixture compaction.",
+  "chunk_ms": 1
+}

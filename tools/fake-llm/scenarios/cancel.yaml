@@ -1,0 +1,5 @@
+{
+  "name": "cancel",
+  "prompt": "Complete isolated fixture cancel.",
+  "chunk_ms": 100
+}

@@ -6,6 +6,7 @@ pub(crate) fn validate_perf() -> Result<()> {
     perf::Config::from_env().map(|_| ())
 }
 use crate::Brand;
+use agentkit_client::recording::RecordingInput;
 use agentkit_client::{ConnectionState, Endpoint, api::WorkbenchApi};
 use agentkit_protocol::{DecodedSessionEvent, generated::Session, generated::Workspace};
 use agentkit_sidecar::{SidecarConfig, SidecarEvent, SidecarHandle};
@@ -16,6 +17,7 @@ use agentkit_store::{
     },
     entities::{AppState, SessionListStore, SessionStore, WorkspaceStore},
 };
+type RecordingSender = async_channel::Sender<RecordingInput>;
 use agentkit_ui::{WorkbenchIntent, WorkbenchView};
 use anyhow::{Context as _, Result};
 use gpui_kit::*;
@@ -26,6 +28,10 @@ use std::{
     time::Duration,
 };
 
+fn report_recording_failure() {
+    // Development output only; never include transcript, token or destination path.
+    eprintln!("Event recording stopped: destination exists or IO failed");
+}
 fn sidecar_message(error: &agentkit_sidecar::SidecarError) -> String {
     use agentkit_sidecar::SidecarError as E;
     let key = match error {
@@ -46,10 +52,12 @@ pub(crate) struct Running {
     api: WorkbenchApi,
     sidecar: Option<SidecarHandle>,
     lifecycle: Option<smol::Task<()>>,
+    recording: Option<smol::Task<()>>,
     session_id: Option<String>,
 }
 impl Running {
     pub(crate) async fn shutdown_for_exit(mut self) {
+        self.recording.take();
         self.lifecycle.take();
         // GPUI allows only 200 ms in on_app_quit. Close transport first and
         // reserve time to kill and reap the owned process group.
@@ -59,6 +67,7 @@ impl Running {
         }
     }
     pub(crate) async fn shutdown(mut self) {
+        self.recording.take();
         self.lifecycle.take();
         if let Some(id) = &self.session_id {
             let _ = smol::future::race(self.api.cancel_for_shutdown(id), async {
@@ -97,7 +106,7 @@ struct Started {
     skills: Vec<agentkit_protocol::generated::LoadedSkill>,
     connections: Vec<agentkit_protocol::generated::LlmConnectionWithStatus>,
 }
-async fn bootstrap(brand: Brand) -> Result<Started> {
+async fn bootstrap(brand: Brand, recording: Option<RecordingSender>) -> Result<Started> {
     let mut sidecar = None;
     let endpoint = match (
         std::env::var("AGENTKIT_REMOTE_URL"),
@@ -147,7 +156,7 @@ async fn bootstrap(brand: Brand) -> Result<Started> {
         }
         _ => anyhow::bail!("Both AGENTKIT_REMOTE_URL and AGENTKIT_REMOTE_TOKEN are required"),
     };
-    match initialize(endpoint).await {
+    match initialize(endpoint, recording.clone()).await {
         Ok(mut started) => {
             if let Some(handle) = &sidecar {
                 let events = handle.events();
@@ -155,7 +164,14 @@ async fn bootstrap(brand: Brand) -> Result<Started> {
                 started.running.lifecycle = Some(smol::spawn(async move {
                     while let Ok(event) = events.recv().await {
                         match event {
-                            SidecarEvent::Restarted { endpoint } => api.replace_endpoint(endpoint),
+                            SidecarEvent::Restarted { endpoint } => {
+                                if let Some(tx) = &recording {
+                                    let _ = tx
+                                        .send(RecordingInput::Redact(endpoint.token.clone()))
+                                        .await;
+                                }
+                                api.replace_endpoint(endpoint);
+                            }
                             SidecarEvent::Fatal { .. } => api.close(),
                             SidecarEvent::Exited { .. } => {}
                         }
@@ -174,7 +190,7 @@ async fn bootstrap(brand: Brand) -> Result<Started> {
         }
     }
 }
-async fn initialize(endpoint: Endpoint) -> Result<Started> {
+async fn initialize(endpoint: Endpoint, recording: Option<RecordingSender>) -> Result<Started> {
     let initial = WorkbenchApi::connect(endpoint.clone(), String::new());
     let workspaces = initial.workspaces_generated().await?;
     let workspace = workspaces
@@ -189,7 +205,23 @@ async fn initialize(endpoint: Endpoint) -> Result<Started> {
         .or_else(|| connections.iter().find(|c| c.is_authenticated))
         .map(|c| c.default_model.clone().unwrap_or_else(|| c.name.clone()));
     initial.close();
+    if let Some(tx) = &recording {
+        let _ = tx
+            .send(RecordingInput::Redact(endpoint.token.clone()))
+            .await;
+    }
     let api = WorkbenchApi::connect(endpoint, workspace.id.clone());
+    let recording = recording.map(|tx| {
+        let receiver = api.session_events();
+        smol::spawn(async move {
+            while let Ok(args) = receiver.recv().await {
+                if tx.send(RecordingInput::Events(args)).await.is_err() {
+                    report_recording_failure();
+                    break;
+                }
+            }
+        })
+    });
     let events = api.session_events();
     let context = ContextEvents {
         unread: api.unread_events(),
@@ -214,6 +246,7 @@ async fn initialize(endpoint: Endpoint) -> Result<Started> {
         api,
         sidecar: None,
         lifecycle: None,
+        recording,
         session_id: Some(session.id.clone()),
     };
     Ok(Started {
@@ -265,6 +298,8 @@ pub(crate) struct WorkbenchController {
     monitor: Option<Task<()>>,
     viewing: Option<Task<()>>,
     operations: Vec<Task<()>>,
+    recording_sender: Option<RecordingSender>,
+    _recording_worker: Option<smol::Task<()>>,
     _subscription: Subscription,
 }
 impl WorkbenchController {
@@ -287,6 +322,21 @@ impl WorkbenchController {
             cx.set_global(SharedAppState(entity.clone()));
             entity
         };
+        let (recording_sender, recording_worker) =
+            if let Some(path) = std::env::var_os("AGENTKIT_RECORD_EVENTS") {
+                let (tx, rx) = async_channel::bounded(256);
+                let worker = smol::spawn(async move {
+                    if agentkit_client::recording::record(rx, path.into())
+                        .await
+                        .is_err()
+                    {
+                        report_recording_failure();
+                    }
+                });
+                (Some(tx), Some(worker))
+            } else {
+                (None, None)
+            };
         let mut this = Self {
             #[cfg(feature = "perf")]
             perf: perf::Config::from_env()
@@ -318,6 +368,8 @@ impl WorkbenchController {
             monitor: None,
             viewing: None,
             operations: vec![],
+            recording_sender,
+            _recording_worker: recording_worker,
             _subscription: subscription,
         };
         this.start(window, cx);
@@ -349,6 +401,7 @@ impl WorkbenchController {
         self.viewing = None;
         let previous = self.runtime.borrow_mut().take();
         let brand = self.brand.clone();
+        let recording = self.recording_sender.clone();
         let quitting = self.quitting.clone();
         *self.startup.borrow_mut() = Some(cx.spawn_in(window, async move |weak, cx| {
             if let Some(previous) = previous {
@@ -357,7 +410,7 @@ impl WorkbenchController {
             // Environment and filesystem work stays off the GPUI foreground thread.
             let result = cx
                 .background_executor()
-                .spawn(async move { bootstrap(brand).await })
+                .spawn(async move { bootstrap(brand, recording).await })
                 .await;
             if quitting.get() {
                 if let Ok(started) = result {
