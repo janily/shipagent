@@ -5,7 +5,11 @@ mod perf;
 pub(crate) fn validate_perf() -> Result<()> {
     perf::Config::from_env().map(|_| ())
 }
-use crate::Brand;
+use crate::{
+    Brand,
+    actions::*,
+    preferences::{Appearance, Geometry, PreferenceStore, Preferences},
+};
 use agentkit_client::recording::RecordingInput;
 use agentkit_client::{ConnectionState, Endpoint, api::WorkbenchApi};
 use agentkit_protocol::{DecodedSessionEvent, generated::Session, generated::Workspace};
@@ -106,7 +110,11 @@ struct Started {
     skills: Vec<agentkit_protocol::generated::LoadedSkill>,
     connections: Vec<agentkit_protocol::generated::LlmConnectionWithStatus>,
 }
-async fn bootstrap(brand: Brand, recording: Option<RecordingSender>) -> Result<Started> {
+async fn bootstrap(
+    brand: Brand,
+    recording: Option<RecordingSender>,
+    preferences: Preferences,
+) -> Result<Started> {
     let mut sidecar = None;
     let endpoint = match (
         std::env::var("AGENTKIT_REMOTE_URL"),
@@ -156,7 +164,7 @@ async fn bootstrap(brand: Brand, recording: Option<RecordingSender>) -> Result<S
         }
         _ => anyhow::bail!("Both AGENTKIT_REMOTE_URL and AGENTKIT_REMOTE_TOKEN are required"),
     };
-    match initialize(endpoint, recording.clone()).await {
+    match initialize(endpoint, recording.clone(), &preferences).await {
         Ok(mut started) => {
             if let Some(handle) = &sidecar {
                 let events = handle.events();
@@ -190,13 +198,24 @@ async fn bootstrap(brand: Brand, recording: Option<RecordingSender>) -> Result<S
         }
     }
 }
-async fn initialize(endpoint: Endpoint, recording: Option<RecordingSender>) -> Result<Started> {
+async fn initialize(
+    endpoint: Endpoint,
+    recording: Option<RecordingSender>,
+    preferences: &Preferences,
+) -> Result<Started> {
     let initial = WorkbenchApi::connect(endpoint.clone(), String::new());
-    let workspaces = initial.workspaces_generated().await?;
-    let workspace = workspaces
-        .into_iter()
-        .next()
-        .context("No backend workspace available")?;
+    initial.health().await?;
+    let mut workspaces = initial.workspaces_generated().await?;
+    let selected = if preferences.restore_session {
+        workspaces
+            .iter()
+            .position(|w| Some(&w.id) == preferences.workspace.as_ref())
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    anyhow::ensure!(!workspaces.is_empty(), "No backend workspace available");
+    let workspace = workspaces.swap_remove(selected);
     initial.disable_browser().await?;
     let connections = initial.connections_generated().await?;
     let model = connections
@@ -232,7 +251,7 @@ async fn initialize(endpoint: Endpoint, recording: Option<RecordingSender>) -> R
     let settings = api.workspace_settings(&workspace.id).await?;
     let skills = api.workspace_skills(&workspace.id).await?;
     let mut sessions = api.sessions_generated().await?;
-    let session = if let Some(summary) = sessions.first() {
+    let session = if let Some(summary) = restored_session(&sessions, preferences) {
         api.session_generated(&summary.id).await?
     } else {
         let working_directory = std::env::var("AGENTKIT_WORKING_DIR").ok();
@@ -300,6 +319,10 @@ pub(crate) struct WorkbenchController {
     operations: Vec<Task<()>>,
     recording_sender: Option<RecordingSender>,
     _recording_worker: Option<smol::Task<()>>,
+    preferences: PreferenceStore,
+    focus_handle: FocusHandle,
+    _window_observers: Vec<Subscription>,
+    _preference_monitor: Option<Task<()>>,
     _subscription: Subscription,
 }
 impl WorkbenchController {
@@ -308,6 +331,7 @@ impl WorkbenchController {
         runtime: RuntimeSlot,
         startup: StartupSlot,
         quitting: Rc<Cell<bool>>,
+        preferences: PreferenceStore,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
@@ -371,7 +395,50 @@ impl WorkbenchController {
             recording_sender,
             _recording_worker: recording_worker,
             _subscription: subscription,
+            preferences,
+            focus_handle: cx.focus_handle(),
+            _window_observers: Vec::new(),
+            _preference_monitor: None,
         };
+        this.focus_handle.focus(window, cx);
+        this.view.update(cx, |view, cx| {
+            view.apply_shell(
+                this.preferences.value.borrow().shell.clone(),
+                this.preferences.writable(),
+                window,
+                cx,
+            )
+        });
+        this._window_observers
+            .push(cx.observe_window_bounds(window, |this, window, cx| {
+                let bounds = window.window_bounds();
+                let b = bounds.get_bounds();
+                this.preferences.update(|p| {
+                    p.geometry = Some(Geometry {
+                        x: f32::from(b.origin.x),
+                        y: f32::from(b.origin.y),
+                        width: f32::from(b.size.width),
+                        height: f32::from(b.size.height),
+                        maximized: matches!(bounds, WindowBounds::Maximized(_)),
+                    })
+                });
+                this.view.update(cx, |v, cx| v.viewport_changed(window, cx));
+            }));
+        this._window_observers
+            .push(cx.observe_window_appearance(window, |this, window, cx| {
+                if this.preferences.value.borrow().appearance == Appearance::System {
+                    gpui_kit::component::Theme::sync_system_appearance(Some(window), cx);
+                }
+            }));
+        let failures = this.preferences.failures();
+        this._preference_monitor = Some(cx.spawn(async move |weak, cx| {
+            while failures.recv().await.is_ok() {
+                let _ = weak.update(cx, |this, cx| {
+                    this.view
+                        .update(cx, |v, cx| v.set_preferences_writable(false, cx))
+                });
+            }
+        }));
         this.start(window, cx);
         #[cfg(feature = "perf")]
         perf::watchdog(&mut this, window, cx);
@@ -402,6 +469,10 @@ impl WorkbenchController {
         let previous = self.runtime.borrow_mut().take();
         let brand = self.brand.clone();
         let recording = self.recording_sender.clone();
+        let preferences = bootstrap_preferences(
+            &self.preferences.value.borrow(),
+            self.state.as_ref().map(|s| &s.read(cx).model.state.session),
+        );
         let quitting = self.quitting.clone();
         *self.startup.borrow_mut() = Some(cx.spawn_in(window, async move |weak, cx| {
             if let Some(previous) = previous {
@@ -410,7 +481,7 @@ impl WorkbenchController {
             // Environment and filesystem work stays off the GPUI foreground thread.
             let result = cx
                 .background_executor()
-                .spawn(async move { bootstrap(brand, recording).await })
+                .spawn(async move { bootstrap(brand, recording, preferences).await })
                 .await;
             if quitting.get() {
                 if let Ok(started) = result {
@@ -475,13 +546,18 @@ impl WorkbenchController {
         let info = api.snapshot();
         self.app_state.update(cx, |s, cx| {
             s.connected = true;
+            s.background_tasks = 0;
             s.connections = started.connections;
             s.unread = started.unread;
-            s.theme = self.brand.default_theme.clone();
-            s.language = std::env::var("AGENTKIT_LANGUAGE").unwrap_or_else(|_| "zh-CN".into());
+            s.theme = format!("{:?}", self.preferences.value.borrow().appearance).to_lowercase();
+            s.language = self.preferences.value.borrow().language.clone();
             s.server_version = info.server_version;
             s.registered_channels = info.registered_channels.unwrap_or_default();
             cx.notify();
+        });
+        self.preferences.update(|p| {
+            p.workspace = Some(started.workspace.id.clone());
+            p.session = Some(state.read(cx).model.state.session.id.clone());
         });
         *self.runtime.borrow_mut() = Some(started.running);
         self.view.update(cx, |view, cx| {
@@ -765,6 +841,17 @@ impl WorkbenchController {
                 }
             }
         }
+        let count = running_background_tasks(
+            self.stores
+                .values()
+                .map(|s| &s.read(cx).model.state.session),
+        );
+        if self.app_state.read(cx).background_tasks != count {
+            self.app_state.update(cx, |s, cx| {
+                s.background_tasks = count;
+                cx.notify();
+            });
+        }
         if self.list.read(cx).model.refresh_required && !self.refreshing_list {
             self.refreshing_list = true;
             self.list_backlog.clear();
@@ -805,6 +892,16 @@ impl WorkbenchController {
         }
     }
 
+    fn remember_session(&self, cx: &App) {
+        if let Some(store) = &self.state {
+            let id = store.read(cx).model.state.session.id.clone();
+            let workspace = self.workspace.as_ref().map(|w| w.id.clone());
+            self.preferences.update(|p| {
+                p.session = Some(id);
+                p.workspace = workspace;
+            });
+        }
+    }
     fn mark_viewed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let (Some(api), Some(store), Some(workspace)) =
             (self.api(), self.state.clone(), self.workspace.as_ref())
@@ -849,6 +946,43 @@ impl WorkbenchController {
     fn handle(&mut self, intent: WorkbenchIntent, window: &mut Window, cx: &mut Context<Self>) {
         if self.quitting.get() {
             return;
+        }
+        match &intent {
+            WorkbenchIntent::LayoutChanged(shell) => {
+                self.preferences.update(|p| p.shell = shell.clone());
+                return;
+            }
+            WorkbenchIntent::CycleAppearance => {
+                self.preferences.update(|p| {
+                    p.appearance = match p.appearance {
+                        Appearance::System => Appearance::Light,
+                        Appearance::Light => Appearance::Dark,
+                        Appearance::Dark => Appearance::System,
+                    }
+                });
+                let appearance = self.preferences.value.borrow().appearance;
+                match appearance {
+                    Appearance::System => {
+                        gpui_kit::component::Theme::sync_system_appearance(Some(window), cx)
+                    }
+                    Appearance::Light => gpui_kit::component::Theme::change(
+                        gpui_kit::component::ThemeMode::Light,
+                        Some(window),
+                        cx,
+                    ),
+                    Appearance::Dark => gpui_kit::component::Theme::change(
+                        gpui_kit::component::ThemeMode::Dark,
+                        Some(window),
+                        cx,
+                    ),
+                };
+                self.app_state.update(cx, |s, cx| {
+                    s.theme = format!("{appearance:?}").to_lowercase();
+                    cx.notify();
+                });
+                return;
+            }
+            _ => {}
         }
         if let WorkbenchIntent::DraftChanged { session_id, text } = intent {
             if let Some(store) = self.stores.get(&session_id) {
@@ -948,6 +1082,7 @@ impl WorkbenchController {
                     }
                     self.view
                         .update(cx, |v, cx| v.bind_session(store, window, cx));
+                    self.remember_session(cx);
                     self.mark_viewed(window, cx);
                     return;
                 }
@@ -1011,6 +1146,7 @@ impl WorkbenchController {
                                     this.view.update(cx, |v, cx| {
                                         v.bind_session(store, window, cx);
                                     });
+                                    this.remember_session(cx);
                                     this.mark_viewed(window, cx);
                                 }
                                 Err(e) => this
@@ -1085,13 +1221,34 @@ impl WorkbenchController {
                         });
                     }));
             }
-            WorkbenchIntent::Reconnect | WorkbenchIntent::DraftChanged { .. } => {}
+            WorkbenchIntent::Reconnect
+            | WorkbenchIntent::DraftChanged { .. }
+            | WorkbenchIntent::LayoutChanged(_)
+            | WorkbenchIntent::CycleAppearance => {}
         }
     }
 }
 impl Render for WorkbenchController {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        self.view.clone()
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .size_full()
+            .track_focus(&self.focus_handle)
+            .key_context("Workbench")
+            .on_action(cx.listener(|this, _: &ToggleSidebar, window, cx| {
+                this.view.update(cx, |v, cx| v.toggle_sidebar(window, cx))
+            }))
+            .on_action(cx.listener(|this, _: &ToggleRightPanel, window, cx| {
+                this.view
+                    .update(cx, |v, cx| v.toggle_right_panel(window, cx))
+            }))
+            .on_action(cx.listener(|this, _: &ToggleFocusMode, window, cx| {
+                this.view
+                    .update(cx, |v, cx| v.toggle_focus_mode(window, cx))
+            }))
+            .on_action(cx.listener(|this, _: &NewChat, window, cx| {
+                this.handle(WorkbenchIntent::NewSession, window, cx)
+            }))
+            .child(self.view.clone())
     }
 }
 
@@ -1232,4 +1389,94 @@ fn claim_load(epoch: u64, request: u64, loading: &mut bool) -> bool {
     }
     *loading = false;
     true
+}
+
+fn bootstrap_preferences(preferences: &Preferences, active: Option<&Session>) -> Preferences {
+    let mut selected = preferences.clone();
+    // The launch preference must not redirect an explicit runtime reload.
+    if let Some(session) = active {
+        selected.restore_session = true;
+        selected.workspace = Some(session.workspace_id.clone());
+        selected.session = Some(session.id.clone());
+    }
+    selected
+}
+fn restored_session<'a>(sessions: &'a [Session], preferences: &Preferences) -> Option<&'a Session> {
+    if !preferences.restore_session {
+        return None;
+    }
+    sessions
+        .iter()
+        .find(|s| Some(&s.id) == preferences.session.as_ref())
+        .or_else(|| sessions.first())
+}
+fn running_background_tasks<'a>(sessions: impl IntoIterator<Item = &'a Session>) -> usize {
+    use agentkit_protocol::generated::ToolStatus;
+    let mut tasks = std::collections::HashSet::new();
+    for session in sessions {
+        for message in &session.messages {
+            if message.is_background == Some(true)
+                && !matches!(
+                    message.tool_status,
+                    Some(ToolStatus::Completed | ToolStatus::Error)
+                )
+            {
+                tasks.insert((
+                    session.id.as_str(),
+                    message
+                        .task_id
+                        .as_deref()
+                        .or(message.tool_use_id.as_deref())
+                        .unwrap_or(&message.id),
+                ));
+            }
+        }
+    }
+    tasks.len()
+}
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod shell_policy_tests {
+    use super::*;
+    fn session(id: &str) -> Session {
+        serde_json::from_value(serde_json::json!({"id":id,"workspaceId":"w","workspaceName":"W","messages":[],"lastMessageAt":0,"isProcessing":false})).unwrap()
+    }
+    #[::core::prelude::v1::test]
+    fn disabled_restore_creates_empty_instead_of_reopening_recent() {
+        let list = vec![session("recent"), session("saved")];
+        let mut prefs = Preferences {
+            session: Some("saved".into()),
+            ..Default::default()
+        };
+        assert_eq!(restored_session(&list, &prefs).unwrap().id, "saved");
+        prefs.session = Some("deleted".into());
+        assert_eq!(restored_session(&list, &prefs).unwrap().id, "recent");
+        prefs.restore_session = false;
+        assert!(restored_session(&list, &prefs).is_none());
+    }
+    #[::core::prelude::v1::test]
+    fn disabled_launch_restore_still_refreshes_active_session_on_reconnect() {
+        let prefs = Preferences {
+            restore_session: false,
+            session: Some("saved".into()),
+            ..Default::default()
+        };
+        let active = session("active");
+        let list = vec![session("saved"), active.clone()];
+        assert!(restored_session(&list, &bootstrap_preferences(&prefs, None)).is_none());
+        let reloaded = bootstrap_preferences(&prefs, Some(&active));
+        assert_eq!(restored_session(&list, &reloaded).unwrap().id, "active");
+        assert!(!prefs.restore_session);
+    }
+    #[::core::prelude::v1::test]
+    fn background_counts_all_open_sessions_and_deduplicates_task_rows() {
+        let mut one = session("one");
+        let two = session("two");
+        one.messages=serde_json::from_value(serde_json::json!([{"id":"t1","role":"tool","content":"","timestamp":1,"isBackground":true,"taskId":"task","toolStatus":"backgrounded"},{"id":"t2","role":"tool","content":"","timestamp":2,"isBackground":true,"taskId":"task","toolStatus":"backgrounded"}])).unwrap();
+        assert_eq!(running_background_tasks([&one, &two]), 1);
+        for m in &mut one.messages {
+            m.tool_status = Some(agentkit_protocol::generated::ToolStatus::Completed);
+        }
+        assert_eq!(running_background_tasks([&two, &one]), 0);
+    }
 }

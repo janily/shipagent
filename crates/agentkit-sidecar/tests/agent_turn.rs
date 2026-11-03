@@ -107,6 +107,7 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
         typed.settings().default_permissions().await.unwrap();
         typed.settings().network_proxy().await.unwrap();
         let api = WorkbenchApi::connect(endpoint, workspaces[0].id.clone());
+        api.health().await.unwrap();
         let events = api.session_events();
         let session = api
             .create_session(&workspaces[0].id, temp.path().to_str())

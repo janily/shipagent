@@ -16,6 +16,12 @@ fn project<T: Serialize, U: DeserializeOwned>(value: T) -> Result<U, RpcError> {
     Ok(serde_json::from_value(serde_json::to_value(value)?)?)
 }
 impl WorkbenchApi {
+    /// Verify backend health before selecting the startup workspace and session.
+    pub async fn health(&self) -> Result<(), RpcError> {
+        let _ = self.client.service().health().await?;
+        Ok(())
+    }
+
     /// Replace the local sidecar generation; pending calls are rejected without replay.
     pub fn replace_endpoint(&self, endpoint: Endpoint) {
         self.client.replace_endpoint(endpoint);

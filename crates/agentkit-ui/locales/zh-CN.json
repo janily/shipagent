@@ -62,6 +62,17 @@
     "reload_required": "请重新加载会话以同步完整状态，草稿已保留。",
     "mode_ask": "询问",
     "mode_execute": "执行",
-    "session_deleted": "会话已删除，可新建会话继续。"
+    "session_deleted": "会话已删除，可新建会话继续。",
+    "context_panel": "上下文面板",
+    "files": "文件",
+    "tasks": "后台任务",
+    "working_directory": "工作目录",
+    "no_directory": "未指定工作目录",
+    "no_plan": "当前会话还没有提交计划",
+    "no_tasks": "没有后台任务",
+    "toggle_sidebar": "显示或隐藏会话侧栏",
+    "focus_mode": "专注模式",
+    "backend": "后端",
+    "prefs_readonly": "偏好设置只读"
   }
 }

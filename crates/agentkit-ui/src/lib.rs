@@ -19,3 +19,5 @@ pub fn set_locale(locale: &str) {
         "en"
     });
 }
+/// Viewport-aware, serializable shell layout policy.
+pub mod layout;

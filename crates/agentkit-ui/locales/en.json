@@ -62,6 +62,17 @@
     "reload_required": "Reload to synchronize the session. Your draft was kept.",
     "mode_ask": "Ask",
     "mode_execute": "Execute",
-    "session_deleted": "Session was deleted. Start a new session to continue."
+    "session_deleted": "Session was deleted. Start a new session to continue.",
+    "context_panel": "Context panel",
+    "files": "Files",
+    "tasks": "Background tasks",
+    "working_directory": "Working directory",
+    "no_directory": "No working directory",
+    "no_plan": "No plan submitted in this session",
+    "no_tasks": "No background tasks",
+    "toggle_sidebar": "Toggle session sidebar",
+    "focus_mode": "Focus mode",
+    "backend": "Backend",
+    "prefs_readonly": "Preferences are read-only"
   }
 }
