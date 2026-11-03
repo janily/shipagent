@@ -4,6 +4,7 @@ use agentkit_client::{ClientOptions, RpcClient, api::WorkbenchApi};
 use agentkit_protocol::prototype::SessionEvent;
 use agentkit_sidecar::{SidecarConfig, SidecarHandle};
 use agentkit_store::core::reducer::{Context as ReductionContext, SessionState, process_decoded};
+use agentkit_store::core::session::SessionModel;
 use agentkit_store::core::turns::{
     GroupTurnsOptions, TurnPhase, derive_turn_phase, get_last_assistant_turn,
     group_messages_by_turn,
@@ -137,8 +138,17 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             &agentkit_protocol::generated::SessionCommand::MarkPendingPlanExecutionDispatched
         ).await.unwrap(), agentkit_client::api::types::CommandResult::PlanDispatched(false))
         );
+        assert!(!api.workspaces_generated().await.unwrap().is_empty());
+        api.workspace_settings(&workspaces[0].id).await.unwrap();
+        api.workspace_skills(&workspaces[0].id).await.unwrap();
+        api.connections_generated().await.unwrap();
+        api.unread_snapshot().await.unwrap();
+        api.view_session(&session.id, &workspaces[0].id)
+            .await
+            .unwrap();
         let generated_snapshot = api.session_generated(&session.id).await.unwrap();
         assert_eq!(generated_snapshot.id, session.id);
+        let mut cache = SessionModel::new(generated_snapshot.clone());
         let mut formal = SessionState {
             session: generated_snapshot,
             streaming: None,
@@ -189,6 +199,25 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                     )
                     .unwrap();
                     formal = result.state;
+                    cache
+                        .apply(
+                            &generated_event,
+                            &ReductionContext {
+                                now_ms: 1700000000000 + reduction_index,
+                                message_id: format!("formal-live-{reduction_index}"),
+                            },
+                        )
+                        .unwrap();
+                    assert_eq!(
+                        serde_json::to_value(&cache.turns).unwrap(),
+                        serde_json::to_value(group_messages_by_turn(
+                            &cache.state.session.messages,
+                            GroupTurnsOptions {
+                                is_session_processing: Some(cache.state.session.is_processing)
+                            }
+                        ))
+                        .unwrap()
+                    );
                     let turns = group_messages_by_turn(
                         &formal.session.messages,
                         GroupTurnsOptions {
@@ -289,6 +318,15 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             live_phases.contains(&TurnPhase::ToolActive),
             "Live grouping never represented the actual running tool"
         );
+        assert!(!cache.busy());
+        assert!(
+            cache
+                .state
+                .session
+                .messages
+                .iter()
+                .any(|m| m.id == formal_answer.id && m.content == formal_answer.content)
+        );
         let formal_tool = formal
             .session
             .messages
@@ -334,6 +372,7 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             session: api.session_generated(&cancelled_id).await.unwrap(),
             streaming: None,
         };
+        let mut cancelled_cache = SessionModel::new(formal_cancelled.session.clone());
         let mut cancelled_state = ChatState::new(cancelled);
         cancelled_state.begin_send("Read proof.txt again".into(), "cancel-user".into());
         assert!(
@@ -365,6 +404,15 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                     )
                     .unwrap()
                     .state;
+                    cancelled_cache
+                        .apply(
+                            &generated_event,
+                            &ReductionContext {
+                                now_ms: 1700000000000 + reduction_index,
+                                message_id: format!("formal-live-{reduction_index}"),
+                            },
+                        )
+                        .unwrap();
                     cancelled_state.apply(&event);
                     if event.kind == "text_delta" && !requested {
                         api.cancel(&cancelled_id).await.unwrap();
@@ -389,6 +437,8 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             "No interrupted event after cancelling the real stream"
         );
         assert_eq!(cancelled_state.status, RunState::Interrupted);
+        assert!(!cancelled_cache.busy());
+        assert!(cancelled_cache.state.streaming.is_none());
         assert!(!formal_cancelled.session.is_processing);
         assert!(formal_cancelled.streaming.is_none());
         let cancelled_turns = group_messages_by_turn(

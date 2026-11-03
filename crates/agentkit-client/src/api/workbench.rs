@@ -1,4 +1,4 @@
-//! Transitional UI projection over the typed facade; no independent wire calls.
+//! Native application facade and retained compatibility projections over typed RPC groups.
 use crate::{ClientOptions, ConnectionState, Endpoint, RpcClient, RpcError};
 use agentkit_protocol::{
     generated as g,
@@ -7,7 +7,7 @@ use agentkit_protocol::{
 use secrecy::SecretString;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
-/// Application bridge until the formal domain/reducer migration (T-1-06).
+/// Controller facade; production entity paths use the generated snapshot methods.
 #[derive(Clone)]
 pub struct WorkbenchApi {
     client: RpcClient,
@@ -42,6 +42,113 @@ impl WorkbenchApi {
     /// Fetch validated sessions, then project UI fields.
     pub async fn sessions(&self) -> Result<Vec<Session>, RpcError> {
         project(self.client.sessions().list().await?)
+    }
+    /// Generated workspace context for native entities.
+    pub async fn workspaces_generated(&self) -> Result<Vec<g::Workspace>, RpcError> {
+        self.client.workspaces().list().await
+    }
+    /// Safe model connection status, without credentials.
+    pub async fn connections_generated(&self) -> Result<Vec<g::LlmConnectionWithStatus>, RpcError> {
+        self.client.connections().list_with_status().await
+    }
+    /// Workspace settings snapshot.
+    pub async fn workspace_settings(
+        &self,
+        id: &str,
+    ) -> Result<Option<g::WorkspaceSettings>, RpcError> {
+        self.client.workspaces().settings(id).await
+    }
+    /// Loaded workspace skill metadata.
+    pub async fn workspace_skills(&self, id: &str) -> Result<Vec<g::LoadedSkill>, RpcError> {
+        self.client.skills().list(id, None).await
+    }
+    /// Mark the selected conversation as actively viewed and read, once per open intent.
+    pub async fn view_session(&self, id: &str, workspace: &str) -> Result<(), RpcError> {
+        self.client
+            .sessions()
+            .command(
+                id,
+                &g::SessionCommand::SetActiveViewing {
+                    workspace_id: workspace.into(),
+                },
+            )
+            .await?;
+        self.client
+            .sessions()
+            .command(id, &g::SessionCommand::MarkRead)
+            .await?;
+        Ok(())
+    }
+    /// Authoritative unread count at bootstrap.
+    pub async fn unread_snapshot(&self) -> Result<g::UnreadSummary, RpcError> {
+        self.client.sessions().unread_summary().await
+    }
+    /// Invalidation events for the safe connection catalog.
+    pub fn connection_events(&self) -> async_channel::Receiver<Result<(), RpcError>> {
+        self.client.events().connections_changed()
+    }
+    /// Workspace-local skill changes.
+    pub fn skill_events(
+        &self,
+    ) -> async_channel::Receiver<Result<(String, Vec<g::LoadedSkill>), RpcError>> {
+        self.client.events().skills_changed()
+    }
+    /// Global unread summary changes.
+    pub fn unread_events(&self) -> async_channel::Receiver<Result<g::UnreadSummary, RpcError>> {
+        self.client.events().unread_summary()
+    }
+    /// Generated summaries for the formal store.
+    pub async fn sessions_generated(&self) -> Result<Vec<g::Session>, RpcError> {
+        self.client.sessions().list().await
+    }
+    /// Create directly into the generated store contract.
+    pub async fn create_session_generated(
+        &self,
+        workspace: &str,
+        working_directory: Option<&str>,
+    ) -> Result<g::Session, RpcError> {
+        self.client
+            .sessions()
+            .create(
+                workspace,
+                Some(&g::CreateSessionOptions {
+                    permission_mode: Some(g::PermissionMode::Safe),
+                    working_directory: working_directory.map(str::to_owned),
+                    ..Default::default()
+                }),
+            )
+            .await
+    }
+    /// Send attachment-capable optimistic work once; uploads/picker remain controller concerns.
+    pub async fn send_with_attachments(
+        &self,
+        session: &str,
+        text: &str,
+        optimistic_id: &str,
+        attachments: &[g::FileAttachment],
+        stored: &[g::StoredAttachment],
+    ) -> Result<SendAck, RpcError> {
+        let options = g::SendMessageOptions {
+            optimistic_message_id: Some(optimistic_id.into()),
+            ..Default::default()
+        };
+        let ack = self
+            .client
+            .sessions()
+            .send_message(
+                session,
+                text,
+                super::types::SendParts {
+                    attachments: Some(attachments),
+                    stored_attachments: Some(stored),
+                    options: Some(&options),
+                },
+            )
+            .await?;
+        Ok(SendAck {
+            accepted: ack.accepted,
+            message_id: ack.message_id,
+        })
     }
     /// Fetch a persisted session, rejecting a missing session explicitly.
     pub async fn session(&self, id: &str) -> Result<Session, RpcError> {
@@ -165,7 +272,7 @@ impl WorkbenchApi {
     pub async fn disable_browser(&self) -> Result<(), RpcError> {
         self.client.settings().disable_browser().await
     }
-    /// Raw event arguments retained for the existing batch reducer; it validates ingress.
+    /// Raw arguments retain future tags; window ingress performs explicit formal decoding.
     pub fn session_events(&self) -> async_channel::Receiver<Vec<Value>> {
         self.client
             .subscribe(agentkit_protocol::constants::channels::sessions::EVENT)

@@ -1,159 +1,156 @@
 use crate::{WorkbenchIntent, WorkbenchView, tr};
-use agentkit_protocol::prototype::Message;
-use agentkit_store::RunState;
+use agentkit_store::core::turns::{ActivityStatus, ActivityType, Turn};
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
     input::Textarea,
     message_scroller::MessageScroller,
-    text::{TextView, TextViewState},
+    text::TextView,
     *,
 };
 use gpui_kit::{prelude::*, *};
-use std::collections::HashMap;
 
 impl WorkbenchView {
     pub(crate) fn chat_body(&self, cx: &mut Context<Self>) -> AnyElement {
-        let messages = self
-            .state
-            .as_ref()
-            .map(|state| state.session.messages.clone())
-            .unwrap_or_default();
-        let markdown: HashMap<String, Entity<TextViewState>> = self
-            .markdown
-            .iter()
-            .map(|(id, (_, state))| (id.clone(), state.clone()))
-            .collect();
-        let expanded = self.expanded.clone();
+        let store = self.state.clone();
+        let count = store.as_ref().map_or(0, |s| s.read(cx).model.turns.len());
         let weak = cx.weak_entity();
-        let history = if messages.is_empty() {
+        let history = if count == 0 {
             v_flex()
                 .flex_1()
                 .justify_center()
                 .items_center()
-                .gap_3()
-                .child(div().text_xl().font_semibold().child(tr("ak.empty_title")))
-                .child(
-                    div()
-                        .text_color(cx.theme().muted_foreground)
-                        .child(tr(if self.loading {
-                            "ak.loading"
-                        } else {
-                            "ak.empty_hint"
-                        })),
-                )
+                .child(tr(if self.loading {
+                    "ak.loading"
+                } else {
+                    "ak.empty_hint"
+                }))
                 .into_any_element()
         } else {
             MessageScroller::new("messages", self.scroll.clone(), move |index, _, cx| {
-                let Some(message) = messages.get(index) else {
+                let Some(view) = weak.upgrade() else {
                     return div().into_any_element();
                 };
-                let body = match message.role.as_str() {
-                    "user" => h_flex()
-                        .w_full()
-                        .justify_end()
-                        .child(
+                let view_state = view.read(cx);
+                let markdown = &view_state.markdown;
+                let expanded = &view_state.expanded;
+                let Some(store) = &store else {
+                    return div().into_any_element();
+                };
+                let Some(turn) = store.read(cx).model.turns.get(index) else {
+                    return div().into_any_element();
+                };
+                let mut row = v_flex().w_full().gap_2();
+                let label = match turn {
+                    Turn::User(t) => {
+                        row = row.items_end().child(
                             div()
-                                .max_w(relative(0.8))
                                 .px_4()
                                 .py_3()
                                 .rounded_lg()
                                 .bg(cx.theme().muted)
-                                .when(message.is_pending, |view| view.opacity(0.6))
-                                .child(message.content.clone()),
-                        )
-                        .into_any_element(),
-                    "assistant" => div()
-                        .w_full()
-                        .when_some(markdown.get(&message.id), |view, state| {
-                            view.child(
+                                .when(t.message.is_pending == Some(true), |v| v.opacity(0.6))
+                                .child(t.message.content.clone()),
+                        );
+                        t.message.content.clone()
+                    }
+                    Turn::System(t) => {
+                        row = row.child(t.message.content.clone());
+                        t.message.content.clone()
+                    }
+                    Turn::Assistant(t) => {
+                        for activity in &t.activities {
+                            if activity.kind == ActivityType::Intermediate {
+                                if t.response.as_ref().and_then(|r| r.message_id.as_ref())
+                                    == Some(&activity.id)
+                                {
+                                    continue;
+                                }
+                                if let Some((_, state)) = markdown.get(&activity.id) {
+                                    row = row.child(
+                                        TextView::new(state).selectable(true).stream_fade(
+                                            activity.status == ActivityStatus::Running,
+                                        ),
+                                    );
+                                }
+                            } else {
+                                let id = activity.id.clone();
+                                let weak = weak.clone();
+                                let open = expanded.contains(&id);
+                                let title = format!(
+                                    "{} · {}",
+                                    activity.tool_name.clone().unwrap_or_else(|| {
+                                        if activity.kind == ActivityType::Plan {
+                                            tr("ak.plan")
+                                        } else {
+                                            String::new()
+                                        }
+                                    }),
+                                    tr(match activity.status {
+                                        ActivityStatus::Completed => "ak.tool_done",
+                                        ActivityStatus::Error => "ak.tool_error",
+                                        _ => "ak.tool_running",
+                                    })
+                                );
+                                row = row.child(
+                                    v_flex()
+                                        .border_1()
+                                        .border_color(cx.theme().border)
+                                        .rounded_md()
+                                        .child(
+                                            Button::new(SharedString::from(format!("tool:{id}")))
+                                                .ghost()
+                                                .label(title)
+                                                .on_click(move |_, _, cx| {
+                                                    let _ = weak.update(cx, |this, cx| {
+                                                        if !this.expanded.remove(&id) {
+                                                            this.expanded.insert(id.clone());
+                                                        }
+                                                        this.scroll
+                                                            .update(cx, |s, cx| s.remeasure(cx));
+                                                        cx.notify();
+                                                    });
+                                                }),
+                                        )
+                                        .when(open, |v| {
+                                            v.child(
+                                                serde_json::to_string(&activity.tool_input)
+                                                    .unwrap_or_default(),
+                                            )
+                                            .child(
+                                                activity
+                                                    .content
+                                                    .as_deref()
+                                                    .unwrap_or_default()
+                                                    .chars()
+                                                    .take(2000)
+                                                    .collect::<String>(),
+                                            )
+                                        }),
+                                );
+                            }
+                        }
+                        if let Some(response) = &t.response
+                            && let Some(id) = &response.message_id
+                            && let Some((_, state)) = markdown.get(id)
+                        {
+                            row = row.child(
                                 TextView::new(state)
                                     .selectable(true)
-                                    .stream_fade(message.is_streaming),
-                            )
-                        })
-                        .into_any_element(),
-                    "tool" => {
-                        let id = message.id.clone();
-                        let weak = weak.clone();
-                        let open = expanded.contains(&id);
-                        v_flex()
-                            .w_full()
-                            .border_1()
-                            .border_color(cx.theme().border)
-                            .rounded_md()
-                            .when(message.parent_tool_use_id.is_some(), |view| view.ml_4())
-                            .child(
-                                Button::new(SharedString::from(format!("tool:{id}")))
-                                    .ghost()
-                                    .w_full()
-                                    .justify_start()
-                                    .label(tool_title(message))
-                                    .on_click(move |_, _, cx| {
-                                        let _ = weak.update(cx, |this, cx| {
-                                            if !this.expanded.remove(&id) {
-                                                this.expanded.insert(id.clone());
-                                            }
-                                            this.scroll
-                                                .update(cx, |scroll, cx| scroll.remeasure(cx));
-                                            cx.notify();
-                                        });
-                                    }),
-                            )
-                            .when(open, |view| {
-                                view.child(
-                                    v_flex()
-                                        .p_3()
-                                        .gap_2()
-                                        .text_xs()
-                                        .child(
-                                            div()
-                                                .text_color(cx.theme().muted_foreground)
-                                                .child(tr("ak.input")),
-                                        )
-                                        .child(
-                                            div()
-                                                .font_family(cx.theme().mono_font_family.clone())
-                                                .child(
-                                                    message
-                                                        .tool_input
-                                                        .as_ref()
-                                                        .map(|v| v.to_string())
-                                                        .unwrap_or_default(),
-                                                ),
-                                        )
-                                        .child(
-                                            div()
-                                                .text_color(cx.theme().muted_foreground)
-                                                .child(tr("ak.output")),
-                                        )
-                                        .child(
-                                            div()
-                                                .font_family(cx.theme().mono_font_family.clone())
-                                                .child(
-                                                    message
-                                                        .tool_result
-                                                        .as_deref()
-                                                        .unwrap_or_default()
-                                                        .chars()
-                                                        .take(2000)
-                                                        .collect::<String>(),
-                                                ),
-                                        )
-                                        .when(
-                                            message
-                                                .tool_result
-                                                .as_ref()
-                                                .is_some_and(|r| r.chars().count() > 2000),
-                                            |view| view.child(tr("ak.truncated")),
-                                        ),
-                                )
+                                    .stream_fade(response.is_streaming),
+                            );
+                        }
+                        t.response
+                            .as_ref()
+                            .map(|r| r.text.clone())
+                            .or_else(|| {
+                                t.activities
+                                    .iter()
+                                    .rev()
+                                    .find(|a| a.kind == ActivityType::Intermediate)
+                                    .and_then(|a| a.content.clone())
                             })
-                            .into_any_element()
+                            .unwrap_or_default()
                     }
-                    _ => div()
-                        .text_color(cx.theme().muted_foreground)
-                        .child(message.content.clone())
-                        .into_any_element(),
                 };
                 h_flex()
                     .w_full()
@@ -164,14 +161,10 @@ impl WorkbenchView {
                         div()
                             .id(("message", index))
                             .role(Role::Group)
-                            .aria_label(if message.role == "tool" {
-                                tool_title(message)
-                            } else {
-                                message.content.clone()
-                            })
+                            .aria_label(label)
                             .w_full()
                             .max_w(px(820.))
-                            .child(body)
+                            .child(row)
                             .test_support(),
                     )
                     .into_any_element()
@@ -181,13 +174,15 @@ impl WorkbenchView {
             .min_h_0()
             .into_any_element()
         };
-        let busy = self.busy();
+        let busy = self.busy(cx);
         v_flex()
             .flex_1()
             .min_h_0()
             .child(history)
             .when_some(
-                self.state.as_ref().and_then(|s| s.permission.clone()),
+                self.state
+                    .as_ref()
+                    .and_then(|s| s.read(cx).model.permissions.first().cloned()),
                 |view, permission| {
                     let allow_id = permission.request_id.clone();
                     let deny_id = permission.request_id.clone();
@@ -231,7 +226,7 @@ impl WorkbenchView {
                                                     cx.notify();
                                                 })),
                                         )
-                                        .when(permission.can_always_allow, |view| {
+                                        .when(permission.can_always_allow == Some(true), |view| {
                                             view.child(
                                                 Button::new("permission-always")
                                                     .outline()
@@ -290,7 +285,10 @@ impl WorkbenchView {
                                         .appearance(false)
                                         .bordered(false)
                                         .disabled(
-                                            !self.ready || self.loading || self.model.is_none(),
+                                            !self.ready
+                                                || self.state.is_none()
+                                                || self.loading
+                                                || self.model.is_none(),
                                         ),
                                 )
                                 .test_support(),
@@ -311,7 +309,7 @@ impl WorkbenchView {
                                                 .border_1()
                                                 .border_color(cx.theme().border)
                                                 .rounded_full()
-                                                .child(tr("ak.safe")),
+                                                .child(tr(match self.state.as_ref().and_then(|s|s.read(cx).model.state.session.permission_mode) {Some(agentkit_protocol::generated::PermissionMode::Ask)=>"ak.mode_ask",Some(agentkit_protocol::generated::PermissionMode::AllowAll)=>"ak.mode_execute",_=>"ak.safe"})),
                                         )
                                         .child(
                                             self.model.clone().unwrap_or_else(|| tr("ak.no_model")),
@@ -319,7 +317,7 @@ impl WorkbenchView {
                                         .when(busy, |view| {
                                             view.child(tr(
                                                 if self.state.as_ref().is_some_and(|s| {
-                                                    s.status == RunState::WaitingForPermission
+                                                    !s.read(cx).model.permissions.is_empty()
                                                 }) {
                                                     "ak.permission_wait"
                                                 } else {
@@ -328,14 +326,12 @@ impl WorkbenchView {
                                             ))
                                         }),
                                 )
-                                .child(if busy {
-                                    Button::new("stop")
-                                        .label(tr("ak.stop"))
-                                        .on_click(cx.listener(|_, _, _, cx| {
-                                            cx.emit(WorkbenchIntent::Cancel)
-                                        }))
-                                        .into_any_element()
-                                } else {
+                                .when(busy, |v| {
+                                    v.child(Button::new("stop").label(tr("ak.stop")).on_click(
+                                        cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::Cancel)),
+                                    ))
+                                })
+                                .child(
                                     Button::new("send")
                                         .primary()
                                         .label(tr("ak.send"))
@@ -346,32 +342,11 @@ impl WorkbenchView {
                                                 || self.submitting
                                                 || self.composer.read(cx).value().trim().is_empty(),
                                         )
-                                        .on_click(cx.listener(|this, _, _, cx| this.submit(cx)))
-                                        .into_any_element()
-                                }),
+                                        .on_click(cx.listener(|this, _, _, cx| this.submit(cx))),
+                                ),
                         ),
                 ),
             )
             .into_any_element()
     }
-}
-fn tool_title(message: &Message) -> String {
-    let (mark, key) = match message.tool_status.as_deref() {
-        Some("completed") => ("✓", "ak.tool_done"),
-        Some("error") => ("×", "ak.tool_error"),
-        Some("interrupted") => ("—", "ak.tool_interrupted"),
-        _ => ("…", "ak.tool_running"),
-    };
-    let hint = message
-        .tool_input
-        .as_ref()
-        .and_then(|input| input.get("path").or_else(|| input.get("command")))
-        .and_then(serde_json::Value::as_str)
-        .unwrap_or_default();
-    format!(
-        "{mark}  {}  {}  · {}",
-        message.tool_name.as_deref().unwrap_or_default(),
-        hint.chars().take(100).collect::<String>(),
-        tr(key)
-    )
 }

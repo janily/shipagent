@@ -15,7 +15,7 @@ uuid.workspace = true
 secrecy.workspace = true
 agentkit-client.workspace = true
 agentkit-sidecar.workspace = true
-agentkit-store.workspace = true
+agentkit-store = { workspace = true, features = ["entities"] }
 agentkit-ui.workspace = true
 agentkit-capabilities.workspace = true
 gpui-kit.workspace = true
