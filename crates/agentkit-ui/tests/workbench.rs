@@ -256,11 +256,11 @@ fn mixed_structural_and_stream_batches_never_double_append_markdown(cx: &mut Tes
         store.update(cx,|s,cx|s.apply_batch(&batch,cx));
     });
     cx.update(|cx|{
-        assert_eq!(v.read(cx).cached_markdown("authoritative").unwrap(),"A");assert_eq!(v.read(cx).cached_markdown("m2").unwrap(),"B");
+        assert_eq!(v.read(cx).cached_markdown("authoritative",cx).unwrap(),"A");assert_eq!(v.read(cx).cached_markdown("m2",cx).unwrap(),"B");
         let batch:Vec<_>=["C","D"].into_iter().map(|delta|(serde_json::from_value(serde_json::json!({"type":"text_delta","sessionId":"s","turnId":"next","delta":delta})).unwrap(),Clock{now_ms:1003,message_id:"unused".into()})).collect();store.update(cx,|s,cx|s.apply_batch(&batch,cx));
     });
     cx.update(|cx| {
-        assert_eq!(v.read(cx).cached_markdown("m2").unwrap(), "BCD");
+        assert_eq!(v.read(cx).cached_markdown("m2", cx).unwrap(), "BCD");
     });
     cx.update_window(w, |_, _, _| {}).unwrap();
 }

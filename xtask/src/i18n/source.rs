@@ -327,6 +327,20 @@ impl<'ast> Visit<'ast> for Audit {
                 .last()
                 .map(|s| s.ident.to_string())
                 .unwrap_or_default();
+            if p.path.segments.iter().any(|s| s.ident == "Alert")
+                && matches!(
+                    function.as_str(),
+                    "new" | "error" | "warning" | "info" | "success"
+                )
+            {
+                let old = self.visible;
+                for (index, arg) in node.args.iter().enumerate() {
+                    self.visible = index > 0;
+                    self.visit_expr(arg);
+                }
+                self.visible = old;
+                return;
+            }
             if matches!(function.as_str(), "tr" | "translate") {
                 self.error(
                     p.path.segments[0].ident.span(),
@@ -462,6 +476,7 @@ mod tests {
         for body in [
             r#"t!(key)"#,
             r#"div().label("Send")"#,
+            r#"Alert::error("alert-id", "Failure")"#,
             r#"div().label("Send".to_string())"#,
             r#"div().label(format!("{{Send}}"))"#,
             r#"div().child(format!("{{中文}}"))"#,

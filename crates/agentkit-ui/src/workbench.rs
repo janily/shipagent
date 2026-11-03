@@ -2,25 +2,23 @@ use crate::t;
 #[path = "shell.rs"]
 mod shell;
 use crate::layout::ShellPreferences;
-use agentkit_store::{
-    core::session::SessionStoreEvent,
-    entities::{AppState, SessionListStore, SessionStore, WorkspaceStore},
-};
+use crate::transcript::{ChatIntent, ChatView};
+use agentkit_store::entities::{AppState, SessionListStore, SessionStore, WorkspaceStore};
 use gpui_kit::component::resizable::ResizableState;
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
     input::{Input, InputEvent, InputState, TextareaState},
     message_scroller::MessageScrollerState,
-    text::TextViewState,
     *,
 };
 use gpui_kit::{prelude::*, *};
 use secrecy::SecretString;
-use std::collections::{HashMap, HashSet};
 
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Conversation component intent, resolved against canonical state by the controller.
+    Chat(ChatIntent),
     /// Submit a draft; no credential or RPC channel appears in the view.
     Submit(String),
     /// Session-scoped local draft change; valid even while disconnected.
@@ -30,6 +28,8 @@ pub enum WorkbenchIntent {
         /// Current composer text.
         text: String,
     },
+    /// Explicitly resend a canonical user message, including its stored attachments.
+    ResendMessage(String),
     /// Stop the active round.
     Cancel,
     /// Create a safe empty conversation.
@@ -61,7 +61,7 @@ pub enum WorkbenchIntent {
     /// Cycle system/light/dark appearance in the application layer.
     CycleAppearance,
 }
-/// Native fixed-layout prototype backed by actual conversation state.
+/// Native application shell hosting the canonical conversation components.
 pub struct WorkbenchView {
     pub(crate) app_name: SharedString,
     shell: ShellPreferences,
@@ -81,8 +81,7 @@ pub struct WorkbenchView {
     pub(crate) sessions: Option<Entity<SessionListStore>>,
     pub(crate) composer: Entity<TextareaState>,
     pub(crate) scroll: Entity<MessageScrollerState>,
-    pub(crate) markdown: HashMap<String, (String, Entity<TextViewState>)>,
-    pub(crate) expanded: HashSet<String>,
+    pub(crate) chat: Entity<ChatView>,
     pub(crate) setup: bool,
     pub(crate) submitting: bool,
     configuring: bool,
@@ -116,6 +115,11 @@ impl WorkbenchView {
                 }
                 _ => {}
             });
+        let chat = cx.new(ChatView::new);
+        let scroll = chat.read(cx).scroll_state().clone();
+        let chat_subscription = cx.subscribe(&chat, |_, _, intent, cx| {
+            cx.emit(WorkbenchIntent::Chat(intent.clone()))
+        });
         Self {
             app_name,
             shell: ShellPreferences::default(),
@@ -134,9 +138,8 @@ impl WorkbenchView {
             state: None,
             sessions: None,
             composer,
-            scroll: cx.new(|cx| MessageScrollerState::new(0, cx)),
-            markdown: HashMap::new(),
-            expanded: HashSet::new(),
+            scroll,
+            chat,
             setup: false,
             submitting: false,
             configuring: false,
@@ -146,12 +149,19 @@ impl WorkbenchView {
                 .new(|cx| InputState::new(window, cx).placeholder("http://127.0.0.1:11434/v1")),
             model_id: cx.new(|cx| InputState::new(window, cx)),
             api_key: cx.new(|cx| InputState::new(window, cx).masked(true)),
-            _subscriptions: vec![input_subscription],
+            _subscriptions: vec![input_subscription, chat_subscription],
             session_subscriptions: Vec::new(),
             list_subscription: None,
             app_state: None,
             context_subscriptions: Vec::new(),
         }
+    }
+    /// Show the existing local model connection form without changing drafts.
+    pub fn show_configuration(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.setup = true;
+        self.base_url
+            .update(cx, |input, cx| input.focus(window, cx));
+        cx.notify();
     }
     /// Apply actual bootstrap results; no simulated connected state is used by the app.
     pub fn connected(&mut self, workspace: String, model: Option<String>, cx: &mut Context<Self>) {
@@ -216,47 +226,17 @@ impl WorkbenchView {
             return;
         }
         self.session_subscriptions.clear();
-        self.markdown.clear();
-        self.expanded.clear();
-        self.scroll.update(cx, |s, cx| s.reset(0, cx));
+        self.chat
+            .update(cx, |chat, cx| chat.bind(store.clone(), cx));
         self.error = store.read(cx).model.last_error.clone();
         self.state = Some(store.clone());
-        self.reconcile(0, cx);
+
         let draft = store.read(cx).model.draft.text.clone();
         self.composer
             .update(cx, |input, cx| input.set_value(draft, window, cx));
-        self.session_subscriptions.push(cx.subscribe(
-            &store,
-            |this, store, event, cx| match event {
-                SessionStoreEvent::TurnsChanged { from_turn } => this.reconcile(*from_turn, cx),
-                SessionStoreEvent::StreamDelta { message_id, delta } => {
-                    if let Some((text, entity)) = this.markdown.get_mut(message_id) {
-                        text.push_str(delta);
-                        entity.update(cx, |state, cx| state.push_str(delta, cx));
-                    } else if let Some(message) = store
-                        .read(cx)
-                        .model
-                        .state
-                        .session
-                        .messages
-                        .iter()
-                        .find(|m| &m.id == message_id && m.hidden != Some(true))
-                    {
-                        let content = message.content.clone();
-                        let state = cx.new(|cx| TextViewState::markdown(&content, cx));
-                        this.markdown.insert(message_id.clone(), (content, state));
-                    }
-                    this.sync_rows(cx);
-                    if let Some(row) = store.read(cx).model.turn_index(message_id) {
-                        this.scroll
-                            .update(cx, |s, cx| s.remeasure_items(row..row + 1, cx));
-                    }
-                }
-            },
-        ));
         self.session_subscriptions
             .push(cx.observe(&store, |this, _, cx| {
-                this.sync_rows(cx);
+                this.sync_permissions(cx);
                 cx.notify();
             }));
         if self.setup {
@@ -271,19 +251,7 @@ impl WorkbenchView {
         self.permission_busy = false;
         cx.notify();
     }
-    fn sync_rows(&mut self, cx: &mut Context<Self>) {
-        let count = self
-            .state
-            .as_ref()
-            .map_or(0, |s| s.read(cx).model.turns.len());
-        let old = self.scroll.read(cx).item_count();
-        self.scroll.update(cx, |scroll, cx| {
-            if count < old {
-                scroll.splice(count..old, 0, cx);
-            } else if count > old {
-                scroll.append(count - old, cx);
-            }
-        });
+    fn sync_permissions(&mut self, cx: &mut Context<Self>) {
         let request = self.state.as_ref().and_then(|s| {
             s.read(cx)
                 .model
@@ -296,66 +264,6 @@ impl WorkbenchView {
             self.permission_id = request;
         }
     }
-    fn reconcile(&mut self, from: usize, cx: &mut Context<Self>) {
-        let Some(store) = self.state.clone() else {
-            return;
-        };
-        let model = &store.read(cx).model;
-        let ids: HashSet<_> = model
-            .turns
-            .iter()
-            .skip(from)
-            .flat_map(|t| match t {
-                agentkit_store::core::turns::Turn::Assistant(t) => t
-                    .activities
-                    .iter()
-                    .filter(|a| a.kind == agentkit_store::core::turns::ActivityType::Intermediate)
-                    .map(|a| a.id.clone())
-                    .chain(t.response.iter().filter_map(|r| r.message_id.clone()))
-                    .collect::<Vec<_>>(),
-                _ => Vec::new(),
-            })
-            .collect();
-        let messages: Vec<_> = model
-            .state
-            .session
-            .messages
-            .iter()
-            .filter(|m| ids.contains(&m.id))
-            .map(|m| (m.id.clone(), m.content.clone()))
-            .collect();
-        let retained: HashSet<_> = model
-            .state
-            .session
-            .messages
-            .iter()
-            .map(|m| m.id.clone())
-            .collect();
-        self.markdown.retain(|id, _| retained.contains(id));
-        for (id, text) in messages {
-            if let Some((previous, entity)) = self.markdown.get_mut(&id) {
-                if *previous != text {
-                    entity.update(cx, |s, cx| s.set_text(&text, cx));
-                    *previous = text;
-                }
-            } else {
-                let entity = cx.new(|cx| TextViewState::markdown(&text, cx));
-                self.markdown.insert(id, (text, entity));
-            }
-        }
-        let count = store.read(cx).model.turns.len();
-        let old = self.scroll.read(cx).item_count();
-        let start = from.min(old).min(count);
-        self.scroll.update(cx, |s, cx| {
-            if start < old || start < count {
-                s.splice(start..old, count - start, cx);
-            }
-            if start < count {
-                s.remeasure_items(start..count, cx);
-            }
-        });
-        self.sync_rows(cx);
-    }
     /// Inspect virtual-list state in component and performance sample builds.
     #[cfg(feature = "samples")]
     pub fn scroll_state(&self) -> &Entity<MessageScrollerState> {
@@ -363,15 +271,14 @@ impl WorkbenchView {
     }
     /// Inspect rendered Markdown content in component/performance sample builds.
     #[cfg(feature = "samples")]
-    pub fn cached_markdown(&self, id: &str) -> Option<&str> {
-        self.markdown.get(id).map(|(text, _)| text.as_str())
+    pub fn cached_markdown(&self, id: &str, cx: &App) -> Option<String> {
+        self.chat.read(cx).cached_markdown(id, cx)
     }
     /// Detach a deleted session; the backend connection remains available for new sessions.
     pub fn clear_session(&mut self, cx: &mut Context<Self>) {
         self.session_subscriptions.clear();
         self.state = None;
-        self.markdown.clear();
-        self.expanded.clear();
+        self.chat.update(cx, |chat, cx| chat.clear(cx));
         self.permission_id = None;
         self.permission_busy = false;
         self.scroll.update(cx, |s, cx| s.reset(0, cx));

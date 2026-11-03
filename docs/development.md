@@ -119,3 +119,5 @@ T-1-09 真实事件录制与回放命令、14类场景及比较规则见 [录制
 T-1-10 本地偏好与实例隔离见 [验证报告](verification-shell-2026-11-03.md)。`AGENTKIT_APP_DATA_DIR` 指定客户端prefs/socket目录；单独设置`AGENTKIT_CONFIG_DIR`时客户端默认使用其`client`子目录。真实亮暗窗口与第二次启动聚焦冒烟见 [shell-smoke](../tools/shell-smoke/README.md)。
 
 T-1-11 文案修改后运行 `cargo xtask i18n` 并提交生成资源；`cargo xtask i18n --check` 只读验证。资源位置、命名插值及AST策略见 [i18n管线](../tools/i18n/README.md)。
+
+T-1-12 对话组件、缓存/阶段与错误操作见 [验证报告](verification-chat-2026-11-03.md)。原生组件测试：`cargo test -p agentkit-ui --features samples --test transcript`；完整工具卡按 T-1-13 推进。

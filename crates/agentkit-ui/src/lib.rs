@@ -1,10 +1,12 @@
-//! GPUI Kit phase-zero workbench. Views emit intents and never call RPC.
+//! Native GPUI Kit Agent workbench. Views emit intents and never call RPC.
 #![deny(missing_docs)]
 rust_i18n::i18n!("locales", fallback = "en");
 mod chat;
 /// Isolated, memory-only Kit component examples; enable with `samples`.
 #[cfg(feature = "samples")]
 pub mod samples;
+/// Virtualized transcript, assistant cards and streaming Markdown documents.
+pub mod transcript;
 mod workbench;
 pub use workbench::{WorkbenchIntent, WorkbenchView};
 /// Translate a literal application key with named parameters.

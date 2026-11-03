@@ -6,6 +6,12 @@ use support::*;
 fn serve(
     results: Vec<(&'static str, serde_json::Value)>,
 ) -> (Endpoint, std::thread::JoinHandle<()>) {
+    serve_checked(results, |_| {})
+}
+fn serve_checked(
+    results: Vec<(&'static str, serde_json::Value)>,
+    inspect: impl Fn(&serde_json::Value) + Send + 'static,
+) -> (Endpoint, std::thread::JoinHandle<()>) {
     let (urls, recv) = std::sync::mpsc::channel();
     let task = std::thread::spawn(move || {
         smol::block_on(async move {
@@ -19,6 +25,7 @@ fn serve(
             for (channel, result) in results {
                 let req = frame(&mut ws).await;
                 assert_eq!(req["channel"], channel);
+                inspect(&req);
                 send(
                     &mut ws,
                     json!({"type":"response","id":req["id"],"result":result}),
@@ -71,4 +78,24 @@ fn unaccepted_permission_response_is_not_treated_as_success() {
     api.close();
     server.join().unwrap();
     assert!(result.is_err(), "unaccepted response was ignored");
+}
+
+#[test]
+fn user_branch_sends_canonical_source_and_safe_permission_mode_once() {
+    let snapshot = json!({"id":"branch","workspaceId":"w","workspaceName":"W","messages":[],"lastMessageAt":0,"isProcessing":false});
+    let (endpoint, server) = serve_checked(vec![("sessions:create", snapshot)], |request| {
+        assert_eq!(request["args"][0], "w");
+        let options = &request["args"][1];
+        assert_eq!(options["branchFromSessionId"], "source");
+        assert_eq!(options["branchFromMessageId"], "user");
+        assert_eq!(options["permissionMode"], "safe");
+        assert_eq!(options["workingDirectory"], "/project");
+    });
+    let api = WorkbenchApi::connect(endpoint, "w".into());
+    let session =
+        smol::block_on(api.branch_session_generated("w", "source", "user", Some("/project")))
+            .unwrap();
+    assert_eq!(session.id, "branch");
+    api.close();
+    server.join().unwrap();
 }

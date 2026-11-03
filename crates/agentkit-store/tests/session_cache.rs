@@ -396,3 +396,26 @@ fn visible_message_locations_are_indexed_and_unknown_ids_are_absent() {
     .unwrap();
     assert_eq!(m.turn_index("stream"), Some(0));
 }
+
+#[test]
+fn explicit_resend_never_owns_equal_or_empty_composer_drafts() {
+    for accepted in [false, true] {
+        for text in ["", "original", "different"] {
+            let mut model = SessionModel::new(snapshot());
+            model.set_draft(text.into());
+            let file:g::StoredAttachment=serde_json::from_value(serde_json::json!({"id":"stored","type":"text","name":"proof.txt","mimeType":"text/plain","size":1,"storedPath":"/tmp/proof.txt"})).unwrap();
+            model.set_draft_attachments(vec![file.clone()]);
+            let before = model.draft_attachments.clone();
+            model
+                .begin_resend("original".into(), vec![file], &ctx("retry"))
+                .unwrap();
+            assert!(!model.draft_is_current("retry"));
+            model.finish_send("retry", accepted).unwrap();
+            assert_eq!(model.draft.text, text);
+            assert_eq!(
+                serde_json::to_value(&model.draft_attachments).unwrap(),
+                serde_json::to_value(before).unwrap()
+            );
+        }
+    }
+}
