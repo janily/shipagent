@@ -1,4 +1,7 @@
 //! A profile-scoped local focus endpoint, guarded by an OS-released file lock.
+use interprocess::ConnectWaitMode;
+#[cfg(unix)]
+use interprocess::local_socket::ConnectOptions;
 #[cfg(unix)]
 use interprocess::local_socket::GenericFilePath;
 #[cfg(windows)]
@@ -59,13 +62,18 @@ fn socket_name<'a>(
     }
     #[cfg(windows)]
     {
-        use sha2::{Digest, Sha256};
-        let key = format!(
-            "{_bundle}.{:x}",
-            Sha256::digest(dir.to_string_lossy().as_bytes())
-        );
-        Ok(key.to_ns_name::<GenericNamespaced>()?.into_owned())
+        Ok(pipe_key(dir, _bundle)
+            .to_ns_name::<GenericNamespaced>()?
+            .into_owned())
     }
+}
+#[cfg(windows)]
+fn pipe_key(dir: &Path, bundle: &str) -> String {
+    use sha2::{Digest, Sha256};
+    format!(
+        "{bundle}.{:x}",
+        Sha256::digest(dir.to_string_lossy().as_bytes())
+    )
 }
 /// Claim one frontend per client data directory, or forward focus to its owner.
 /// Called before the GPUI event loop. A held lock prevents live socket replacement.
@@ -85,7 +93,25 @@ pub fn claim(dir: &Path, bundle: &str) -> Result<Claim, InstanceError> {
             let mut phase = "connect";
             let mut cause = None;
             while Instant::now() < deadline {
-                match Stream::connect(socket_name(&dir, bundle)?) {
+                let remaining = deadline
+                    .saturating_duration_since(Instant::now())
+                    .min(Duration::from_millis(200));
+                #[cfg(unix)]
+                let connection = ConnectOptions::new()
+                    .name(socket_name(&dir, bundle)?)
+                    .wait_mode(ConnectWaitMode::Timeout(remaining))
+                    .nonblocking_stream(true)
+                    .connect_sync();
+                // interprocess2.4.7's generic Windows socket constructor drops
+                // wait_mode. The safe pipe constructor honours the connect deadline.
+                #[cfg(windows)]
+                let connection = interprocess::os::windows::named_pipe::DuplexPipeStream::<
+                    interprocess::os::windows::named_pipe::pipe_mode::Bytes,
+                >::connect_by_path_with_wait_mode(
+                    format!(r"\\.\pipe\{}", pipe_key(&dir, bundle)),
+                    ConnectWaitMode::Timeout(remaining),
+                );
+                match connection {
                     Ok(mut stream) => {
                         stream.set_nonblocking(true)?;
                         let until = (Instant::now() + Duration::from_millis(200)).min(deadline);
@@ -174,7 +200,11 @@ pub fn claim(dir: &Path, bundle: &str) -> Result<Claim, InstanceError> {
         _lock: lock,
     }))
 }
-fn write_deadline(stream: &mut Stream, mut bytes: &[u8], deadline: Instant) -> std::io::Result<()> {
+fn write_deadline(
+    stream: &mut impl Write,
+    mut bytes: &[u8],
+    deadline: Instant,
+) -> std::io::Result<()> {
     while !bytes.is_empty() && Instant::now() < deadline {
         match stream.write(bytes) {
             Ok(0) if cfg!(windows) => std::thread::sleep(Duration::from_millis(2)),
@@ -192,7 +222,7 @@ fn write_deadline(stream: &mut Stream, mut bytes: &[u8], deadline: Instant) -> s
         Err(std::io::ErrorKind::TimedOut.into())
     }
 }
-fn read_line(stream: &mut Stream, deadline: Instant) -> std::io::Result<Vec<u8>> {
+fn read_line(stream: &mut impl Read, deadline: Instant) -> std::io::Result<Vec<u8>> {
     read_line_policy(stream, deadline, cfg!(windows))
 }
 fn read_line_policy(

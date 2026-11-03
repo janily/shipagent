@@ -4,7 +4,7 @@
 
 启动在进入 GPUI 事件循环前解析品牌并协商实例、读取小型本地偏好，初始化日志。窗口先显示 Kit Skeleton，再异步启动 sidecar、握手/health 并拉取数据；有连接时恢复所选工作区/会话，缺失会话回退到可用会话。关闭启动恢复会创建空会话；运行中的显式重连仍刷新活动会话，不改变持久化的启动开关。无模型保留现有端点配置入口，未将完整首次引导提前验收。
 
-单实例使用 `interprocess`：Unix 客户端数据目录的 app.sock / Windows 按品牌与规范化配置路径命名的管道。先取得系统文件锁，只有持锁者可以清理旧 socket；普通文件/符号链接不删除，进程退出由系统释放锁。第二次启动仅发送有界 focus 消息、等待确认后退出，不进入 GPUI/sidecar。收发使用非阻塞截止时间，避免依赖 Windows 未支持的 socket timeout API；Windows字节管道暂时无数据的空读按截止时间重试，Unix EOF仍立即失败。Windows首次CI暴露该兼容差异，已增加空读/真正EOF/截止时间回归。后台接收器仅接受 focus 并激活已有主窗口，不执行传入 URL。测试包含独立进程转发和过期 socket / 配置隔离。
+单实例使用 `interprocess`：Unix 客户端数据目录的 app.sock / Windows 按品牌与规范化配置路径命名的管道。先取得系统文件锁，只有持锁者可以清理旧 socket；普通文件/符号链接不删除，进程退出由系统释放锁。第二次启动仅发送有界 focus 消息、等待确认后退出，不进入 GPUI/sidecar。收发使用非阻塞截止时间，避免依赖 Windows 未支持的 socket timeout API；Windows字节管道暂时无数据的空读按截止时间重试，Unix EOF仍立即失败。Windows首次CI暴露该兼容差异，已增加空读/真正EOF/截止时间回归。建立连接也受截止时间约束；Windows使用显式管道连接API，避开依赖通用构造器未传递等待策略的问题。后台接收器仅接受 focus 并激活已有主窗口，不执行传入 URL。测试包含独立进程转发和过期 socket / 配置隔离。
 
 客户端 prefs.json 与后端凭据目录分开：macOS ~/Library/Application Support/<bundle_id>；Windows %APPDATA%/<bundle_id>；Linux $XDG_CONFIG_HOME/<bundle_id> 或 ~/.config/<bundle_id>。开发可设置 AGENTKIT_APP_DATA_DIR；若仅设置隔离的 AGENTKIT_CONFIG_DIR，客户端默认位于其 client 子目录。性能 runner 显式使用独立 client 目录，保持后端配置起初为空。偏好不存 token/会话内容，包含语言、system/light/dark、窗口几何、栏宽/展开、当前标签/专注、上次工作区/会话与恢复开关。
 
