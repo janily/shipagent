@@ -18,7 +18,7 @@ required-features = ["samples"]
 agentkit-protocol.workspace = true
 serde_json.workspace = true
 secrecy.workspace = true
-agentkit-store.workspace = true
+agentkit-store = { workspace = true, features = ["entities"] }
 gpui-kit.workspace = true
 rust-i18n.workspace = true
 

@@ -2,3 +2,7 @@
 #![deny(missing_docs)]
 pub mod core;
 pub use core::{ChatState, RunState};
+
+/// Optional native entity wrappers; the default store remains GPUI-independent.
+#[cfg(feature = "entities")]
+pub mod entities;

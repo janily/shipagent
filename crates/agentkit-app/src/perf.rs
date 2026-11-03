@@ -1,5 +1,6 @@
 //! Optional benchmark instrumentation; absent from default builds.
 use super::*;
+use agentkit_protocol::prototype::SessionEvent;
 use gpui_kit::profiler::{FrameEvent, FrameTiming, FrameTimingCollector};
 use serde::Serialize;
 use std::{collections::BTreeMap, fs, io::Write, time::Instant};
@@ -275,7 +276,10 @@ pub(super) fn launch(
                     return;
                 }
                 if let Some(capture) = &mut this.perf {
-                    capture.session = this.state.as_ref().map(|s| s.session.id.clone());
+                    capture.session = this
+                        .state
+                        .as_ref()
+                        .map(|s| s.read(cx).model.state.session.id.clone());
                 }
                 this.view.update(cx, |view, cx| {
                     view.connected("Benchmark".into(), Some("fixture-model".into()), cx)
@@ -328,11 +332,16 @@ pub(super) fn finish_if_terminal(
         return;
     };
     let path = capture.config.root.join("native.json");
-    let final_bytes = this
-        .state
-        .as_ref()
-        .and_then(|s| s.session.messages.iter().rfind(|m| m.role == "assistant"))
-        .map_or(0, |m| m.content.len());
+    let final_bytes = this.state.as_ref().map_or(0, |s| {
+        s.read(cx)
+            .model
+            .state
+            .session
+            .messages
+            .iter()
+            .rfind(|m| m.role == agentkit_protocol::generated::MessageRole::Assistant)
+            .map_or(0, |m| m.content.len())
+    });
     this.operations
         .push(cx.spawn_in(window, async move |weak, cx| {
             cx.background_executor()

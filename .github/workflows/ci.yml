@@ -135,6 +135,7 @@ jobs:
       - run: cargo llvm-cov -p agentkit-store --tests --json --output-path target/reducer-coverage.json
       - run: node tools/reducer/coverage.mjs target/reducer-coverage.json
       - run: node tools/reducer/coverage.mjs target/reducer-coverage.json turns
+      - run: node tools/reducer/coverage.mjs target/reducer-coverage.json session
       - uses: actions/upload-artifact@v4
         with:
           name: reducer-coverage

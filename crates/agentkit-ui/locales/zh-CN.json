@@ -51,6 +51,17 @@
     "sidecar_occupied": "另一个后端正在使用此数据目录，请关闭后重试。",
     "sidecar_invalid_endpoint": "后端返回的本地地址无效，请重试。",
     "sidecar_restart_limit": "后端多次退出，已停止自动重启。请重试或查看日志。",
-    "sidecar_stopped": "后端监督器已停止。"
+    "sidecar_stopped": "后端监督器已停止。",
+    "event_invalid": "后端事件格式无效，请重新加载会话。",
+    "send_rejected": "发送未被接受，草稿已保留。",
+    "load_overflow": "加载期间事件过多，请重新加载会话。",
+    "reconnecting": "后端正在重连",
+    "plan": "计划",
+    "unread": "未读",
+    "connection_unavailable": "连接不可用，草稿已保留。",
+    "reload_required": "请重新加载会话以同步完整状态，草稿已保留。",
+    "mode_ask": "询问",
+    "mode_execute": "执行",
+    "session_deleted": "会话已删除，可新建会话继续。"
   }
 }

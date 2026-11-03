@@ -51,6 +51,17 @@
     "sidecar_occupied": "Another backend is using this data directory. Close it before retrying.",
     "sidecar_invalid_endpoint": "The backend reported an invalid local address. Please retry.",
     "sidecar_restart_limit": "The backend exited repeatedly. Automatic restart stopped; retry or check the log.",
-    "sidecar_stopped": "The backend supervisor has stopped."
+    "sidecar_stopped": "The backend supervisor has stopped.",
+    "event_invalid": "Invalid backend event. Reload the session.",
+    "send_rejected": "Send was rejected. Your draft was kept.",
+    "load_overflow": "Too many events during loading. Reload the session.",
+    "reconnecting": "Backend reconnecting",
+    "plan": "Plan",
+    "unread": "Unread",
+    "connection_unavailable": "Connection unavailable. Your draft was kept.",
+    "reload_required": "Reload to synchronize the session. Your draft was kept.",
+    "mode_ask": "Ask",
+    "mode_execute": "Execute",
+    "session_deleted": "Session was deleted. Start a new session to continue."
   }
 }

@@ -1,0 +1,7 @@
+# T-1-08 entities and event routing
+
+Base maince2508f after PR14. Approved spec03 entities/event routing/streaming/optimistic send and spec06 T108. Implement skill; isolated Standards/Spec review before commit. No release or phase0 acceptance.
+
+1. Pure session cache and summary router: generated DTOs, deterministic event contexts, bounded batches, cached turns with affected suffix regroup, indexed in-place text deltas without cloning history/regroup, pending permissions/drafts, optimistic send with attachments/queue/rollback. Regression tests at these seams; unchanged reducer/turns oracle gates.
+2. Optional GPUI store feature with AppState, WorkspaceStore, SessionListStore, per-open SessionStore entities; once-per-batch notification and typed StreamDelta/TurnsChanged events. App routes all sessions, buffers events during snapshot loads, rejects stale operation completion, retains drafts by session and executes effects at controller boundary. Native workbench reads store and applies Markdown deltas without full snapshots. RPC stays outside UI/store.
+3. Test pure and native entity batching/render/drafts, real backend reducer→cache flow and three-platform CI; fullfeaturecheck/clippy/fmt/oracle/coverage. Keep richer ChatView/TurnCard visuals/attachment picker (T112/114), plan dispatcher (T110), full recovery UX (T121) scoped separately. Attachment-capable store/send facade seam is part of T108. Commit/push/readyPR, no merge.

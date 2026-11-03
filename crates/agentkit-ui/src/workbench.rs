@@ -1,6 +1,8 @@
 use crate::tr;
-use agentkit_protocol::prototype::Session;
-use agentkit_store::{ChatState, RunState};
+use agentkit_store::{
+    core::session::SessionStoreEvent,
+    entities::{AppState, SessionListStore, SessionStore, WorkspaceStore},
+};
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
     input::{Input, InputEvent, InputState, TextareaState},
@@ -17,6 +19,13 @@ use std::collections::{HashMap, HashSet};
 pub enum WorkbenchIntent {
     /// Submit a draft; no credential or RPC channel appears in the view.
     Submit(String),
+    /// Session-scoped local draft change; valid even while disconnected.
+    DraftChanged {
+        /// Owning session ID.
+        session_id: String,
+        /// Current composer text.
+        text: String,
+    },
     /// Stop the active round.
     Cancel,
     /// Create a safe empty conversation.
@@ -54,8 +63,8 @@ pub struct WorkbenchView {
     reload_required: bool,
     pub(crate) loading: bool,
     pub(crate) error: Option<String>,
-    pub(crate) state: Option<ChatState>,
-    pub(crate) sessions: Vec<Session>,
+    pub(crate) state: Option<Entity<SessionStore>>,
+    pub(crate) sessions: Option<Entity<SessionListStore>>,
     pub(crate) composer: Entity<TextareaState>,
     pub(crate) scroll: Entity<MessageScrollerState>,
     pub(crate) markdown: HashMap<String, (String, Entity<TextViewState>)>,
@@ -64,10 +73,15 @@ pub struct WorkbenchView {
     pub(crate) submitting: bool,
     configuring: bool,
     pub(crate) permission_busy: bool,
+    permission_id: Option<String>,
     base_url: Entity<InputState>,
     model_id: Entity<InputState>,
     api_key: Entity<InputState>,
     _subscriptions: Vec<Subscription>,
+    session_subscriptions: Vec<Subscription>,
+    list_subscription: Option<Subscription>,
+    app_state: Option<Entity<AppState>>,
+    context_subscriptions: Vec<Subscription>,
 }
 impl EventEmitter<WorkbenchIntent> for WorkbenchView {}
 impl WorkbenchView {
@@ -82,7 +96,10 @@ impl WorkbenchView {
         let input_subscription =
             cx.subscribe_in(&composer, window, |this, _, event, _, cx| match event {
                 InputEvent::PressEnter { shift: false, .. } => this.submit(cx),
-                InputEvent::Change => cx.notify(),
+                InputEvent::Change => {
+                    this.save_draft(cx);
+                    cx.notify();
+                }
                 _ => {}
             });
         Self {
@@ -95,7 +112,7 @@ impl WorkbenchView {
             loading: false,
             error: None,
             state: None,
-            sessions: vec![],
+            sessions: None,
             composer,
             scroll: cx.new(|cx| MessageScrollerState::new(0, cx)),
             markdown: HashMap::new(),
@@ -104,11 +121,16 @@ impl WorkbenchView {
             submitting: false,
             configuring: false,
             permission_busy: false,
+            permission_id: None,
             base_url: cx
                 .new(|cx| InputState::new(window, cx).placeholder("http://127.0.0.1:11434/v1")),
             model_id: cx.new(|cx| InputState::new(window, cx)),
             api_key: cx.new(|cx| InputState::new(window, cx).masked(true)),
             _subscriptions: vec![input_subscription],
+            session_subscriptions: Vec::new(),
+            list_subscription: None,
+            app_state: None,
+            context_subscriptions: Vec::new(),
         }
     }
     /// Apply actual bootstrap results; no simulated connected state is used by the app.
@@ -126,11 +148,7 @@ impl WorkbenchView {
     pub fn transport_recovered(&mut self, full_refresh: bool, cx: &mut Context<Self>) {
         self.reload_required |= full_refresh;
         if self.reload_required {
-            self.show_error(
-                "连接已恢复，请重新加载会话以同步完整状态。".into(),
-                true,
-                cx,
-            );
+            self.show_error(tr("ak.reload_required"), true, cx);
         } else {
             self.ready = true;
             self.error = None;
@@ -138,74 +156,221 @@ impl WorkbenchView {
             cx.notify();
         }
     }
-    /// Update sidebar summaries from the backend.
-    pub fn set_sessions(&mut self, sessions: Vec<Session>, cx: &mut Context<Self>) {
-        self.sessions = sessions;
+    /// Observe global and workspace context without retaining network handles.
+    pub fn bind_context(
+        &mut self,
+        app: Entity<AppState>,
+        workspace: Entity<WorkspaceStore>,
+        cx: &mut Context<Self>,
+    ) {
+        self.context_subscriptions.clear();
+        self.app_state = Some(app.clone());
+        self.context_subscriptions
+            .push(cx.observe(&app, |_, _, cx| cx.notify()));
+        self.context_subscriptions
+            .push(cx.observe(&workspace, |this, workspace, cx| {
+                this.workspace = workspace.read(cx).name.clone().into();
+                cx.notify();
+            }));
+    }
+    /// Read sidebar summaries from the window's list Entity.
+    pub fn bind_list(&mut self, list: Entity<SessionListStore>, cx: &mut Context<Self>) {
+        self.list_subscription = Some(cx.observe(&list, |_, _, cx| cx.notify()));
+        self.sessions = Some(list);
         cx.notify();
     }
-    /// Replace the rendered session after pure reduction, appending only changed Markdown suffixes.
-    pub fn show_session(&mut self, state: ChatState, cx: &mut Context<Self>) {
-        let switched = self
+    /// Bind a canonical session Entity; no RPC or conversation snapshots live in the view.
+    pub fn bind_session(
+        &mut self,
+        store: Entity<SessionStore>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self
             .state
             .as_ref()
-            .is_none_or(|old| old.session.id != state.session.id);
-        if switched {
-            self.markdown.clear();
-            self.expanded.clear();
+            .is_some_and(|s| s.entity_id() == store.entity_id())
+        {
+            self.loading = false;
+            cx.notify();
+            return;
         }
-        if let Some(summary) = self.sessions.iter_mut().find(|s| s.id == state.session.id) {
-            summary.name = state.session.name.clone();
-            summary.is_processing = state.session.is_processing;
-        }
-        let old_count = self.scroll.read(cx).item_count();
-        let count = state.session.messages.len();
-        let mut first_changed = count;
-        for (index, message) in state.session.messages.iter().enumerate() {
-            if message.role != "assistant" {
-                continue;
-            }
-            if let Some((previous, entity)) = self.markdown.get_mut(&message.id) {
-                if previous != &message.content {
-                    if message.is_streaming && message.content.starts_with(previous.as_str()) {
-                        let suffix = &message.content[previous.len()..];
-                        entity.update(cx, |text, cx| text.push_str(suffix, cx));
-                    } else {
-                        entity.update(cx, |text, cx| text.set_text(&message.content, cx));
+        self.session_subscriptions.clear();
+        self.markdown.clear();
+        self.expanded.clear();
+        self.scroll.update(cx, |s, cx| s.reset(0, cx));
+        self.error = store.read(cx).model.last_error.clone();
+        self.state = Some(store.clone());
+        self.reconcile(0, cx);
+        let draft = store.read(cx).model.draft.text.clone();
+        self.composer
+            .update(cx, |input, cx| input.set_value(draft, window, cx));
+        self.session_subscriptions.push(cx.subscribe(
+            &store,
+            |this, store, event, cx| match event {
+                SessionStoreEvent::TurnsChanged { from_turn } => this.reconcile(*from_turn, cx),
+                SessionStoreEvent::StreamDelta { message_id, delta } => {
+                    if let Some((text, entity)) = this.markdown.get_mut(message_id) {
+                        text.push_str(delta);
+                        entity.update(cx, |state, cx| state.push_str(delta, cx));
+                    } else if let Some(message) = store
+                        .read(cx)
+                        .model
+                        .state
+                        .session
+                        .messages
+                        .iter()
+                        .find(|m| &m.id == message_id && m.hidden != Some(true))
+                    {
+                        let content = message.content.clone();
+                        let state = cx.new(|cx| TextViewState::markdown(&content, cx));
+                        this.markdown.insert(message_id.clone(), (content, state));
                     }
-                    *previous = message.content.clone();
-                    first_changed = first_changed.min(index);
+                    this.sync_rows(cx);
+                    if let Some(row) = store.read(cx).model.turn_index(message_id) {
+                        this.scroll
+                            .update(cx, |s, cx| s.remeasure_items(row..row + 1, cx));
+                    }
+                }
+            },
+        ));
+        self.session_subscriptions
+            .push(cx.observe(&store, |this, _, cx| {
+                this.sync_rows(cx);
+                cx.notify();
+            }));
+        self.loading = false;
+        self.submitting = false;
+        self.permission_busy = false;
+        cx.notify();
+    }
+    fn sync_rows(&mut self, cx: &mut Context<Self>) {
+        let count = self
+            .state
+            .as_ref()
+            .map_or(0, |s| s.read(cx).model.turns.len());
+        let old = self.scroll.read(cx).item_count();
+        self.scroll.update(cx, |scroll, cx| {
+            if count < old {
+                scroll.splice(count..old, 0, cx);
+            } else if count > old {
+                scroll.append(count - old, cx);
+            }
+        });
+        let request = self.state.as_ref().and_then(|s| {
+            s.read(cx)
+                .model
+                .permissions
+                .first()
+                .map(|r| r.request_id.clone())
+        });
+        if self.permission_id != request {
+            self.permission_busy = false;
+            self.permission_id = request;
+        }
+    }
+    fn reconcile(&mut self, from: usize, cx: &mut Context<Self>) {
+        let Some(store) = self.state.clone() else {
+            return;
+        };
+        let model = &store.read(cx).model;
+        let ids: HashSet<_> = model
+            .turns
+            .iter()
+            .skip(from)
+            .flat_map(|t| match t {
+                agentkit_store::core::turns::Turn::Assistant(t) => t
+                    .activities
+                    .iter()
+                    .filter(|a| a.kind == agentkit_store::core::turns::ActivityType::Intermediate)
+                    .map(|a| a.id.clone())
+                    .chain(t.response.iter().filter_map(|r| r.message_id.clone()))
+                    .collect::<Vec<_>>(),
+                _ => Vec::new(),
+            })
+            .collect();
+        let messages: Vec<_> = model
+            .state
+            .session
+            .messages
+            .iter()
+            .filter(|m| ids.contains(&m.id))
+            .map(|m| (m.id.clone(), m.content.clone()))
+            .collect();
+        let retained: HashSet<_> = model
+            .state
+            .session
+            .messages
+            .iter()
+            .map(|m| m.id.clone())
+            .collect();
+        self.markdown.retain(|id, _| retained.contains(id));
+        for (id, text) in messages {
+            if let Some((previous, entity)) = self.markdown.get_mut(&id) {
+                if *previous != text {
+                    entity.update(cx, |s, cx| s.set_text(&text, cx));
+                    *previous = text;
                 }
             } else {
-                let entity = cx.new(|cx| TextViewState::markdown(&message.content, cx));
-                self.markdown
-                    .insert(message.id.clone(), (message.content.clone(), entity));
-                first_changed = first_changed.min(index);
+                let entity = cx.new(|cx| TextViewState::markdown(&text, cx));
+                self.markdown.insert(id, (text, entity));
             }
         }
-        self.markdown.retain(|id, _| {
-            state
-                .session
-                .messages
-                .iter()
-                .any(|message| &message.id == id)
-        });
-        self.scroll.update(cx, |scroll, cx| {
-            if switched || count < old_count {
-                scroll.reset(count, cx);
-            } else if count > old_count {
-                scroll.append(count - old_count, cx);
+        let count = store.read(cx).model.turns.len();
+        let old = self.scroll.read(cx).item_count();
+        let start = from.min(old).min(count);
+        self.scroll.update(cx, |s, cx| {
+            if start < old || start < count {
+                s.splice(start..old, count - start, cx);
             }
-            if first_changed < count {
-                scroll.remeasure_items(first_changed..count, cx);
+            if start < count {
+                s.remeasure_items(start..count, cx);
             }
         });
-        if state.permission.is_none() {
-            self.permission_busy = false;
-        }
-        self.error = state.last_error.clone();
-        self.state = Some(state);
-        self.loading = false;
+        self.sync_rows(cx);
+    }
+    /// Inspect virtual-list state in component and performance sample builds.
+    #[cfg(feature = "samples")]
+    pub fn scroll_state(&self) -> &Entity<MessageScrollerState> {
+        &self.scroll
+    }
+    /// Inspect rendered Markdown content in component/performance sample builds.
+    #[cfg(feature = "samples")]
+    pub fn cached_markdown(&self, id: &str) -> Option<&str> {
+        self.markdown.get(id).map(|(text, _)| text.as_str())
+    }
+    /// Detach a deleted session; the backend connection remains available for new sessions.
+    pub fn clear_session(&mut self, cx: &mut Context<Self>) {
+        self.session_subscriptions.clear();
+        self.state = None;
+        self.markdown.clear();
+        self.expanded.clear();
+        self.permission_id = None;
+        self.permission_busy = false;
+        self.scroll.update(cx, |s, cx| s.reset(0, cx));
         cx.notify();
+    }
+    /// Current local draft packet, for controller-owned persistence before switching.
+    pub fn current_draft(&self, cx: &App) -> Option<(String, String)> {
+        self.state.as_ref().map(|store| {
+            (
+                store.read(cx).model.state.session.id.clone(),
+                self.composer.read(cx).value().to_string(),
+            )
+        })
+    }
+    /// Emit a draft intent; the view never mutates the shared session Entity.
+    pub fn save_draft(&mut self, cx: &mut Context<Self>) {
+        if let Some((session_id, text)) = self.current_draft(cx) {
+            cx.emit(WorkbenchIntent::DraftChanged { session_id, text });
+        }
+    }
+    /// Restore text without overwriting newer user input.
+    pub fn restore_draft(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {
+        if self.composer.read(cx).value().is_empty() {
+            self.composer
+                .update(cx, |input, cx| input.set_value(text, window, cx));
+        }
     }
     /// Preserve draft text until send persistence is acknowledged; do not clear later edits.
     pub fn submission_finished(
@@ -255,24 +420,21 @@ impl WorkbenchView {
         self.loading = true;
         cx.notify();
     }
-    pub(crate) fn busy(&self) -> bool {
-        self.state.as_ref().is_some_and(|state| {
-            state.session.is_processing
-                || matches!(
-                    state.status,
-                    RunState::Processing | RunState::WaitingForPermission
-                )
-        })
+    pub(crate) fn busy(&self, cx: &App) -> bool {
+        self.state
+            .as_ref()
+            .is_some_and(|store| store.read(cx).model.busy())
     }
     pub(crate) fn submit(&mut self, cx: &mut Context<Self>) {
         let text = self.composer.read(cx).value().to_string();
-        if self.ready
+        if self.state.is_some()
+            && self.ready
             && !self.loading
             && self.model.is_some()
-            && !self.busy()
             && !self.submitting
             && !text.trim().is_empty()
         {
+            self.error = None;
             self.submitting = true;
             cx.emit(WorkbenchIntent::Submit(text));
             cx.notify();
@@ -349,11 +511,11 @@ impl WorkbenchView {
 }
 impl Render for WorkbenchView {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let busy = self.busy();
+        let busy = self.busy(cx);
         let title = self
             .state
             .as_ref()
-            .and_then(|s| s.session.name.clone())
+            .and_then(|s| s.read(cx).model.state.session.name.clone())
             .unwrap_or_else(|| self.app_name.to_string());
         let sidebar = v_flex()
             .w(px(280.))
@@ -381,7 +543,7 @@ impl Render for WorkbenchView {
                     .primary()
                     .w_full()
                     .label(tr("ak.new"))
-                    .disabled(!self.ready || busy || self.submitting || self.loading)
+                    .disabled(!self.ready || self.loading)
                     .on_click(cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::NewSession))),
             )
             .child(
@@ -396,26 +558,61 @@ impl Render for WorkbenchView {
                     .flex_1()
                     .overflow_y_scroll()
                     .gap_1()
-                    .children(self.sessions.iter().map(|session| {
-                        let id = session.id.clone();
-                        let active = self.state.as_ref().is_some_and(|s| s.session.id == id);
-                        Button::new(SharedString::from(format!("session:{id}")))
-                            .ghost()
-                            .w_full()
-                            .justify_start()
-                            .label(
-                                session
-                                    .name
-                                    .clone()
-                                    .or(session.preview.clone())
-                                    .unwrap_or_else(|| tr("ak.new")),
-                            )
-                            .disabled(busy || self.submitting || self.loading)
-                            .when(active, |button| button.bg(cx.theme().sidebar_accent))
-                            .on_click(cx.listener(move |_, _, _, cx| {
-                                cx.emit(WorkbenchIntent::OpenSession(id.clone()))
-                            }))
-                    })),
+                    .children(
+                        self.sessions
+                            .as_ref()
+                            .map(|s| s.read(cx).model.sessions.clone())
+                            .unwrap_or_default()
+                            .iter()
+                            .map(|session| {
+                                let id = session.id.clone();
+                                let active = self
+                                    .state
+                                    .as_ref()
+                                    .is_some_and(|s| s.read(cx).model.state.session.id == id);
+                                Button::new(SharedString::from(format!("session:{id}")))
+                                    .ghost()
+                                    .w_full()
+                                    .justify_start()
+                                    .label({
+                                        let pending = self.sessions.as_ref().is_some_and(|list| {
+                                            list.read(cx)
+                                                .model
+                                                .awaiting
+                                                .get(&id)
+                                                .is_some_and(|r| !r.is_empty())
+                                        });
+                                        let plan = self.sessions.as_ref().is_some_and(|list| {
+                                            list.read(cx).model.plans.contains(&id)
+                                        });
+                                        let name = session
+                                            .name
+                                            .clone()
+                                            .or(session.preview.clone())
+                                            .unwrap_or_else(|| tr("ak.new"));
+                                        format!(
+                                            "{}{}{}{}",
+                                            if session.is_processing { "• " } else { "" },
+                                            if pending {
+                                                format!("{} · ", tr("ak.permission_wait"))
+                                            } else {
+                                                String::new()
+                                            },
+                                            if plan {
+                                                format!("{} · ", tr("ak.plan"))
+                                            } else {
+                                                String::new()
+                                            },
+                                            name
+                                        )
+                                    })
+                                    .disabled(!self.ready || self.loading)
+                                    .when(active, |button| button.bg(cx.theme().sidebar_accent))
+                                    .on_click(cx.listener(move |_, _, _, cx| {
+                                        cx.emit(WorkbenchIntent::OpenSession(id.clone()))
+                                    }))
+                            }),
+                    ),
             )
             .child(
                 Button::new("model-settings")
@@ -486,7 +683,14 @@ impl Render for WorkbenchView {
                                         .child(
                                             self.state
                                                 .as_ref()
-                                                .and_then(|s| s.session.working_directory.clone())
+                                                .and_then(|s| {
+                                                    s.read(cx)
+                                                        .model
+                                                        .state
+                                                        .session
+                                                        .working_directory
+                                                        .clone()
+                                                })
                                                 .unwrap_or_default(),
                                         ),
                                 ),
@@ -499,7 +703,14 @@ impl Render for WorkbenchView {
                                     .gap_3()
                                     .bg(cx.theme().muted)
                                     .child(
-                                        div().flex_1().text_color(cx.theme().danger).child(error),
+                                        div()
+                                            .id("session-error")
+                                            .role(Role::Alert)
+                                            .aria_label(error.clone())
+                                            .flex_1()
+                                            .text_color(cx.theme().danger)
+                                            .child(error)
+                                            .test_support(),
                                     )
                                     .when(!self.ready, |view| {
                                         view.child(

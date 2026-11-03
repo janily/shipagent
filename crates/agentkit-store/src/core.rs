@@ -257,3 +257,6 @@ pub mod reducer;
 
 /// Pure assistant turn and activity projections.
 pub mod turns;
+
+/// Formal mutable session caches and summary routing.
+pub mod session;

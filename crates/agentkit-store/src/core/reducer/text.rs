@@ -2,6 +2,17 @@
 use super::*;
 /// Ported from mkagent v0.2.6 apps/electron/src/renderer/event-processor/handlers/text.ts.
 pub(super) fn delta(state: &mut SessionState, e: &g::SessionTextDeltaEvent, ctx: &Context) {
+    let index = streaming(&state.session.messages, e.turn_id.as_deref());
+    delta_at(state, e, ctx, index);
+}
+/// Ported from mkagent v0.2.6 apps/electron/src/renderer/event-processor/handlers/text.ts.
+/// Indexed variant used by the session cache.
+pub(crate) fn delta_at(
+    state: &mut SessionState,
+    e: &g::SessionTextDeltaEvent,
+    ctx: &Context,
+    index: Option<usize>,
+) {
     if let Some(stream) = &mut state.streaming {
         stream.content.push_str(&e.delta);
         if e.turn_id.is_some() {
@@ -14,7 +25,7 @@ pub(super) fn delta(state: &mut SessionState, e: &g::SessionTextDeltaEvent, ctx:
             parent_tool_use_id: None,
         });
     }
-    if let Some(i) = streaming(&state.session.messages, e.turn_id.as_deref()) {
+    if let Some(i) = index {
         state.session.messages[i].content.push_str(&e.delta);
     } else {
         let mut m = message(ctx, g::MessageRole::Assistant, e.delta.clone());
