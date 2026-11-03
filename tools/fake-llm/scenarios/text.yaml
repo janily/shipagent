@@ -1,0 +1,5 @@
+{
+  "name": "text",
+  "prompt": "Complete isolated fixture text.",
+  "chunk_ms": 1
+}

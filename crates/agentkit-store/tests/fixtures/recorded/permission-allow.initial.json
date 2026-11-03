@@ -1,0 +1,24 @@
+{
+  "261103-lively-zenith": {
+    "createdAt": 1793683418299,
+    "id": "261103-lively-zenith",
+    "isProcessing": false,
+    "lastMessageAt": 1793683418299,
+    "messageCount": 0,
+    "messages": [],
+    "name": "Fixture permission-allow",
+    "permissionMode": "ask",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-lively-zenith",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "contextTokens": 0.0,
+      "costUsd": 0.0,
+      "inputTokens": 0.0,
+      "outputTokens": 0.0,
+      "totalTokens": 0.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_f6d289fb",
+    "workspaceName": "Default"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "single-tool",
+  "prompt": "Complete isolated fixture single-tool.",
+  "chunk_ms": 1
+}

@@ -113,3 +113,5 @@ CI 中 macos-14 指 Apple Silicon arm64，windows-2022 指 x64；macOS Intel、W
 T-1-04 真实客户端契约：先运行 `cargo xtask backend build --contract`，设置 `AGENTKIT_BACKEND_DIR` 及 `AGENTKIT_CONTRACT_SERVER` 后运行 `cargo test -p agentkit-client --test contract --locked -- --ignored`；完整命令和平台目录见 [契约说明](../tools/contract/README.md)。普通 cargo test 显式跳过这些进程测试；CI contract 三平台运行。
 
 T-1-05 进程监督测试使用同一后端工程包运行 `cargo test -p agentkit-sidecar --test manager --locked -- --ignored --skip owned_supervisor_fixture --skip shell_probe_fixture`，设置 `AGENTKIT_BACKEND_DIR`。见 [sidecar说明](../crates/agentkit-sidecar/README.md)。
+
+T-1-09 真实事件录制与回放命令、14类场景及比较规则见 [录制说明](../tools/fixtures/README.md)。`AGENTKIT_RECORD_EVENTS` 为显式开发录制开关，目标必须是新文件，保留消息/工具内容并脱敏连接 token。

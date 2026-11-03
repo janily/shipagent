@@ -1,0 +1,32 @@
+{
+  "backendSha256": {
+    "pi": "f0ad2034ff3dde2ba345eb52a81308f186ce239eb4b2142e9cf0740d7e4cf481",
+    "server": "b710e488fbdfb7a57def1c76990ec69c4057b5ed01ef379515baa5f7d87a5fa9"
+  },
+  "evidence": {
+    "eventCounts": {
+      "complete": 1,
+      "text_complete": 1,
+      "text_delta": 18,
+      "tool_result": 1,
+      "tool_start": 1,
+      "usage_update": 7,
+      "user_message": 1
+    },
+    "maxOverlappingTools": 1,
+    "sessions": 1
+  },
+  "files": {
+    "events": "f2480beeadcd72cbf7c5ad26e3a5f529a9514d3974dbb765f1c90da07e0b539e",
+    "final": "623a3d9806dbb330d3840d426edcd22fe3e41ad67f144897fd70e08c008ad03f",
+    "initial": "bcacd1db91a2f6fbf6b8842de62d783103de5e3f01f3c2439169e7443b7b59fd"
+  },
+  "modelSha256": "4f7a01a3f8cde7de91d7de71bccdaccb66db059cd41c8ffa62ee51938413813e",
+  "platform": "linux",
+  "projectionVersion": 1,
+  "scenario": "tool-failure",
+  "scenarioSha256": "47fcbba8f87bcbff5139e1d5c89df79dfee07b5a8f030f1a7901408462545488",
+  "schemaVersion": 1,
+  "upstreamCommit": "6e8ebc456b6b82441be09118ca11afca79b84836",
+  "upstreamTag": "v0.2.6"
+}

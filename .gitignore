@@ -32,3 +32,6 @@ tools/codegen/node_modules/
 
 # Python benchmark test caches
 __pycache__/
+
+# Unverified recorder candidates (never replayed as accepted fixtures)
+crates/agentkit-store/tests/fixtures/recorded/.pending/

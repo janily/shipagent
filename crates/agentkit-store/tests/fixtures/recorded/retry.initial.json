@@ -1,0 +1,24 @@
+{
+  "261103-calm-dolphin": {
+    "createdAt": 1793683441029,
+    "id": "261103-calm-dolphin",
+    "isProcessing": false,
+    "lastMessageAt": 1793683441029,
+    "messageCount": 0,
+    "messages": [],
+    "name": "Fixture retry",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-calm-dolphin",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "contextTokens": 0.0,
+      "costUsd": 0.0,
+      "inputTokens": 0.0,
+      "outputTokens": 0.0,
+      "totalTokens": 0.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_c685c1cb",
+    "workspaceName": "Default"
+  }
+}

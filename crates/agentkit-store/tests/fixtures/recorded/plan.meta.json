@@ -1,0 +1,33 @@
+{
+  "backendSha256": {
+    "pi": "f0ad2034ff3dde2ba345eb52a81308f186ce239eb4b2142e9cf0740d7e4cf481",
+    "server": "b710e488fbdfb7a57def1c76990ec69c4057b5ed01ef379515baa5f7d87a5fa9"
+  },
+  "evidence": {
+    "eventCounts": {
+      "complete": 1,
+      "plan_submitted": 1,
+      "text_complete": 1,
+      "text_delta": 18,
+      "tool_result": 1,
+      "tool_start": 1,
+      "usage_update": 7,
+      "user_message": 1
+    },
+    "maxOverlappingTools": 1,
+    "sessions": 1
+  },
+  "files": {
+    "events": "082bc07a9684bec2eab126c4088b36c1057a865ec61f11c5f9fd9b0cf15928f3",
+    "final": "d223037777bf014301d01fd95f03f9cc0935d10d4da484be63f64a846a480ce0",
+    "initial": "148f5751b165d0e4c55c4bdcd3329deda2e45715a689d9833b9f653851c72fff"
+  },
+  "modelSha256": "4f7a01a3f8cde7de91d7de71bccdaccb66db059cd41c8ffa62ee51938413813e",
+  "platform": "linux",
+  "projectionVersion": 1,
+  "scenario": "plan",
+  "scenarioSha256": "cd80a27143b85f1415fc631310a3272fc887c2b747b634591bc3dda416fa6cef",
+  "schemaVersion": 1,
+  "upstreamCommit": "6e8ebc456b6b82441be09118ca11afca79b84836",
+  "upstreamTag": "v0.2.6"
+}

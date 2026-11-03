@@ -1,0 +1,24 @@
+{
+  "261103-quiet-gust": {
+    "createdAt": 1793683413609,
+    "id": "261103-quiet-gust",
+    "isProcessing": false,
+    "lastMessageAt": 1793683413609,
+    "messageCount": 0,
+    "messages": [],
+    "name": "Fixture tool-failure",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-quiet-gust",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "contextTokens": 0.0,
+      "costUsd": 0.0,
+      "inputTokens": 0.0,
+      "outputTokens": 0.0,
+      "totalTokens": 0.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_8f443191",
+    "workspaceName": "Default"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "261103-refined-grove": {
+    "createdAt": 1793683391961,
+    "hasUnread": true,
+    "id": "261103-refined-grove",
+    "isProcessing": false,
+    "lastFinalMessageId": "a873126a-cf4c-4032-b8d3-a82cf13ed944",
+    "lastMessageAt": 1793683391972,
+    "lastMessageRole": "assistant",
+    "messageCount": 0,
+    "messages": [
+      {
+        "content": "Complete isolated fixture text.",
+        "id": "msg-1793683391972-vmytc9",
+        "role": "user",
+        "timestamp": 1793683391972
+      },
+      {
+        "content": "Fixture answer 中文。",
+        "id": "a873126a-cf4c-4032-b8d3-a82cf13ed944",
+        "isIntermediate": false,
+        "role": "assistant",
+        "timestamp": 1793683393254,
+        "turnId": "pi-turn-1__m0"
+      }
+    ],
+    "name": "Fixture text",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-refined-grove",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "cacheCreationTokens": 0.0,
+      "cacheReadTokens": 0.0,
+      "contextTokens": 0.0,
+      "contextUsage": {
+        "canCompact": true,
+        "isEstimate": true,
+        "isStale": false,
+        "limitKind": "compaction",
+        "limitTokens": 114688.0,
+        "usedTokens": 510.0
+      },
+      "costUsd": 0.0,
+      "inputTokens": 500.0,
+      "outputTokens": 10.0,
+      "totalTokens": 510.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_33fb3e8e",
+    "workspaceName": "Default"
+  }
+}

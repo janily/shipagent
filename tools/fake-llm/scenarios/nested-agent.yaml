@@ -1,0 +1,5 @@
+{
+  "name": "nested-agent",
+  "prompt": "Complete isolated fixture nested-agent.",
+  "chunk_ms": 1
+}

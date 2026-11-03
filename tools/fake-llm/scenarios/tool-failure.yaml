@@ -1,0 +1,5 @@
+{
+  "name": "tool-failure",
+  "prompt": "Complete isolated fixture tool-failure.",
+  "chunk_ms": 1
+}

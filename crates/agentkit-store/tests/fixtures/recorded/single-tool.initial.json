@@ -1,0 +1,24 @@
+{
+  "261103-fleet-steel": {
+    "createdAt": 1793683397842,
+    "id": "261103-fleet-steel",
+    "isProcessing": false,
+    "lastMessageAt": 1793683397842,
+    "messageCount": 0,
+    "messages": [],
+    "name": "Fixture single-tool",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-fleet-steel",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "contextTokens": 0.0,
+      "costUsd": 0.0,
+      "inputTokens": 0.0,
+      "outputTokens": 0.0,
+      "totalTokens": 0.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_2a9ca2d3",
+    "workspaceName": "Default"
+  }
+}

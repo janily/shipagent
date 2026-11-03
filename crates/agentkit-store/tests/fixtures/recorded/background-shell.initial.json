@@ -1,0 +1,24 @@
+{
+  "261103-witty-vista": {
+    "createdAt": 1793683463789,
+    "id": "261103-witty-vista",
+    "isProcessing": false,
+    "lastMessageAt": 1793683463789,
+    "messageCount": 0,
+    "messages": [],
+    "name": "Fixture background-shell",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-witty-vista",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "contextTokens": 0.0,
+      "costUsd": 0.0,
+      "inputTokens": 0.0,
+      "outputTokens": 0.0,
+      "totalTokens": 0.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_07964a93",
+    "workspaceName": "Default"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "261103-early-pine": {
+    "createdAt": 1793683423148,
+    "hasUnread": true,
+    "id": "261103-early-pine",
+    "isProcessing": false,
+    "lastFinalMessageId": "59b086f2-cffc-489b-adf1-9a9fb108a343",
+    "lastMessageAt": 1793683423158,
+    "lastMessageRole": "assistant",
+    "messageCount": 0,
+    "messages": [
+      {
+        "content": "Complete isolated fixture permission-deny.",
+        "id": "msg-1793683423158-kzf0x7",
+        "role": "user",
+        "timestamp": 1793683423158
+      },
+      {
+        "content": "Fixture answer 中文。",
+        "id": "59b086f2-cffc-489b-adf1-9a9fb108a343",
+        "isIntermediate": false,
+        "role": "assistant",
+        "timestamp": 1793683423922,
+        "turnId": "pi-turn-1__m0"
+      }
+    ],
+    "name": "Fixture permission-deny",
+    "permissionMode": "ask",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-early-pine",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "cacheCreationTokens": 0.0,
+      "cacheReadTokens": 0.0,
+      "contextTokens": 0.0,
+      "contextUsage": {
+        "canCompact": true,
+        "isEstimate": true,
+        "isStale": false,
+        "limitKind": "compaction",
+        "limitTokens": 114688.0,
+        "usedTokens": 510.0
+      },
+      "costUsd": 0.0,
+      "inputTokens": 500.0,
+      "outputTokens": 20.0,
+      "totalTokens": 520.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_2d3e5122",
+    "workspaceName": "Default"
+  }
+}
