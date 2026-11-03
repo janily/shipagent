@@ -4,6 +4,10 @@ use agentkit_client::{ClientOptions, RpcClient, api::WorkbenchApi};
 use agentkit_protocol::prototype::SessionEvent;
 use agentkit_sidecar::{SidecarConfig, SidecarHandle};
 use agentkit_store::core::reducer::{Context as ReductionContext, SessionState, process_decoded};
+use agentkit_store::core::turns::{
+    GroupTurnsOptions, TurnPhase, derive_turn_phase, get_last_assistant_turn,
+    group_messages_by_turn,
+};
 use agentkit_store::{ChatState, RunState};
 use std::{
     io::{BufRead, BufReader},
@@ -140,6 +144,7 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             streaming: None,
         };
         let mut reduction_index = 0;
+        let mut live_phases = Vec::new();
         let mut state = ChatState::new(session);
         let id = state.session.id.clone();
         state.begin_send(
@@ -184,6 +189,15 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                     )
                     .unwrap();
                     formal = result.state;
+                    let turns = group_messages_by_turn(
+                        &formal.session.messages,
+                        GroupTurnsOptions {
+                            is_session_processing: Some(formal.session.is_processing),
+                        },
+                    );
+                    if let Some(turn) = get_last_assistant_turn(&turns) {
+                        live_phases.push(derive_turn_phase(turn));
+                    }
                     kinds.push(event.kind.clone());
                     if matches!(event.kind.as_str(), "error" | "typed_error") {
                         eprintln!("backend test error: {}", event.payload["error"]);
@@ -248,6 +262,32 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                 .iter()
                 .any(|m| m.id == formal_answer.id && m.content == formal_answer.content),
             "Formal reducer did not retain authoritative final message identity/content"
+        );
+        let grouped = group_messages_by_turn(
+            &formal.session.messages,
+            GroupTurnsOptions {
+                is_session_processing: Some(false),
+            },
+        );
+        let final_turn = get_last_assistant_turn(&grouped).unwrap();
+        assert_eq!(derive_turn_phase(final_turn), TurnPhase::Complete);
+        assert_eq!(
+            final_turn.response.as_ref().unwrap().message_id.as_deref(),
+            Some(formal_answer.id.as_str())
+        );
+        assert_eq!(
+            final_turn.response.as_ref().unwrap().text,
+            formal_answer.content
+        );
+        assert!(
+            final_turn
+                .activities
+                .iter()
+                .any(|a| a.tool_name.as_deref() == Some("Read"))
+        );
+        assert!(
+            live_phases.contains(&TurnPhase::ToolActive),
+            "Live grouping never represented the actual running tool"
         );
         let formal_tool = formal
             .session
@@ -351,6 +391,16 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
         assert_eq!(cancelled_state.status, RunState::Interrupted);
         assert!(!formal_cancelled.session.is_processing);
         assert!(formal_cancelled.streaming.is_none());
+        let cancelled_turns = group_messages_by_turn(
+            &formal_cancelled.session.messages,
+            GroupTurnsOptions {
+                is_session_processing: Some(false),
+            },
+        );
+        assert!(
+            get_last_assistant_turn(&cancelled_turns)
+                .is_some_and(|t| derive_turn_phase(t) == TurnPhase::Complete)
+        );
         assert!(!api.session(&cancelled_id).await.unwrap().is_processing);
         typed.close();
         api.close();

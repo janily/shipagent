@@ -1,0 +1,7 @@
+# T-1-07 turns port
+
+Base main33485d5 after PR13 merged; backend pinned v0.2.6. Authority spec03 core::turns and spec06 T1-07. Apply implement skill and isolated Standards/Spec review before commits.
+
+1. Execute all seven pinned chat test files in deterministic upstream oracle; capture exported function arguments/results with full provenance and original assertions. Five files exercise turns, one message local timestamp, one React CSS source guard (two triggers). Preserve that distinction: CSS guard runs upstream and is not claimed as native UI acceptance. Explicit offset keeps Rust timestamp formatting pure; native local timezone resolution belongs at the application boundary.
+2. Implement generated-Message-backed pure turns models and functions: grouping/phase/thinking/identity, activity ancestry/continued groups/TaskOutput, todos, summaries/selectors and formatting. Named Rust counterparts test all captured pure calls; add meaningful supplemental scenarios and retain input immutability. Strict typed field auditing must reject silent omissions.
+3. Feed formal reducer output through turns in the real Agent contract; no GPUI entity migration before T1-08. Enforce formal turns line coverage in CI and upstream oracle drift. Verify fmt/clippy/core/native/real contracts and three-platform CI. Commit/push/open ready PR after review; do not merge. Phase0/release/physical desktop gates remain open.
