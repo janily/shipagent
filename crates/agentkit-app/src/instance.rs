@@ -20,7 +20,13 @@ pub enum InstanceError {
     Io(#[from] std::io::Error),
     /// Existing owner did not acknowledge focus within the bounded deadline.
     #[error("Existing application instance did not acknowledge focus")]
-    Unresponsive,
+    Unresponsive {
+        /// Last handshake stage attempted; no request contents are retained.
+        phase: &'static str,
+        /// Last IO failure, if the peer supplied none of the expected acknowledgement.
+        #[source]
+        cause: Option<std::io::Error>,
+    },
 }
 /// Result of negotiating ownership before opening a window or starting a sidecar.
 pub enum Claim {
@@ -76,20 +82,36 @@ pub fn claim(dir: &Path, bundle: &str) -> Result<Claim, InstanceError> {
         Ok(()) => {}
         Err(std::fs::TryLockError::WouldBlock) => {
             let deadline = Instant::now() + Duration::from_secs(2);
+            let mut phase = "connect";
+            let mut cause = None;
             while Instant::now() < deadline {
-                if let Ok(mut stream) = Stream::connect(socket_name(&dir, bundle)?) {
-                    stream.set_nonblocking(true)?;
-                    let until = (Instant::now() + Duration::from_millis(200)).min(deadline);
-                    if write_deadline(&mut stream, b"{\"cmd\":\"focus\"}\n", until).is_ok()
-                        && read_line(&mut stream, until)
-                            .is_ok_and(|bytes| bytes == b"{\"ok\":true}\n")
-                    {
-                        return Ok(Claim::Forwarded);
+                match Stream::connect(socket_name(&dir, bundle)?) {
+                    Ok(mut stream) => {
+                        stream.set_nonblocking(true)?;
+                        let until = (Instant::now() + Duration::from_millis(200)).min(deadline);
+                        phase = "write";
+                        match write_deadline(&mut stream, b"{\"cmd\":\"focus\"}\n", until) {
+                            Ok(()) => {
+                                phase = "read";
+                                match read_line(&mut stream, until) {
+                                    Ok(bytes) if bytes == b"{\"ok\":true}\n" => {
+                                        return Ok(Claim::Forwarded);
+                                    }
+                                    Ok(_) => cause = Some(std::io::ErrorKind::InvalidData.into()),
+                                    Err(e) => cause = Some(e),
+                                }
+                            }
+                            Err(e) => cause = Some(e),
+                        }
+                    }
+                    Err(e) => {
+                        phase = "connect";
+                        cause = Some(e);
                     }
                 }
                 std::thread::sleep(Duration::from_millis(20));
             }
-            return Err(InstanceError::Unresponsive);
+            return Err(InstanceError::Unresponsive { phase, cause });
         }
         Err(std::fs::TryLockError::Error(e)) => return Err(e.into()),
     }
@@ -155,6 +177,7 @@ pub fn claim(dir: &Path, bundle: &str) -> Result<Claim, InstanceError> {
 fn write_deadline(stream: &mut Stream, mut bytes: &[u8], deadline: Instant) -> std::io::Result<()> {
     while !bytes.is_empty() && Instant::now() < deadline {
         match stream.write(bytes) {
+            Ok(0) if cfg!(windows) => std::thread::sleep(Duration::from_millis(2)),
             Ok(0) => return Err(std::io::ErrorKind::WriteZero.into()),
             Ok(n) => bytes = &bytes[n..],
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
@@ -170,10 +193,20 @@ fn write_deadline(stream: &mut Stream, mut bytes: &[u8], deadline: Instant) -> s
     }
 }
 fn read_line(stream: &mut Stream, deadline: Instant) -> std::io::Result<Vec<u8>> {
+    read_line_policy(stream, deadline, cfg!(windows))
+}
+fn read_line_policy(
+    stream: &mut impl Read,
+    deadline: Instant,
+    retry_empty: bool,
+) -> std::io::Result<Vec<u8>> {
     let mut bytes = Vec::new();
     while Instant::now() < deadline && bytes.len() < 64 {
         let mut byte = [0];
         match stream.read(&mut byte) {
+            // interprocess Windows byte pipes map ERROR_NO_DATA/BrokenPipe to
+            // an empty read. Unlike Unix EOF, this can mean no bytes available yet.
+            Ok(0) if retry_empty => std::thread::sleep(Duration::from_millis(2)),
             Ok(0) => return Err(std::io::ErrorKind::UnexpectedEof.into()),
             Ok(_) => {
                 bytes.push(byte[0]);
@@ -335,5 +368,55 @@ mod tests {
             assert!(Instant::now() < deadline, "primary did not stop");
             std::thread::sleep(Duration::from_millis(10));
         }
+    }
+    struct EmptyThenBytes {
+        empty: bool,
+        bytes: std::io::Cursor<Vec<u8>>,
+    }
+    impl Read for EmptyThenBytes {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            if self.empty {
+                self.empty = false;
+                Ok(0)
+            } else {
+                self.bytes.read(buf)
+            }
+        }
+    }
+    #[test]
+    fn windows_empty_pipe_reads_wait_for_ack_but_unix_eof_still_fails() {
+        let bytes = b"{\"ok\":true}\n".to_vec();
+        let mut pipe = EmptyThenBytes {
+            empty: true,
+            bytes: std::io::Cursor::new(bytes.clone()),
+        };
+        assert_eq!(
+            read_line_policy(&mut pipe, Instant::now() + Duration::from_millis(100), true).unwrap(),
+            bytes
+        );
+        let mut socket = EmptyThenBytes {
+            empty: true,
+            bytes: std::io::Cursor::new(bytes),
+        };
+        assert_eq!(
+            read_line_policy(
+                &mut socket,
+                Instant::now() + Duration::from_millis(100),
+                false
+            )
+            .unwrap_err()
+            .kind(),
+            std::io::ErrorKind::UnexpectedEof
+        );
+        assert_eq!(
+            read_line_policy(
+                &mut std::io::empty(),
+                Instant::now() + Duration::from_millis(10),
+                true
+            )
+            .unwrap_err()
+            .kind(),
+            std::io::ErrorKind::TimedOut
+        );
     }
 }
