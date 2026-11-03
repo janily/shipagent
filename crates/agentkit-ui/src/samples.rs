@@ -1,4 +1,5 @@
 //! T-0-10: six native Kit components with local state and no backend IO.
+use crate::t;
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
     collapsible::Collapsible,
@@ -25,7 +26,7 @@ impl ComponentSamples {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let draft = cx.new(|cx| {
             TextareaState::new(window, cx)
-                .placeholder("输入消息 · Enter 发送，Shift+Enter 换行")
+                .placeholder(t!("ak.samples.placeholder"))
                 .auto_grow(2, 5)
                 .submit_on_enter(true)
         });
@@ -59,19 +60,19 @@ impl ComponentSamples {
         window.open_dialog(cx, move |dialog, _, _| {
             let weak = weak.clone();
             dialog
-                .title("清空组件样板？")
-                .child("清除本窗口中的样板消息与草稿。")
+                .title(t!("ak.samples.clear_title"))
+                .child(t!("ak.samples.clear_hint"))
                 .footer(
                     DialogFooter::new()
                         .child(
                             Button::new("sample-clear-cancel")
-                                .label("取消")
+                                .label(t!("common.cancel"))
                                 .outline()
                                 .on_click(|_, window, cx| window.close_dialog(cx)),
                         )
                         .child(
                             Button::new("sample-clear-confirm")
-                                .label("清空")
+                                .label(t!("common.clear"))
                                 .primary()
                                 .on_click(move |_, window, cx| {
                                     let _ = weak.update(cx, |this, cx| {
@@ -96,28 +97,34 @@ impl ComponentSamples {
             .child(
                 Settings::new("sample-settings-pages")
                     .sidebar_width(px(170.))
-                    .pages(vec![SettingPage::new("外观").default_open(true).groups(
-                        vec![SettingGroup::new().title("主题").items(vec![
-                                SettingItem::new(
-                                    "深色模式",
-                                    SettingField::switch(
-                                        |cx: &App| cx.theme().mode.is_dark(),
-                                        |dark, cx: &mut App| {
-                                            Theme::change(
-                                                if dark {
-                                                    ThemeMode::Dark
-                                                } else {
-                                                    ThemeMode::Light
+                    .pages(vec![
+                        SettingPage::new(t!("ak.samples.appearance"))
+                            .default_open(true)
+                            .groups(vec![
+                                SettingGroup::new()
+                                    .title(t!("ak.samples.theme"))
+                                    .items(vec![
+                                        SettingItem::new(
+                                            t!("ak.samples.dark"),
+                                            SettingField::switch(
+                                                |cx: &App| cx.theme().mode.is_dark(),
+                                                |dark, cx: &mut App| {
+                                                    Theme::change(
+                                                        if dark {
+                                                            ThemeMode::Dark
+                                                        } else {
+                                                            ThemeMode::Light
+                                                        },
+                                                        None,
+                                                        cx,
+                                                    );
                                                 },
-                                                None,
-                                                cx,
-                                            );
-                                        },
-                                    ),
-                                )
-                                .description("即时应用到本次样板窗口"),
-                            ])],
-                    )]),
+                                            ),
+                                        )
+                                        .description(t!("ak.samples.apply_hint")),
+                                    ]),
+                            ]),
+                    ]),
             )
     }
 
@@ -127,12 +134,17 @@ impl ComponentSamples {
             .min_w_0()
             .gap_4()
             .p_5()
-            .child(div().text_lg().font_semibold().child("原生组件工作台"))
+            .child(
+                div()
+                    .text_lg()
+                    .font_semibold()
+                    .child(t!("ak.samples.heading")),
+            )
             .child(
                 div()
                     .text_sm()
                     .text_color(cx.theme().muted_foreground)
-                    .child("GPUI Kit 0.8.1 · 六类组件交互样板"),
+                    .child(t!("ak.samples.subtitle")),
             )
             .child(
                 Collapsible::new()
@@ -145,7 +157,7 @@ impl ComponentSamples {
                             } else {
                                 IconName::ChevronRight
                             })
-                            .label("读取 README.md · 0.1s")
+                            .label(t!("ak.samples.read"))
                             .on_click(cx.listener(|this, _, _, cx| {
                                 this.tool_open = !this.tool_open;
                                 cx.notify();
@@ -158,7 +170,7 @@ impl ComponentSamples {
                             .p_3()
                             .bg(cx.theme().muted)
                             .rounded_lg()
-                            .child("# ShipAgent\n原生 Agent 工作台 · 工具结果样板"),
+                            .child(t!("ak.samples.result")),
                     ),
             )
             .child(
@@ -175,7 +187,7 @@ impl ComponentSamples {
                                 .test_support()
                                 .p_4()
                                 .text_color(cx.theme().muted_foreground)
-                                .child("输入一条消息，验证原生 Textarea"),
+                                .child(t!("ak.samples.empty")),
                         )
                     })
                     .children(self.messages.iter().enumerate().map(|(index, message)| {
@@ -210,11 +222,16 @@ impl ComponentSamples {
                                 div()
                                     .text_xs()
                                     .text_color(cx.theme().muted_foreground)
-                                    .child("仅在内存中保留"),
+                                    .child(t!("ak.samples.memory")),
                             )
-                            .child(Button::new("sample-send").primary().label("发送").on_click(
-                                cx.listener(|this, _, window, cx| this.submit(window, cx)),
-                            )),
+                            .child(
+                                Button::new("sample-send")
+                                    .primary()
+                                    .label(t!("ak.samples.send"))
+                                    .on_click(
+                                        cx.listener(|this, _, window, cx| this.submit(window, cx)),
+                                    ),
+                            ),
                     ),
             )
     }
@@ -226,7 +243,7 @@ impl Render for ComponentSamples {
             .size_full()
             .bg(cx.theme().background)
             .text_color(cx.theme().foreground)
-            .child(TitleBar::new().child("ShipAgent · 组件样板"))
+            .child(TitleBar::new().child(t!("ak.samples.title")))
             .child(
                 h_flex()
                     .flex_1()
@@ -234,11 +251,11 @@ impl Render for ComponentSamples {
                     .child(
                         Sidebar::new("sample-sidebar")
                             .w(px(220.))
-                            .header(SidebarHeader::new().child("默认工作区"))
+                            .header(SidebarHeader::new().child(t!("ak.samples.workspace")))
                             .child(
-                                SidebarGroup::new("组件样板").child(
+                                SidebarGroup::new(t!("ak.samples.group")).child(
                                     SidebarMenu::new().child(
-                                        SidebarMenuItem::new("原生会话")
+                                        SidebarMenuItem::new(t!("ak.samples.conversation"))
                                             .icon(IconName::Bot)
                                             .active(!self.settings)
                                             .on_click(cx.listener(|this, _, _, cx| {
@@ -253,7 +270,7 @@ impl Render for ComponentSamples {
                                     Button::new("sample-settings")
                                         .ghost()
                                         .icon(IconName::Settings)
-                                        .label("设置")
+                                        .label(t!("ak.samples.settings"))
                                         .on_click(cx.listener(|this, _, _, cx| {
                                             this.settings = true;
                                             cx.notify();
@@ -279,7 +296,7 @@ impl Render for ComponentSamples {
                                     .child(
                                         Button::new("sample-back")
                                             .ghost()
-                                            .label("返回工作台")
+                                            .label(t!("ak.samples.back"))
                                             .on_click(cx.listener(|this, _, _, cx| {
                                                 this.settings = false;
                                                 cx.notify();
@@ -288,7 +305,7 @@ impl Render for ComponentSamples {
                                     .child(
                                         Button::new("sample-clear")
                                             .outline()
-                                            .label("清空样板")
+                                            .label(t!("ak.samples.clear_samples"))
                                             .on_click(cx.listener(Self::clear_dialog)),
                                     ),
                             )
@@ -313,14 +330,16 @@ impl Render for ComponentSamples {
                                                     .p_4()
                                                     .gap_4()
                                                     .child(
-                                                        div().font_semibold().child("文件与计划"),
+                                                        div()
+                                                            .font_semibold()
+                                                            .child(t!("ak.samples.inspector")),
                                                     )
                                                     .child("README.md")
                                                     .child(
                                                         div()
                                                             .text_sm()
                                                             .text_color(cx.theme().muted_foreground)
-                                                            .child("拖动左侧分隔线调整宽度"),
+                                                            .child(t!("ak.samples.resize_hint")),
                                                     ),
                                             ),
                                     )
@@ -336,7 +355,7 @@ impl Render for ComponentSamples {
                     .bg(cx.theme().muted)
                     .text_xs()
                     .text_color(cx.theme().muted_foreground)
-                    .child("组件样板 · 本地交互"),
+                    .child(t!("ak.samples.status")),
             )
     }
 }

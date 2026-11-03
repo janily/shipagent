@@ -1,5 +1,13 @@
 use super::*;
 impl WorkbenchView {
+    fn status_label(&self) -> String {
+        match self.status_key {
+            "ak.connected" => t!("ak.connected"),
+            "ak.disconnected" => t!("ak.disconnected"),
+            _ => t!("ak.starting"),
+        }
+    }
+
     pub(crate) fn render_shell(
         &mut self,
         window: &mut Window,
@@ -73,7 +81,7 @@ impl WorkbenchView {
                             Button::new("toggle-sidebar")
                                 .ghost()
                                 .icon(IconName::PanelLeft)
-                                .accessibility_label(tr("ak.toggle_sidebar"))
+                                .accessibility_label(t!("ak.toggle_sidebar"))
                                 .on_click(
                                     cx.listener(|v, _, window, cx| v.toggle_sidebar(window, cx)),
                                 ),
@@ -89,8 +97,8 @@ impl WorkbenchView {
                         .child(
                             Button::new("toggle-focus")
                                 .ghost()
-                                .label(tr("ak.focus_mode"))
-                                .accessibility_label(tr("ak.focus_mode"))
+                                .label(t!("ak.focus_mode"))
+                                .accessibility_label(t!("ak.focus_mode"))
                                 .on_click(
                                     cx.listener(|v, _, window, cx| v.toggle_focus_mode(window, cx)),
                                 ),
@@ -99,7 +107,7 @@ impl WorkbenchView {
                             Button::new("toggle-right-panel")
                                 .ghost()
                                 .icon(IconName::PanelRight)
-                                .accessibility_label(tr("ak.context_panel"))
+                                .accessibility_label(t!("ak.context_panel"))
                                 .on_click(
                                     cx.listener(|v, _, window, cx| {
                                         v.toggle_right_panel(window, cx)
@@ -118,30 +126,30 @@ impl WorkbenchView {
                         div()
                             .id("connection-status")
                             .role(Role::Status)
-                            .aria_label(tr(self.status_key))
-                            .child(tr(self.status_key))
+                            .aria_label(self.status_label())
+                            .child(self.status_label())
                             .test_support(),
                     )
                     .child(
                         div()
                             .id("background-task-count")
                             .role(Role::Status)
-                            .aria_label(format!("{} {tasks}", tr("ak.tasks")))
-                            .child(format!("{} {tasks}", tr("ak.tasks")))
+                            .aria_label(t!("ak.task_count", count = tasks))
+                            .child(t!("ak.task_count", count = tasks))
                             .test_support(),
                     )
                     .right(div().text_xs().child(format!(
                         "{} · {} {version}",
-                        self.model.clone().unwrap_or_else(|| tr("ak.no_model")),
-                        tr("ak.backend")
+                        self.model.clone().unwrap_or_else(|| t!("ak.no_model")),
+                        t!("ak.backend")
                     )))
                     .when(!self.preferences_writable, |bar| {
                         bar.right(
                             div()
                                 .id("preferences-status")
                                 .role(Role::Alert)
-                                .aria_label(tr("ak.prefs_readonly"))
-                                .child(tr("ak.prefs_readonly"))
+                                .aria_label(t!("ak.prefs_readonly"))
+                                .child(t!("ak.prefs_readonly"))
                                 .test_support(),
                         )
                     }),

@@ -5,7 +5,7 @@ impl WorkbenchView {
         let sidebar = v_flex()
             .id("session-sidebar")
             .role(Role::Navigation)
-            .aria_label(tr("ak.sessions"))
+            .aria_label(t!("ak.sessions"))
             .w_full()
             .flex_shrink_0()
             .h_full()
@@ -30,7 +30,7 @@ impl WorkbenchView {
                 Button::new("new-session")
                     .primary()
                     .w_full()
-                    .label(tr("ak.new"))
+                    .label(t!("ak.new"))
                     .disabled(!self.ready || self.loading)
                     .on_click(cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::NewSession))),
             )
@@ -38,7 +38,7 @@ impl WorkbenchView {
                 div()
                     .text_xs()
                     .text_color(cx.theme().muted_foreground)
-                    .child(tr("ak.sessions")),
+                    .child(t!("ak.sessions")),
             )
             .child(
                 v_flex()
@@ -80,17 +80,17 @@ impl WorkbenchView {
                                             .name
                                             .clone()
                                             .or(session.preview.clone())
-                                            .unwrap_or_else(|| tr("ak.new"));
+                                            .unwrap_or_else(|| t!("ak.new"));
                                         format!(
                                             "{}{}{}{}",
                                             if session.is_processing { "• " } else { "" },
                                             if pending {
-                                                format!("{} · ", tr("ak.permission_wait"))
+                                                format!("{} · ", t!("ak.permission_wait"))
                                             } else {
                                                 String::new()
                                             },
                                             if plan {
-                                                format!("{} · ", tr("ak.plan"))
+                                                format!("{} · ", t!("ak.plan"))
                                             } else {
                                                 String::new()
                                             },
@@ -108,7 +108,7 @@ impl WorkbenchView {
             .child(
                 Button::new("model-settings")
                     .ghost()
-                    .label(tr("ak.settings"))
+                    .label(t!("ak.settings"))
                     .disabled(busy)
                     .on_click(cx.listener(|this, _, _, cx| {
                         this.setup = true;
@@ -118,7 +118,7 @@ impl WorkbenchView {
             .child(
                 Button::new("toggle-theme")
                     .ghost()
-                    .label(tr("ak.theme"))
+                    .label(t!("ak.theme"))
                     .on_click(cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::CycleAppearance))),
             );
         sidebar.test_support().into_any_element()

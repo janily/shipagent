@@ -38,17 +38,16 @@ fn report_recording_failure() {
 }
 fn sidecar_message(error: &agentkit_sidecar::SidecarError) -> String {
     use agentkit_sidecar::SidecarError as E;
-    let key = match error {
-        E::MissingRuntime(_) => "ak.sidecar_missing_runtime",
-        E::Io(_) => "ak.sidecar_io",
-        E::ReadyTimeout => "ak.sidecar_ready_timeout",
-        E::ExitedEarly { .. } => "ak.sidecar_exited_early",
-        E::AlreadyRunning { .. } => "ak.sidecar_occupied",
-        E::InvalidEndpoint => "ak.sidecar_invalid_endpoint",
-        E::RestartLimit => "ak.sidecar_restart_limit",
-        E::Stopped => "ak.sidecar_stopped",
-    };
-    agentkit_ui::tr(key)
+    match error {
+        E::MissingRuntime(_) => agentkit_ui::t!("ak.sidecar_missing_runtime"),
+        E::Io(_) => agentkit_ui::t!("ak.sidecar_io"),
+        E::ReadyTimeout => agentkit_ui::t!("ak.sidecar_ready_timeout"),
+        E::ExitedEarly { .. } => agentkit_ui::t!("ak.sidecar_exited_early"),
+        E::AlreadyRunning { .. } => agentkit_ui::t!("ak.sidecar_occupied"),
+        E::InvalidEndpoint => agentkit_ui::t!("ak.sidecar_invalid_endpoint"),
+        E::RestartLimit => agentkit_ui::t!("ak.sidecar_restart_limit"),
+        E::Stopped => agentkit_ui::t!("ak.sidecar_stopped"),
+    }
 }
 pub(crate) type StartupSlot = Rc<RefCell<Option<Task<()>>>>;
 pub(crate) type RuntimeSlot = Rc<RefCell<Option<Running>>>;
@@ -214,7 +213,7 @@ async fn initialize(
     } else {
         0
     };
-    anyhow::ensure!(!workspaces.is_empty(), "No backend workspace available");
+    anyhow::ensure!(!workspaces.is_empty(), agentkit_ui::t!("ak.no_workspace"));
     let workspace = workspaces.swap_remove(selected);
     initial.disable_browser().await?;
     let connections = initial.connections_generated().await?;
@@ -601,7 +600,7 @@ impl WorkbenchController {
                                 match serde_json::from_value::<DecodedSessionEvent>(value) {
                                     Ok(e) => decoded.push((e, reduction_context())),
                                     Err(_) => this.view.update(cx, |v, cx| {
-                                        v.show_error(agentkit_ui::tr("ak.event_invalid"), false, cx)
+                                        v.show_error(agentkit_ui::t!("ak.event_invalid"), false, cx)
                                     }),
                                 }
                             }
@@ -639,7 +638,7 @@ impl WorkbenchController {
                             cx.notify();
                         }),
                         Err(_) => this.view.update(cx, |v, cx| {
-                            v.show_error(agentkit_ui::tr("ak.event_invalid"), false, cx)
+                            v.show_error(agentkit_ui::t!("ak.event_invalid"), false, cx)
                         }),
                     })
                     .is_err()
@@ -659,7 +658,7 @@ impl WorkbenchController {
                             }
                         }),
                         Err(_) => this.view.update(cx, |v, cx| {
-                            v.show_error(agentkit_ui::tr("ak.event_invalid"), false, cx)
+                            v.show_error(agentkit_ui::t!("ak.event_invalid"), false, cx)
                         }),
                     })
                     .is_err()
@@ -681,7 +680,7 @@ impl WorkbenchController {
                             cx.notify();
                         }),
                         Err(_) => this.view.update(cx, |v, cx| {
-                            v.show_error(agentkit_ui::tr("ak.event_invalid"), false, cx)
+                            v.show_error(agentkit_ui::t!("ak.event_invalid"), false, cx)
                         }),
                     })
                     .is_err()
@@ -706,7 +705,7 @@ impl WorkbenchController {
                     let message = api
                         .last_error()
                         .map(|e| e.to_string())
-                        .unwrap_or_else(|| agentkit_ui::tr("ak.reconnecting"));
+                        .unwrap_or_else(|| agentkit_ui::t!("ak.reconnecting"));
                     if weak
                         .update_in(cx, |this, _, cx| {
                             this.app_state.update(cx, |s, cx| {
@@ -795,7 +794,7 @@ impl WorkbenchController {
                     }
                     self.view.update(cx, |v, cx| {
                         v.clear_session(cx);
-                        v.show_error(agentkit_ui::tr("ak.session_deleted"), false, cx);
+                        v.show_error(agentkit_ui::t!("ak.session_deleted"), false, cx);
                     });
                 }
                 continue;
@@ -828,7 +827,7 @@ impl WorkbenchController {
                         Effect::ToastError { message } => self.view.update(cx, |v, cx| {
                             v.show_error(
                                 if message == "ak.event_invalid" {
-                                    agentkit_ui::tr("ak.event_invalid")
+                                    agentkit_ui::t!("ak.event_invalid")
                                 } else {
                                     message
                                 },
@@ -1000,13 +999,13 @@ impl WorkbenchController {
         };
         let Ok((api, snapshot)) = api.bind_connection() else {
             self.view.update(cx, |view, cx| {
-                view.show_error(agentkit_ui::tr("ak.connection_unavailable"), true, cx)
+                view.show_error(agentkit_ui::t!("ak.connection_unavailable"), true, cx)
             });
             return;
         };
         if !transport_is_current(&snapshot, self.transport_epoch) {
             self.view.update(cx, |view, cx| {
-                view.show_error(agentkit_ui::tr("ak.reload_required"), true, cx)
+                view.show_error(agentkit_ui::t!("ak.reload_required"), true, cx)
             });
             return;
         }
@@ -1044,7 +1043,7 @@ impl WorkbenchController {
                         if this.epoch!=generation || this.stores.get(&id).is_none_or(|s|s.entity_id()!=store.entity_id()) {return;}
                         let accepted=result.as_ref().is_ok_and(|ack|ack.accepted) || store.read(cx).model.send_confirmed(&pending.id);
                         let clear_draft=accepted && store.read(cx).model.draft_is_current(&pending.id);
-                        let failure=(!accepted).then(||result.as_ref().err().map(|e|e.to_string()).unwrap_or_else(||agentkit_ui::tr("ak.send_rejected")));
+                        let failure=(!accepted).then(||result.as_ref().err().map(|e|e.to_string()).unwrap_or_else(||agentkit_ui::t!("ak.send_rejected")));
                         store.update(cx,|s,cx|{s.model.finish_send(&pending.id,accepted);s.model.last_error=failure.clone();if !accepted{cx.emit(agentkit_store::core::session::SessionStoreEvent::TurnsChanged{from_turn:0});}cx.notify();});
                         if this.state.as_ref().is_some_and(|s|s.entity_id()==store.entity_id()) {this.view.update(cx,|v,cx| {v.submission_finished(&text,clear_draft,window,cx);if !accepted {v.restore_draft(&text,window,cx);v.show_error(failure.unwrap_or_default(),false,cx);}});}
                     });
@@ -1114,7 +1113,7 @@ impl WorkbenchController {
                             if this.backlog_overflow {
                                 this.backlog.clear();
                                 this.view.update(cx, |v, cx| {
-                                    v.show_error(agentkit_ui::tr("ak.load_overflow"), true, cx)
+                                    v.show_error(agentkit_ui::t!("ak.load_overflow"), true, cx)
                                 });
                                 return;
                             }

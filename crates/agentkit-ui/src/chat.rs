@@ -1,4 +1,4 @@
-use crate::{WorkbenchIntent, WorkbenchView, tr};
+use crate::{WorkbenchIntent, WorkbenchView, t};
 use agentkit_store::core::turns::{ActivityStatus, ActivityType, Turn};
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
@@ -19,11 +19,11 @@ impl WorkbenchView {
                 .flex_1()
                 .justify_center()
                 .items_center()
-                .child(tr(if self.loading {
-                    "ak.loading"
+                .child(if self.loading {
+                    t!("ak.loading")
                 } else {
-                    "ak.empty_hint"
-                }))
+                    t!("ak.empty_hint")
+                })
                 .into_any_element()
         } else {
             MessageScroller::new("messages", self.scroll.clone(), move |index, _, cx| {
@@ -80,16 +80,16 @@ impl WorkbenchView {
                                     "{} · {}",
                                     activity.tool_name.clone().unwrap_or_else(|| {
                                         if activity.kind == ActivityType::Plan {
-                                            tr("ak.plan")
+                                            t!("ak.plan")
                                         } else {
                                             String::new()
                                         }
                                     }),
-                                    tr(match activity.status {
-                                        ActivityStatus::Completed => "ak.tool_done",
-                                        ActivityStatus::Error => "ak.tool_error",
-                                        _ => "ak.tool_running",
-                                    })
+                                    match activity.status {
+                                        ActivityStatus::Completed => t!("ak.tool_done"),
+                                        ActivityStatus::Error => t!("common.failed"),
+                                        _ => t!("ak.tool_running"),
+                                    }
                                 );
                                 row = row.child(
                                     v_flex()
@@ -169,7 +169,7 @@ impl WorkbenchView {
                     )
                     .into_any_element()
             })
-            .with_jump_button_label(tr("ak.latest"))
+            .with_jump_button_label(t!("ak.latest"))
             .flex_1()
             .min_h_0()
             .into_any_element()
@@ -199,7 +199,7 @@ impl WorkbenchView {
                                 .rounded_lg()
                                 .p_4()
                                 .gap_3()
-                                .child(div().font_semibold().child(tr("ak.permission")))
+                                .child(div().font_semibold().child(t!("ak.permission")))
                                 .child(permission.description)
                                 .when_some(permission.command, |view, command| {
                                     view.child(
@@ -214,7 +214,7 @@ impl WorkbenchView {
                                         .child(
                                             Button::new("permission-allow")
                                                 .primary()
-                                                .label(tr("ak.allow"))
+                                                .label(t!("ak.allow"))
                                                 .disabled(!self.ready || self.permission_busy)
                                                 .on_click(cx.listener(move |this, _, _, cx| {
                                                     this.permission_busy = true;
@@ -230,7 +230,7 @@ impl WorkbenchView {
                                             view.child(
                                                 Button::new("permission-always")
                                                     .outline()
-                                                    .label(tr("ak.always"))
+                                                    .label(t!("ak.always"))
                                                     .disabled(!self.ready || self.permission_busy)
                                                     .on_click(cx.listener(
                                                         move |this, _, _, cx| {
@@ -248,7 +248,7 @@ impl WorkbenchView {
                                         .child(
                                             Button::new("permission-deny")
                                                 .outline()
-                                                .label(tr("ak.deny"))
+                                                .label(t!("ak.deny"))
                                                 .disabled(!self.ready || self.permission_busy)
                                                 .on_click(cx.listener(move |this, _, _, cx| {
                                                     this.permission_busy = true;
@@ -281,7 +281,7 @@ impl WorkbenchView {
                                 .w_full()
                                 .child(
                                     Textarea::new(&self.composer)
-                                        .aria_label(tr("ak.composer"))
+                                        .aria_label(t!("ak.composer"))
                                         .appearance(false)
                                         .bordered(false)
                                         .disabled(
@@ -309,32 +309,30 @@ impl WorkbenchView {
                                                 .border_1()
                                                 .border_color(cx.theme().border)
                                                 .rounded_full()
-                                                .child(tr(match self.state.as_ref().and_then(|s|s.read(cx).model.state.session.permission_mode) {Some(agentkit_protocol::generated::PermissionMode::Ask)=>"ak.mode_ask",Some(agentkit_protocol::generated::PermissionMode::AllowAll)=>"ak.mode_execute",_=>"ak.safe"})),
+                                                .child(match self.state.as_ref().and_then(|s|s.read(cx).model.state.session.permission_mode) {Some(agentkit_protocol::generated::PermissionMode::Ask)=>t!("ak.mode_ask"),Some(agentkit_protocol::generated::PermissionMode::AllowAll)=>t!("ak.mode_execute"),_=>t!("ak.safe")}),
                                         )
                                         .child(
-                                            self.model.clone().unwrap_or_else(|| tr("ak.no_model")),
+                                            self.model.clone().unwrap_or_else(|| t!("ak.no_model")),
                                         )
                                         .when(busy, |view| {
-                                            view.child(tr(
-                                                if self.state.as_ref().is_some_and(|s| {
+                                            view.child(if self.state.as_ref().is_some_and(|s| {
                                                     !s.read(cx).model.permissions.is_empty()
                                                 }) {
-                                                    "ak.permission_wait"
+                                                    t!("ak.permission_wait")
                                                 } else {
-                                                    "ak.processing"
-                                                },
-                                            ))
+                                                    t!("ak.processing")
+                                                })
                                         }),
                                 )
                                 .when(busy, |v| {
-                                    v.child(Button::new("stop").label(tr("ak.stop")).on_click(
+                                    v.child(Button::new("stop").label(t!("ak.stop")).on_click(
                                         cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::Cancel)),
                                     ))
                                 })
                                 .child(
                                     Button::new("send")
                                         .primary()
-                                        .label(tr("ak.send"))
+                                        .label(t!("ak.send"))
                                         .disabled(
                                             !self.ready
                                                 || self.model.is_none()

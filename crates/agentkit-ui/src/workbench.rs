@@ -1,4 +1,4 @@
-use crate::tr;
+use crate::t;
 #[path = "shell.rs"]
 mod shell;
 use crate::layout::ShellPreferences;
@@ -103,7 +103,7 @@ impl WorkbenchView {
     pub fn new(app_name: SharedString, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let composer = cx.new(|cx| {
             TextareaState::new(window, cx)
-                .placeholder(tr("ak.placeholder"))
+                .placeholder(t!("ak.placeholder"))
                 .auto_grow(2, 12)
                 .submit_on_enter(true)
         });
@@ -124,7 +124,7 @@ impl WorkbenchView {
             sidebar_sheet: false,
             overlay: None,
             preferences_writable: true,
-            workspace: tr("ak.app").into(),
+            workspace: t!("ak.app").into(),
             model: None,
             status_key: "ak.starting",
             ready: false,
@@ -168,7 +168,7 @@ impl WorkbenchView {
     pub fn transport_recovered(&mut self, full_refresh: bool, cx: &mut Context<Self>) {
         self.reload_required |= full_refresh;
         if self.reload_required {
-            self.show_error(tr("ak.reload_required"), true, cx);
+            self.show_error(t!("ak.reload_required"), true, cx);
         } else {
             self.ready = true;
             self.error = None;
@@ -473,34 +473,34 @@ impl WorkbenchView {
             .max_w(px(620.))
             .gap_4()
             .p_6()
-            .child(div().text_lg().font_semibold().child(tr("ak.settings")))
+            .child(div().text_lg().font_semibold().child(t!("ak.settings")))
             .child(
                 div()
                     .text_color(cx.theme().muted_foreground)
-                    .child(tr("ak.setup_hint")),
+                    .child(t!("ak.setup_hint")),
             )
-            .child(tr("ak.url"))
+            .child(t!("ak.url"))
             .child(
                 Input::new(&self.base_url)
                     .id("endpoint-url")
-                    .aria_label(tr("ak.url")),
+                    .aria_label(t!("ak.url")),
             )
-            .child(tr("ak.model"))
+            .child(t!("ak.model"))
             .child(
                 Input::new(&self.model_id)
                     .id("endpoint-model")
-                    .aria_label(tr("ak.model")),
+                    .aria_label(t!("ak.model")),
             )
-            .child(tr("ak.key"))
+            .child(t!("ak.key"))
             .child(
                 Input::new(&self.api_key)
                     .id("endpoint-key")
-                    .aria_label(tr("ak.key")),
+                    .aria_label(t!("ak.key")),
             )
             .child(
                 Button::new("save-endpoint")
                     .primary()
-                    .label(tr("ak.save"))
+                    .label(t!("ak.save"))
                     .disabled(!self.ready || self.configuring)
                     .on_click(cx.listener(|this, _, _, cx| {
                         let url = this.base_url.read(cx).value().to_string();
@@ -526,7 +526,7 @@ impl WorkbenchView {
                 view.child(
                     Button::new("back-chat")
                         .ghost()
-                        .label(tr("ak.back"))
+                        .label(t!("ak.back"))
                         .on_click(cx.listener(|this, _, _, cx| {
                             this.setup = false;
                             cx.notify();
