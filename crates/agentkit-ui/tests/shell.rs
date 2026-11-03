@@ -52,7 +52,7 @@ fn startup_skeleton_is_visible_before_backend_data(cx: &mut TestAppContext) {
         assert!(window.try_find("startup-skeleton").is_some());
         assert_eq!(
             window.find("connection-status").label(),
-            Some(agentkit_ui::tr("ak.starting").as_str())
+            Some(agentkit_ui::t!("ak.starting").as_str())
         );
     })
     .unwrap();
@@ -205,7 +205,7 @@ fn failed_preference_writer_status_is_visible(cx: &mut TestAppContext) {
         window.render_frame(cx);
         assert_eq!(
             window.find("preferences-status").label(),
-            Some(agentkit_ui::tr("ak.prefs_readonly").as_str())
+            Some(agentkit_ui::t!("ak.prefs_readonly").as_str())
         );
     })
     .unwrap();
@@ -224,7 +224,7 @@ fn status_bar_uses_app_background_count_even_without_active_session(cx: &mut Tes
         window.render_frame(cx);
         assert_eq!(
             window.find("background-task-count").label(),
-            Some(format!("{} 2", agentkit_ui::tr("ak.tasks")).as_str())
+            Some(format!("{} 2", agentkit_ui::t!("ak.tasks")).as_str())
         );
         app.update(cx, |s, cx| {
             s.background_tasks = 1;
@@ -233,7 +233,7 @@ fn status_bar_uses_app_background_count_even_without_active_session(cx: &mut Tes
         window.render_frame(cx);
         assert_eq!(
             window.find("background-task-count").label(),
-            Some(format!("{} 1", agentkit_ui::tr("ak.tasks")).as_str())
+            Some(format!("{} 1", agentkit_ui::t!("ak.tasks")).as_str())
         );
     })
     .unwrap();

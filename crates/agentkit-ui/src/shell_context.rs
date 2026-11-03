@@ -7,17 +7,17 @@ impl WorkbenchView {
             .p_2()
             .border_b_1()
             .border_color(cx.theme().border);
-        for (tab, key, id) in [
-            (PanelTab::Files, "ak.files", "panel-files"),
-            (PanelTab::Plan, "ak.plan", "panel-plan"),
-            (PanelTab::Tasks, "ak.tasks", "panel-tasks"),
+        for (tab, label, id) in [
+            (PanelTab::Files, t!("ak.files"), "panel-files"),
+            (PanelTab::Plan, t!("ak.plan"), "panel-plan"),
+            (PanelTab::Tasks, t!("ak.tasks"), "panel-tasks"),
         ] {
             tabs = tabs.child(
                 Button::new(id)
                     .ghost()
-                    .label(tr(key))
+                    .label(label.clone())
                     .selected(selected == tab)
-                    .accessibility_label(tr(key))
+                    .accessibility_label(label.clone())
                     .on_click(cx.listener(move |v, _, _, cx| {
                         v.shell.panel = tab;
                         v.persist_shell(cx);
@@ -42,13 +42,13 @@ impl WorkbenchView {
                             div()
                                 .text_xs()
                                 .text_color(cx.theme().muted_foreground)
-                                .child(tr("ak.working_directory")),
+                                .child(t!("chat.workingDirectory")),
                         )
                         .child(
                             state
                                 .working_directory
                                 .clone()
-                                .unwrap_or_else(|| tr("ak.no_directory")),
+                                .unwrap_or_else(|| t!("ak.no_directory")),
                         );
                 }
                 PanelTab::Plan => {
@@ -59,7 +59,7 @@ impl WorkbenchView {
                             .rev()
                             .find(|m| m.role == agentkit_protocol::generated::MessageRole::Plan)
                             .map(|m| m.content.clone())
-                            .unwrap_or_else(|| tr("ak.no_plan")),
+                            .unwrap_or_else(|| t!("ak.no_plan")),
                     );
                 }
                 PanelTab::Tasks => {
@@ -69,7 +69,7 @@ impl WorkbenchView {
                         .filter(|m| m.is_background == Some(true))
                         .collect();
                     if tasks.is_empty() {
-                        body = body.child(tr("ak.no_tasks"));
+                        body = body.child(t!("ak.no_tasks"));
                     } else {
                         for m in tasks {
                             body = body.child(
@@ -78,29 +78,29 @@ impl WorkbenchView {
                                         m.tool_display_name
                                             .clone()
                                             .or(m.tool_name.clone())
-                                            .unwrap_or_else(|| tr("ak.tasks")),
+                                            .unwrap_or_else(|| t!("ak.tasks")),
                                     )
-                                    .child(tr(match m.tool_status {
+                                    .child(match m.tool_status {
                                         Some(
                                             agentkit_protocol::generated::ToolStatus::Completed,
-                                        ) => "ak.tool_done",
+                                        ) => t!("ak.tool_done"),
                                         Some(agentkit_protocol::generated::ToolStatus::Error) => {
-                                            "ak.tool_error"
+                                            t!("common.failed")
                                         }
-                                        _ => "ak.tool_running",
-                                    })),
+                                        _ => t!("ak.tool_running"),
+                                    }),
                             );
                         }
                     }
                 }
             }
         } else {
-            body = body.child(tr("ak.loading"));
+            body = body.child(t!("ak.loading"));
         }
         v_flex()
             .id("right-context")
             .role(Role::Complementary)
-            .aria_label(tr("ak.context_panel"))
+            .aria_label(t!("ak.context_panel"))
             .size_full()
             .bg(cx.theme().background)
             .child(tabs)

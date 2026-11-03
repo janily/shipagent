@@ -7,9 +7,18 @@ mod chat;
 pub mod samples;
 mod workbench;
 pub use workbench::{WorkbenchIntent, WorkbenchView};
-/// Translate a shared application UI key using the currently selected locale.
-pub fn tr(key: &str) -> String {
-    rust_i18n::t!(key).to_string()
+/// Translate a literal application key with named parameters.
+#[macro_export]
+macro_rules! t {
+    ($key:literal $(, $name:ident = $value:expr)* $(,)?) => {
+        $crate::translate($key, &[$(stringify!($name)),*], &[$($value.to_string()),*])
+    };
+}
+/// Runtime implementation of the literal-only translation macro.
+#[doc(hidden)]
+pub fn translate(key: &str, names: &[&str], values: &[String]) -> String {
+    let text = _rust_i18n_translate(&rust_i18n::locale(), key);
+    rust_i18n::replace_patterns(&text, names, values)
 }
 /// Choose the owned UI locale (currently zh-CN or en).
 pub fn set_locale(locale: &str) {

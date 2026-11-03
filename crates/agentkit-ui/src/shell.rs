@@ -130,11 +130,11 @@ impl WorkbenchView {
                     sheet
                         .size(px(width))
                         .resizable(false)
-                        .title(tr(if sidebar {
-                            "ak.sessions"
+                        .title(if sidebar {
+                            t!("ak.sessions")
                         } else {
-                            "ak.context_panel"
-                        }))
+                            t!("ak.context_panel")
+                        })
                         .child(overlay.clone())
                         .on_close(move |_, _, cx| {
                             let _ = weak.update(cx, |v, cx| {

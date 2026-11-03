@@ -10,7 +10,7 @@ impl WorkbenchView {
             v_flex()
                 .id("startup-skeleton")
                 .role(Role::Status)
-                .aria_label(tr("ak.starting"))
+                .aria_label(t!("ak.starting"))
                 .flex_1()
                 .p_6()
                 .gap_4()
@@ -78,7 +78,7 @@ impl WorkbenchView {
                             view.child(
                                 Button::new("retry")
                                     .outline()
-                                    .label(tr("ak.retry"))
+                                    .label(t!("ak.retry"))
                                     .on_click(cx.listener(|_, _, _, cx| {
                                         cx.emit(WorkbenchIntent::Reconnect)
                                     })),

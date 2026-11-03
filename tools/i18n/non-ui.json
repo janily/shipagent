@@ -1,0 +1,8 @@
+[
+  {"file":"crates/agentkit-app/src/lib.rs","literal":"Workbench Light","reason":"Theme registry identifier, not the displayed theme name"},
+  {"file":"crates/agentkit-app/src/lib.rs","literal":"Workbench Dark","reason":"Theme registry identifier, not the displayed theme name"},
+  {"file":"crates/agentkit-app/src/lib.rs","literal":"Library/Application Support","reason":"macOS filesystem path component"},
+  {"file":"crates/agentkit-app/src/perf.rs","literal":"Read proof.txt and report its marker","reason":"Fixed benchmark user input sent to the local fixture model"},
+  {"file":"crates/agentkit-ui/src/samples.rs","literal":"README.md","reason":"Sample file name data, preserved across languages"},
+  {"file":"crates/agentkit-ui/src/workbench.rs","literal":"http://127.0.0.1:11434/v1","reason":"Initial model endpoint URL data, not UI copy"}
+]

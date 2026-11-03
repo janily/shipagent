@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ..TitleBar::window_options()
             };
             if let Err(error) = gpui_kit::open_window(options, cx, move |window, cx| {
-                window.set_window_title("ShipAgent · 组件样板");
+                window.set_window_title(&agentkit_ui::t!("ak.samples.title"));
                 let view = cx.new(|cx| ComponentSamples::new(window, cx));
                 if let Some(report) = report {
                     gpui_kit::profiler::set_trace_enabled(true);
