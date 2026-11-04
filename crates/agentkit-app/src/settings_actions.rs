@@ -4,7 +4,7 @@ use agentkit_ui::settings::{
     LocalChange, SettingsIntent,
 };
 #[path = "settings_connection.rs"]
-mod connection;
+pub(super) mod connection;
 #[path = "settings_delete.rs"]
 mod delete;
 #[path = "settings_display.rs"]
@@ -26,7 +26,7 @@ impl WorkbenchController {
             .settings()
             .update(cx, |s, cx| s.status(busy, error, notice, cx));
     }
-    fn settings_api(&self) -> Option<WorkbenchApi> {
+    pub(in crate::controller) fn settings_api(&self) -> Option<WorkbenchApi> {
         let (api, snapshot) = self.api()?.bind_connection().ok()?;
         transport_is_current(&snapshot, self.transport_epoch).then_some(api)
     }

@@ -26,7 +26,16 @@ impl WorkbenchView {
                 .min_h_0()
                 .justify_center()
                 .overflow_y_scroll()
-                .child(self.endpoint_form(cx))
+                .child(
+                    v_flex().gap_4().p_6().child(t!("ak.onboard.empty")).child(
+                        Button::new("add-model-connection")
+                            .primary()
+                            .label(t!("ak.settings.add"))
+                            .on_click(
+                                cx.listener(|v, _, window, cx| v.show_configuration(window, cx)),
+                            ),
+                    ),
+                )
                 .into_any_element()
         } else {
             self.chat_body(window, cx)

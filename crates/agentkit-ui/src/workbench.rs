@@ -7,16 +7,16 @@ use agentkit_store::entities::{AppState, SessionListStore, SessionStore, Workspa
 use gpui_kit::component::resizable::ResizableState;
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
-    input::{Input, InputState},
     message_scroller::MessageScrollerState,
     *,
 };
 use gpui_kit::{prelude::*, *};
-use secrecy::SecretString;
 
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Native first-run setup gesture.
+    Onboarding(crate::onboarding::OnboardingIntent),
     /// Native settings operation.
     Settings(crate::settings::SettingsIntent),
     /// Session/workspace navigation bound to stable identities.
@@ -64,15 +64,6 @@ pub enum WorkbenchIntent {
         /// User requested a session-wide grant.
         always: bool,
     },
-    /// Save a user-entered compatible endpoint.
-    Configure {
-        /// OpenAI-compatible API root.
-        base_url: String,
-        /// User-entered model identifier.
-        model: String,
-        /// Memory-only credential handed to the backend.
-        credential: Option<SecretString>,
-    },
     /// Retry backend startup or connection after failure.
     Reconnect,
     /// Persist a user shell layout change locally.
@@ -83,6 +74,8 @@ pub enum WorkbenchIntent {
 /// Native application shell hosting the canonical conversation components.
 pub struct WorkbenchView {
     pub(crate) font_size: u8,
+    pub(crate) onboarding_view: Option<Entity<crate::onboarding::OnboardingView>>,
+    onboarding_subscription: Option<Subscription>,
     pub(crate) settings_view: Entity<crate::settings::SettingsView>,
     pub(crate) settings_open: bool,
     settings_previous_focus: Option<FocusHandle>,
@@ -108,11 +101,7 @@ pub struct WorkbenchView {
     pub(crate) chat: Entity<ChatView>,
     pub(crate) setup: bool,
     pub(crate) submitting: bool,
-    configuring: bool,
     pub(crate) permission_prompt: Entity<crate::permissions::PermissionPrompt>,
-    base_url: Entity<InputState>,
-    model_id: Entity<InputState>,
-    api_key: Entity<InputState>,
     _subscriptions: Vec<Subscription>,
     session_subscriptions: Vec<Subscription>,
     list_subscription: Option<Subscription>,
@@ -152,6 +141,8 @@ impl WorkbenchView {
             cx.emit(WorkbenchIntent::Chat(intent.clone()))
         });
         Self {
+            onboarding_view: None,
+            onboarding_subscription: None,
             settings_view,
             font_size: 14,
             settings_open: false,
@@ -178,12 +169,7 @@ impl WorkbenchView {
             chat,
             setup: false,
             submitting: false,
-            configuring: false,
             permission_prompt,
-            base_url: cx
-                .new(|cx| InputState::new(window, cx).placeholder("http://127.0.0.1:11434/v1")),
-            model_id: cx.new(|cx| InputState::new(window, cx)),
-            api_key: cx.new(|cx| InputState::new(window, cx).masked(true)),
             _subscriptions: vec![
                 settings_subscription,
                 sidebar_sub,
@@ -200,6 +186,9 @@ impl WorkbenchView {
     }
     /// Show the existing local model connection form without changing drafts.
     pub fn show_configuration(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.onboarding_view.is_some() {
+            return;
+        }
         self.save_draft(cx);
         self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
         self.sidebar_sheet = false;
@@ -350,10 +339,7 @@ impl WorkbenchView {
             .push(cx.observe(&store, |_, _, cx| {
                 cx.notify();
             }));
-        if self.setup {
-            self.base_url
-                .update(cx, |input, cx| input.focus(window, cx));
-        } else if !self.sidebar_view.read(cx).focused(window, cx) {
+        if !self.setup && !self.sidebar_view.read(cx).focused(window, cx) {
             self.composer
                 .read(cx)
                 .input()
@@ -434,26 +420,10 @@ impl WorkbenchView {
         }
         cx.notify();
     }
-    /// Clear the credential field once connection setup finishes successfully.
-    pub fn configuration_finished(
-        &mut self,
-        success: bool,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.configuring = false;
-        if success {
-            self.api_key
-                .update(cx, |input, cx| input.set_value("", window, cx));
-            self.setup = false;
-        }
-        cx.notify();
-    }
-    /// Present a recoverable operation or transport error without discarding history.
+    /// Present a lifecycle or operation failure.
     pub fn show_error(&mut self, error: String, disconnected: bool, cx: &mut Context<Self>) {
         self.error = Some(error);
         self.submitting = false;
-        self.configuring = false;
         self.loading = false;
         if disconnected {
             self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
@@ -487,77 +457,36 @@ impl WorkbenchView {
     pub fn selection_finished(&mut self, cx: &mut Context<Self>) {
         self.composer.update(cx, |c, cx| c.selection_finished(cx));
     }
-    fn endpoint_form(&self, cx: &mut Context<Self>) -> AnyElement {
-        v_flex()
-            .w_full()
-            .max_w(px(620.))
-            .gap_4()
-            .p_6()
-            .child(div().text_lg().font_semibold().child(t!("ak.settings")))
-            .child(
-                div()
-                    .text_color(cx.theme().muted_foreground)
-                    .child(t!("ak.setup_hint")),
-            )
-            .child(t!("ak.url"))
-            .child(
-                Input::new(&self.base_url)
-                    .id("endpoint-url")
-                    .aria_label(t!("ak.url")),
-            )
-            .child(t!("ak.model"))
-            .child(
-                Input::new(&self.model_id)
-                    .id("endpoint-model")
-                    .aria_label(t!("ak.model")),
-            )
-            .child(t!("ak.key"))
-            .child(
-                Input::new(&self.api_key)
-                    .id("endpoint-key")
-                    .aria_label(t!("ak.key")),
-            )
-            .child(
-                Button::new("save-endpoint")
-                    .primary()
-                    .label(t!("ak.save"))
-                    .disabled(!self.ready || self.configuring)
-                    .on_click(cx.listener(|this, _, _, cx| {
-                        let url = this.base_url.read(cx).value().to_string();
-                        let model = this.model_id.read(cx).value().to_string();
-                        let key = this.api_key.read(cx).value().to_string();
-                        if url.trim().is_empty() || model.trim().is_empty() {
-                            return;
-                        }
-                        this.configuring = true;
-                        cx.emit(WorkbenchIntent::Configure {
-                            base_url: url,
-                            model,
-                            credential: if key.is_empty() {
-                                None
-                            } else {
-                                Some(key.into())
-                            },
-                        });
-                        cx.notify();
-                    })),
-            )
-            .when(self.model.is_some(), |view| {
-                view.child(
-                    Button::new("back-chat")
-                        .ghost()
-                        .label(t!("ak.back"))
-                        .on_click(cx.listener(|this, _, _, cx| {
-                            this.setup = false;
-                            cx.notify();
-                        })),
-                )
-            })
-            .into_any_element()
-    }
 }
 impl Render for WorkbenchView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.render_shell(window, cx)
+    }
+}
+
+impl WorkbenchView {
+    /// Show a full-window wizard and forward only semantic gestures.
+    pub fn show_onboarding(&mut self, cx: &mut Context<Self>) {
+        let view = cx.new(crate::onboarding::OnboardingView::new);
+        self.onboarding_subscription = Some(cx.subscribe(&view, |_, _, intent, cx| {
+            cx.emit(WorkbenchIntent::Onboarding(intent.clone()))
+        }));
+        self.onboarding_view = Some(view);
+        cx.notify();
+    }
+    /// Access the active wizard, if any.
+    pub fn onboarding(&self) -> Option<Entity<crate::onboarding::OnboardingView>> {
+        self.onboarding_view.clone()
+    }
+    /// Drop wizard state and focus the first conversation input.
+    pub fn close_onboarding(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.onboarding_view = None;
+        self.onboarding_subscription = None;
+        self.composer
+            .read(cx)
+            .input()
+            .clone()
+            .update(cx, |s, cx| s.focus(window, cx));
+        cx.notify();
     }
 }

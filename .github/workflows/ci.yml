@@ -130,6 +130,9 @@ jobs:
       - run: cargo test -p agentkit-sidecar --test settings --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
+      - run: cargo test -p agentkit-sidecar --test onboarding --locked -- --ignored
+        env:
+          AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
       - name: Record and replay all14 real backend fixtures
         run: cargo xtask fixtures record all
         env:

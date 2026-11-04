@@ -13,6 +13,37 @@ impl WorkbenchView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        if let Some(onboarding) = self.onboarding_view.clone() {
+            return v_flex()
+                .size_full()
+                .bg(cx.theme().background)
+                .text_color(cx.theme().foreground)
+                .child(
+                    TitleBar::new()
+                        .h_10()
+                        .child(div().flex_1().text_center().child(t!("ak.onboard.welcome"))),
+                )
+                .when_some(self.error.clone(), |v, e| {
+                    v.child(
+                        div()
+                            .id("onboarding-runtime-error")
+                            .role(Role::Alert)
+                            .text_color(cx.theme().danger)
+                            .child(e),
+                    )
+                })
+                .when(!self.ready, |v| {
+                    v.child(
+                        Button::new("onboarding-reconnect")
+                            .label(t!("ak.retry"))
+                            .on_click(
+                                cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::Reconnect)),
+                            ),
+                    )
+                })
+                .child(div().flex_1().min_h_0().child(onboarding))
+                .into_any_element();
+        }
         if self.settings_open {
             return v_flex()
                 .size_full()

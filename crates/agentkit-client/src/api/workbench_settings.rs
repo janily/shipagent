@@ -4,6 +4,11 @@ use super::super::{
 };
 use super::*;
 impl WorkbenchApi {
+    /// Persist a first-run deferral without saving credentials.
+    pub async fn defer_setup(&self) -> Result<(), RpcError> {
+        self.client.oauth().defer_setup().await.map(|_| ())
+    }
+
     /// Safe provider presets; no credential retrieval is exposed.
     pub async fn connection_providers(&self) -> Result<Vec<Provider>, RpcError> {
         self.client.connections().api_key_providers().await

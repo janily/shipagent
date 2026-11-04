@@ -36,6 +36,10 @@ impl Geometry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Preferences {
+    /// Backend browser default was successfully initialized for this profile.
+    pub browser_initialized: bool,
+    /// Backend acknowledged first-run setup deferral.
+    pub onboarding_deferred: bool,
     /// File schema version.
     pub version: u32,
     /// Client appearance, never a backend theme channel.
@@ -64,6 +68,8 @@ pub struct Preferences {
 impl Default for Preferences {
     fn default() -> Self {
         Self {
+            browser_initialized: false,
+            onboarding_deferred: false,
             version: 1,
             appearance: Appearance::Light,
             font_size: 14,
@@ -308,5 +314,24 @@ mod geometry_tests {
         assert!(!g.title_visible_on(0., 0., 1440., 900.));
         g.x = -300.;
         assert!(g.title_visible_on(0., 0., 1440., 900.));
+    }
+}
+
+#[cfg(test)]
+mod onboarding_tests {
+    #![allow(clippy::unwrap_used)]
+    use super::*;
+    #[test]
+    fn legacy_preferences_start_uninitialized_and_acknowledgements_round_trip() {
+        let old: Preferences = serde_json::from_str(r#"{"version":1,"language":"en"}"#).unwrap();
+        assert!(!old.browser_initialized && !old.onboarding_deferred);
+        let updated = Preferences {
+            browser_initialized: true,
+            onboarding_deferred: true,
+            ..old
+        };
+        let restored: Preferences =
+            serde_json::from_slice(&serde_json::to_vec(&updated).unwrap()).unwrap();
+        assert!(restored.browser_initialized && restored.onboarding_deferred);
     }
 }

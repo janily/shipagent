@@ -142,3 +142,15 @@ node tools/settings/smoke.mjs target/debug/workbench target/backend/linux-x64 ta
 ```
 
 最后一项需 Linux X11、xdotool、Python Pillow 和 1440×900 测试桌面，报告必须不存在。它使用全新临时配置和本地模型、清理所属进程，不访问用户凭据。真实模型测试需要 SDK 可写用户会话目录，受限云环境的只读 homedir 不能作为探测成功证据。验证边界见 [报告](verification-settings-2026-11-04.md)。
+
+## 首次启动引导（T-1-18）
+
+无认证连接时自动进入四步引导，测试成功后才可保存、设默认并开始会话。第 2 步可稍后设置，延期经后端回执后持久化；无模型时显示添加连接空态。订阅登录仍归后续任务。
+
+```sh
+cargo test -p agentkit-ui --features samples --test onboarding --locked
+AGENTKIT_BACKEND_DIR="$PWD/target/backend/linux-x64" cargo test -p agentkit-sidecar --test onboarding --locked -- --ignored
+node tools/onboarding/smoke.mjs target/debug/workbench target/backend/linux-x64 target/onboarding-light.json light
+```
+
+最后一项需要 Linux 1440×900 X11/Vulkan、xdotool、Python Pillow。报告必须不存在；使用全新隔离配置并监督清理进程，检查延期和重启，不访问用户凭据。真实模型探测需要 SDK 可写用户目录，本地受限环境的只读目录不作为模型可用证据。详见 [验证报告](verification-onboarding-2026-11-04.md)。

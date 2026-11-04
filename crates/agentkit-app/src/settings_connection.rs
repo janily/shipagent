@@ -1,7 +1,7 @@
 use super::*;
 use agentkit_client::api::secrets::{ConnectionSetup, TestConnectionParams};
 use agentkit_protocol::generated as g;
-pub(super) fn connection_record(
+pub(in crate::controller) fn connection_record(
     values: &ConnectionValues,
     existing: Option<&g::LlmConnectionWithStatus>,
 ) -> Result<g::LlmConnection> {
@@ -96,7 +96,10 @@ pub(super) fn connection_record(
     }
     Ok(record)
 }
-pub(super) fn setup(values: &ConnectionValues, record: &g::LlmConnection) -> ConnectionSetup {
+pub(in crate::controller) fn setup(
+    values: &ConnectionValues,
+    record: &g::LlmConnection,
+) -> ConnectionSetup {
     ConnectionSetup {
         slug: values.slug.clone(),
         credential: values.credential.clone(),
@@ -110,7 +113,7 @@ pub(super) fn setup(values: &ConnectionValues, record: &g::LlmConnection) -> Con
         ..Default::default()
     }
 }
-pub(super) fn test_params(
+pub(in crate::controller) fn test_params(
     values: &ConnectionValues,
     record: &g::LlmConnection,
 ) -> TestConnectionParams {

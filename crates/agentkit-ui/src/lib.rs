@@ -4,6 +4,8 @@ rust_i18n::i18n!("locales", fallback = "en");
 mod chat;
 /// Native session composer and safe model catalog.
 pub mod composer;
+/// Native first-run setup flow.
+pub mod onboarding;
 /// Native approval queue, focus and acknowledged conversation notices.
 pub mod permissions;
 /// Isolated, memory-only Kit component examples; enable with `samples`.
