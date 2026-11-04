@@ -34,6 +34,10 @@ pub fn translate(key: &str, names: &[&str], values: &[String]) -> String {
 }
 /// Choose the owned UI locale (currently zh-CN or en).
 pub fn set_locale(locale: &str) {
+    // The generated backend initializes the global default locale on first access.
+    // Finish that initialization before choosing the user locale, including when
+    // another thread is translating a validation error during startup.
+    let _ = _rust_i18n_backend();
     rust_i18n::set_locale(if locale.starts_with("zh") {
         "zh-CN"
     } else {
