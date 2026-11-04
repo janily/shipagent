@@ -187,12 +187,14 @@ fn outgoing_invalid_binary_is_rejected_before_transmission() {
 #[test]
 fn disconnected_capability_is_cancelled_and_cannot_reply_on_new_socket() {
     use std::sync::atomic::{AtomicBool, Ordering};
-    struct Cancelled(Arc<AtomicBool>);
+    struct Cancelled(Arc<AtomicBool>, async_channel::Sender<()>);
     impl Drop for Cancelled {
         fn drop(&mut self) {
             self.0.store(true, Ordering::SeqCst);
+            let _ = self.1.try_send(());
         }
     }
+    let (cancelled_tx, cancelled_rx) = async_channel::bounded(1);
     let cancelled = Arc::new(AtomicBool::new(false));
     let mark = cancelled.clone();
     let (urls, recv) = std::sync::mpsc::channel();
@@ -240,9 +242,10 @@ fn disconnected_capability_is_cancelled_and_cannot_reply_on_new_socket() {
         Arc::new(move |_| {
             let wait = wait.clone();
             let mark = mark.clone();
+            let cancelled_tx = cancelled_tx.clone();
             let started = started.clone();
             Box::pin(async move {
-                let _guard = Cancelled(mark);
+                let _guard = Cancelled(mark, cancelled_tx);
                 started.send(()).await.unwrap();
                 let _ = wait.recv().await;
                 Ok(RpcValue::Null)
@@ -255,6 +258,9 @@ fn disconnected_capability_is_cancelled_and_cannot_reply_on_new_socket() {
         bounded(starting.recv()).await.unwrap().unwrap();
         assert!(client.invoke::<Value>("drop", vec![]).await.is_err());
         bounded(recovery.recv()).await.unwrap().unwrap();
+        // Task drop schedules cancellation; reconnect can win the executor wake-up race.
+        // Wait for the old handler destructor, then still prove no reply reaches the new socket.
+        bounded(cancelled_rx.recv()).await.unwrap().unwrap();
         assert!(cancelled.load(Ordering::SeqCst));
         let _ = release.try_send(());
         assert!(client.invoke::<bool>("echo", vec![]).await.unwrap());
