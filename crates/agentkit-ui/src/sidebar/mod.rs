@@ -80,6 +80,14 @@ impl SessionSidebar {
     pub fn focused(&self, window: &Window, cx: &App) -> bool {
         self.focus.contains_focused(window, cx)
     }
+    /// Refresh cached input copy after a live locale change.
+    pub fn localize(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.search.update(cx, |s, cx| {
+            s.set_placeholder(t!("ak.nav.search"), window, cx)
+        });
+        self.workspace.update(cx, |_, cx| cx.notify());
+        cx.notify();
+    }
     /// Attach the canonical list once; rebuild metadata only when summaries change.
     pub fn bind_list(&mut self, list: Entity<SessionListStore>, cx: &mut Context<Self>) {
         if self

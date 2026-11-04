@@ -17,6 +17,8 @@ use secrecy::SecretString;
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Native settings operation.
+    Settings(crate::settings::SettingsIntent),
     /// Session/workspace navigation bound to stable identities.
     Sidebar(crate::sidebar::SidebarIntent),
     /// Select an authenticated connection and model for this session.
@@ -80,6 +82,10 @@ pub enum WorkbenchIntent {
 }
 /// Native application shell hosting the canonical conversation components.
 pub struct WorkbenchView {
+    pub(crate) font_size: u8,
+    pub(crate) settings_view: Entity<crate::settings::SettingsView>,
+    pub(crate) settings_open: bool,
+    settings_previous_focus: Option<FocusHandle>,
     pub(crate) sidebar_view: Entity<crate::sidebar::SessionSidebar>,
     pub(crate) app_name: SharedString,
     shell: ShellPreferences,
@@ -118,6 +124,10 @@ impl EventEmitter<WorkbenchIntent> for WorkbenchView {}
 impl WorkbenchView {
     /// Construct the window immediately, while backend startup happens asynchronously.
     pub fn new(app_name: SharedString, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let settings_view = cx.new(crate::settings::SettingsView::new);
+        let settings_subscription = cx.subscribe(&settings_view, |_, _, intent, cx| {
+            cx.emit(WorkbenchIntent::Settings(intent.clone()))
+        });
         let sidebar_view = cx.new(|cx| crate::sidebar::SessionSidebar::new(window, cx));
         let sidebar_sub = cx.subscribe(&sidebar_view, |_, _, intent, cx| {
             cx.emit(WorkbenchIntent::Sidebar(intent.clone()))
@@ -142,6 +152,10 @@ impl WorkbenchView {
             cx.emit(WorkbenchIntent::Chat(intent.clone()))
         });
         Self {
+            settings_view,
+            font_size: 14,
+            settings_open: false,
+            settings_previous_focus: None,
             sidebar_view,
             app_name,
             shell: ShellPreferences::default(),
@@ -171,6 +185,7 @@ impl WorkbenchView {
             model_id: cx.new(|cx| InputState::new(window, cx)),
             api_key: cx.new(|cx| InputState::new(window, cx).masked(true)),
             _subscriptions: vec![
+                settings_subscription,
                 sidebar_sub,
                 input_subscription,
                 chat_subscription,
@@ -185,11 +200,54 @@ impl WorkbenchView {
     }
     /// Show the existing local model connection form without changing drafts.
     pub fn show_configuration(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.save_draft(cx);
         self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
-        self.setup = true;
-        self.base_url
-            .update(cx, |input, cx| input.focus(window, cx));
+        self.sidebar_sheet = false;
+        if self.sheet_kind.take().is_some() {
+            window.close_sheet(cx);
+        }
+        if !self.settings_open {
+            self.settings_previous_focus = window.focused(cx);
+        }
+        self.settings_open = true;
+        let settings = self.settings_view.clone();
+        window.defer(cx, move |window, cx| {
+            settings.update(cx, |s, cx| s.focus(window, cx))
+        });
+        cx.emit(WorkbenchIntent::Settings(
+            crate::settings::SettingsIntent::Reload,
+        ));
         cx.notify();
+    }
+    /// Return to the retained canonical conversation and its draft.
+    pub fn close_settings(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.settings_open = false;
+        if let Some(focus) = self.settings_previous_focus.take() {
+            focus.focus(window, cx);
+        }
+        cx.notify();
+    }
+    /// Apply instance-owned display settings to retained conversation views.
+    pub fn set_display(&mut self, font: u8, fade: bool, cx: &mut Context<Self>) {
+        self.font_size = font;
+        self.chat.update(cx, |c, cx| c.set_stream_fade(fade, cx));
+        let count = self.scroll.read(cx).item_count();
+        self.scroll
+            .update(cx, |s, cx| s.remeasure_items(0..count, cx));
+        cx.notify();
+    }
+    /// Refresh controls that retain translated input placeholders.
+    pub fn localize(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.sidebar_view.update(cx, |s, cx| s.localize(window, cx));
+        cx.notify();
+    }
+    /// Controller access to the native settings Entity.
+    pub fn settings(&self) -> Entity<crate::settings::SettingsView> {
+        self.settings_view.clone()
+    }
+    /// Whether the settings replacement page is visible.
+    pub fn settings_visible(&self) -> bool {
+        self.settings_open
     }
     /// Apply actual bootstrap results; no simulated connected state is used by the app.
     pub fn connected(&mut self, workspace: String, model: Option<String>, cx: &mut Context<Self>) {
@@ -232,11 +290,19 @@ impl WorkbenchView {
     ) {
         self.context_subscriptions.clear();
         self.app_state = Some(app.clone());
+        self.settings_view
+            .update(cx, |s, cx| s.bind(app.clone(), cx));
         self.workspace_state = Some(workspace.clone());
         self.sidebar_view
             .update(cx, |s, cx| s.bind_workspace(workspace.clone(), cx));
         self.context_subscriptions
-            .push(cx.observe(&app, |_, _, cx| cx.notify()));
+            .push(cx.observe(&app, |this, app, cx| {
+                let catalog = &app.read(cx).connections;
+                let (model, _) = crate::composer::resolved_model(catalog, None, None);
+                this.model = model;
+                this.setup = this.model.is_none();
+                cx.notify();
+            }));
         self.context_subscriptions
             .push(cx.observe(&workspace, |this, workspace, cx| {
                 this.workspace = workspace.read(cx).name.clone().into();

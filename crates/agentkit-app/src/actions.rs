@@ -10,6 +10,8 @@ gpui_kit::actions!(
         ToggleRightPanel,
         /// Hide or restore side regions.
         ToggleFocusMode,
+        /// Open native model, appearance and language settings.
+        OpenSettings,
         /// Create a conversation through the existing controller.
         NewChat,
         /// Cancel the active session turn when no dialog/sheet consumes Escape.

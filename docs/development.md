@@ -129,3 +129,16 @@ T-1-14 输入与会话选项见 [验证报告](verification-composer-2026-11-04.
 T-1-15 权限审批见 [验证报告](verification-permissions-2026-11-04.md)。原生专项：`cargo test -p agentkit-ui --features samples --test permissions --locked`；真实后端及原生窗口命令见 [审批验证工具](../tools/permissions/README.md)。`approval_notifications` 控制本地后台审批提醒；完整通知设置按 T-2-15 推进。
 
 T-1-16 原生侧栏与工作区切换见 [验证报告](verification-sidebar-2026-11-04.md)。专项命令与千条真实会话窗口工具见 [导航验证](../tools/sidebar/README.md)；默认不包含正文搜索、视图筛选或多窗口操作。
+
+## 原生设置（T-1-17）
+
+Ctrl/Cmd+, 或工作台设置按钮打开通用/外观/模型页；本地偏好立即保存，连接表单显式保存。现有密钥只提供替换入口，不读取明文。OAuth 连接的检查只验证已保存认证，登录归后续任务。
+
+```sh
+cargo test -p agentkit-ui --features samples --test settings --locked
+AGENTKIT_BACKEND_DIR="$PWD/target/backend/linux-x64" cargo test -p agentkit-sidecar --test settings --locked -- --ignored
+cargo build -p agentkit-sidecar --example settings-fixture --locked
+node tools/settings/smoke.mjs target/debug/workbench target/backend/linux-x64 target/debug/examples/settings-fixture target/settings-light.json light
+```
+
+最后一项需 Linux X11、xdotool、Python Pillow 和 1440×900 测试桌面，报告必须不存在。它使用全新临时配置和本地模型、清理所属进程，不访问用户凭据。真实模型测试需要 SDK 可写用户会话目录，受限云环境的只读 homedir 不能作为探测成功证据。验证边界见 [报告](verification-settings-2026-11-04.md)。

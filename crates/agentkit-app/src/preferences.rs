@@ -1,5 +1,6 @@
 //! Client-owned preferences; no credentials or transcript content belongs here.
 use agentkit_ui::layout::ShellPreferences;
+pub use agentkit_ui::settings::Appearance;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::{
@@ -8,18 +9,6 @@ use std::{
     rc::Rc,
     time::Duration,
 };
-/// Client-owned appearance preference.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Appearance {
-    /// Follow desktop appearance.
-    System,
-    /// Explicit light appearance.
-    #[default]
-    Light,
-    /// Explicit dark appearance.
-    Dark,
-}
 /// Restorable window geometry in logical desktop pixels.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Geometry {
@@ -51,6 +40,10 @@ pub struct Preferences {
     pub version: u32,
     /// Client appearance, never a backend theme channel.
     pub appearance: Appearance,
+    /// Body font size in logical pixels.
+    pub font_size: u8,
+    /// Animate newly streamed text.
+    pub stream_fade: bool,
     /// Owned locale: zh-CN or en.
     pub language: String,
     /// Client-owned Enter or Cmd/Ctrl+Enter send preference.
@@ -73,6 +66,8 @@ impl Default for Preferences {
         Self {
             version: 1,
             appearance: Appearance::Light,
+            font_size: 14,
+            stream_fade: true,
             language: "zh-CN".into(),
             send_key: Default::default(),
             approval_notifications: true,
@@ -89,6 +84,7 @@ impl Preferences {
     pub fn validate(&mut self) {
         self.version = 1;
         self.shell.validate();
+        self.font_size = self.font_size.clamp(12, 16);
         if self.language != "en" && self.language != "zh-CN" {
             self.language = "zh-CN".into();
         }

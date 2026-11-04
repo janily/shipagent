@@ -13,6 +13,26 @@ impl WorkbenchView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        if self.settings_open {
+            return v_flex()
+                .size_full()
+                .bg(cx.theme().background)
+                .text_color(cx.theme().foreground)
+                .child(
+                    TitleBar::new()
+                        .h_10()
+                        .child(div().flex_1().text_center().child(t!("ak.settings"))),
+                )
+                .when(!self.preferences_writable, |v| {
+                    v.child(
+                        div()
+                            .text_color(cx.theme().danger)
+                            .child(t!("ak.prefs_readonly")),
+                    )
+                })
+                .child(div().flex_1().min_h_0().child(self.settings_view.clone()))
+                .into_any_element();
+        }
         let width = f32::from(window.bounds().size.width);
         let left = self.shell.sidebar_visible(width);
         let right = self.shell.right_visible() && !self.shell.right_is_sheet(width);
@@ -70,7 +90,7 @@ impl WorkbenchView {
             .size_full()
             .bg(cx.theme().background)
             .text_color(cx.theme().foreground)
-            .text_size(px(14.))
+            .text_size(px(self.font_size as f32))
             .child(
                 TitleBar::new().h_10().child(
                     h_flex()

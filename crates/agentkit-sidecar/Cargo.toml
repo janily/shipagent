@@ -35,3 +35,7 @@ command-group = "=5.0.1"
 [[example]]
 name = "navigation-fixture"
 path = "../../tools/sidebar/seed.rs"
+
+[[example]]
+name = "settings-fixture"
+path = "../../tools/settings/seed.rs"
