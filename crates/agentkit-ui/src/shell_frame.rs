@@ -20,6 +20,10 @@ impl WorkbenchView {
                 .text_color(cx.theme().foreground)
                 .child(
                     TitleBar::new()
+                        .on_close_window(cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::Quit)))
+                        .when_some(self.menu_bar.clone(), |title, menu| {
+                            title.child(div().w(px(300.)).h_full().child(menu))
+                        })
                         .h_10()
                         .child(div().flex_1().text_center().child(t!("ak.onboard.welcome"))),
                 )
@@ -51,6 +55,10 @@ impl WorkbenchView {
                 .text_color(cx.theme().foreground)
                 .child(
                     TitleBar::new()
+                        .on_close_window(cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::Quit)))
+                        .when_some(self.menu_bar.clone(), |title, menu| {
+                            title.child(div().w(px(300.)).h_full().child(menu))
+                        })
                         .h_10()
                         .child(div().flex_1().text_center().child(t!("ak.settings"))),
                 )
@@ -123,49 +131,55 @@ impl WorkbenchView {
             .text_color(cx.theme().foreground)
             .text_size(px(self.font_size as f32))
             .child(
-                TitleBar::new().h_10().child(
-                    h_flex()
-                        .flex_1()
-                        .items_center()
-                        .gap_2()
-                        .child(
-                            Button::new("toggle-sidebar")
-                                .ghost()
-                                .icon(IconName::PanelLeft)
-                                .accessibility_label(t!("ak.toggle_sidebar"))
-                                .on_click(
-                                    cx.listener(|v, _, window, cx| v.toggle_sidebar(window, cx)),
-                                ),
-                        )
-                        .child(
-                            div()
-                                .flex_1()
-                                .text_center()
-                                .text_sm()
-                                .text_color(cx.theme().muted_foreground)
-                                .child(format!("{} — {}", self.app_name, self.workspace)),
-                        )
-                        .child(
-                            Button::new("toggle-focus")
-                                .ghost()
-                                .label(t!("ak.focus_mode"))
-                                .accessibility_label(t!("ak.focus_mode"))
-                                .on_click(
-                                    cx.listener(|v, _, window, cx| v.toggle_focus_mode(window, cx)),
-                                ),
-                        )
-                        .child(
-                            Button::new("toggle-right-panel")
-                                .ghost()
-                                .icon(IconName::PanelRight)
-                                .accessibility_label(t!("ak.context_panel"))
-                                .on_click(
-                                    cx.listener(|v, _, window, cx| {
+                TitleBar::new()
+                    .on_close_window(cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::Quit)))
+                    .when_some(self.menu_bar.clone(), |title, menu| {
+                        title.child(div().w(px(300.)).h_full().child(menu))
+                    })
+                    .h_10()
+                    .child(
+                        h_flex()
+                            .flex_1()
+                            .items_center()
+                            .gap_2()
+                            .child(
+                                Button::new("toggle-sidebar")
+                                    .ghost()
+                                    .icon(IconName::PanelLeft)
+                                    .accessibility_label(t!("ak.toggle_sidebar"))
+                                    .on_click(
+                                        cx.listener(|v, _, window, cx| {
+                                            v.toggle_sidebar(window, cx)
+                                        }),
+                                    ),
+                            )
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .text_center()
+                                    .text_sm()
+                                    .text_color(cx.theme().muted_foreground)
+                                    .child(format!("{} — {}", self.app_name, self.workspace)),
+                            )
+                            .child(
+                                Button::new("toggle-focus")
+                                    .ghost()
+                                    .label(t!("ak.focus_mode"))
+                                    .accessibility_label(t!("ak.focus_mode"))
+                                    .on_click(cx.listener(|v, _, window, cx| {
+                                        v.toggle_focus_mode(window, cx)
+                                    })),
+                            )
+                            .child(
+                                Button::new("toggle-right-panel")
+                                    .ghost()
+                                    .icon(IconName::PanelRight)
+                                    .accessibility_label(t!("ak.context_panel"))
+                                    .on_click(cx.listener(|v, _, window, cx| {
                                         v.toggle_right_panel(window, cx)
-                                    }),
-                                ),
-                        ),
-                ),
+                                    })),
+                            ),
+                    ),
             )
             .child(div().flex_1().min_h_0().child(columns))
             .child(

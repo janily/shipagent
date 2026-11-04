@@ -45,6 +45,13 @@ impl WorkbenchController {
             self.local_setting(change, window, cx);
             return;
         }
+        if matches!(
+            action,
+            SettingsIntent::OpenKeymap | SettingsIntent::ReloadKeymap
+        ) {
+            self.keymap_file(matches!(action, SettingsIntent::ReloadKeymap), cx);
+            return;
+        }
         if self.settings_pending {
             return;
         }
@@ -134,7 +141,10 @@ impl WorkbenchController {
                         });
                     }));
             }
-            SettingsIntent::Back | SettingsIntent::Local(_) => {}
+            SettingsIntent::Back
+            | SettingsIntent::Local(_)
+            | SettingsIntent::OpenKeymap
+            | SettingsIntent::ReloadKeymap => {}
         }
     }
 }

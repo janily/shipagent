@@ -3,7 +3,10 @@
 /// Central native application shell actions.
 pub mod actions;
 mod controller;
+mod exit;
+mod history;
 mod keymap;
+mod menus;
 use actions::Quit;
 use preferences::{Appearance, Geometry, PreferenceStore, Preferences};
 /// Profile-scoped frontend single-instance negotiation.
@@ -76,6 +79,8 @@ pub fn run(brand_toml: &str) -> Result<()> {
             PreferenceStore::readonly(defaults)
         }
     };
+    let keymap_path = directory.join("keymap.json");
+    let keymap_source = keymap::read(&keymap_path);
     let focus = instance.focus.clone();
     let _instance = instance;
     let runtime: controller::RuntimeSlot = Rc::new(RefCell::new(None));
@@ -87,13 +92,16 @@ pub fn run(brand_toml: &str) -> Result<()> {
         .run(move |cx| {
             gpui_kit::init(cx);
             let capabilities = agentkit_capabilities::client_caps::NativeCapabilities::install(cx);
-            keymap::bind(cx);
+            cx.set_global(exit::ExitState::default());
             let quitting = Rc::new(Cell::new(false));
             let action_runtime = runtime.clone();
             let action_startup = startup.clone();
             let action_quitting = quitting.clone();
             let action_prefs = prefs.clone();
             cx.on_action(move |_: &Quit, cx| {
+                if !exit::allow(cx) {
+                    return;
+                }
                 orderly_quit(
                     &action_runtime,
                     &action_startup,
@@ -102,7 +110,41 @@ pub fn run(brand_toml: &str) -> Result<()> {
                     cx,
                 );
             });
+            let force_runtime = runtime.clone();
+            let force_startup = startup.clone();
+            let force_quitting = quitting.clone();
+            let force_prefs = prefs.clone();
+            cx.on_action(move |_: &actions::ConfirmedQuit, cx| {
+                orderly_quit(
+                    &force_runtime,
+                    &force_startup,
+                    &force_quitting,
+                    &force_prefs,
+                    cx,
+                )
+            });
+            cx.on_action(|_: &actions::CloseWindow, cx| cx.dispatch_action(&Quit));
+            cx.on_action(|_: &actions::Hide, cx| cx.hide());
+            cx.on_action(|_: &actions::About, cx| {
+                if let Some(w) = cx.active_window() {
+                    let _ = w.update(cx, |_, w, cx| {
+                        use gpui_kit::component::WindowExt;
+                        if !w.has_active_dialog(cx) {
+                            w.open_alert_dialog(cx, |a, _, _| {
+                                a.title(agentkit_ui::t!("ak.menu.about")).description(
+                                    agentkit_ui::t!(
+                                        "ak.menu.version_info",
+                                        version = env!("CARGO_PKG_VERSION"),
+                                        notice = include_str!("../../../NOTICE")
+                                    ),
+                                )
+                            });
+                        }
+                    });
+                }
+            });
             agentkit_ui::set_locale(&prefs.value.borrow().language);
+            let _menu = menus::init(brand.app_name.clone(), cx);
             // Reference palette lives here; views consume only Kit semantic roles.
             if ThemeRegistry::global_mut(cx)
                 .load_themes_from_str(include_str!("../theme.json"))
@@ -183,7 +225,40 @@ pub fn run(brand_toml: &str) -> Result<()> {
                     )
                 })
             }) {
-                Ok((handle, _)) => {
+                Ok((handle, controller)) => {
+                    let _ = handle.update(cx, |_, window, cx| {
+                        window.on_window_should_close(cx, |window, cx| {
+                            window.dispatch_action(Box::new(Quit), cx);
+                            false
+                        })
+                    });
+                    keymap::install(keymap_path, keymap_source, cx);
+                    let weak = controller.downgrade();
+                    cx.on_action(move |_: &actions::OpenSettings, cx| {
+                        if let Some(w) = cx.active_window() {
+                            let _ = w.update(cx, |_, w, cx| {
+                                let _ = weak.update(cx, |this, cx| this.global_command(0, w, cx));
+                            });
+                        }
+                    });
+                    let weak = controller.downgrade();
+                    cx.on_action(move |_: &actions::KeyboardShortcuts, cx| {
+                        if let Some(w) = cx.active_window() {
+                            let _ = w.update(cx, |_, w, cx| {
+                                let _ = weak.update(cx, |this, cx| this.global_command(1, w, cx));
+                            });
+                        }
+                    });
+                    let weak = controller.downgrade();
+                    cx.on_action(move |_: &actions::ToggleTheme, cx| {
+                        if let Some(w) = cx.active_window() {
+                            let _ = w.update(cx, |_, w, cx| {
+                                let _ = weak.update(cx, |this, cx| this.global_command(2, w, cx));
+                            });
+                        }
+                    });
+                    let stops = keymap::escape_stops(cx);
+                    controller.update(cx, |c, cx| c.configure_shortcuts(stops, cx));
                     cx.spawn(async move |cx| {
                         while focus.recv().await.is_ok() {
                             let _ = handle.update(cx, |_, window, cx| {

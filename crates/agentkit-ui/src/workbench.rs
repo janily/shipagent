@@ -15,6 +15,8 @@ use gpui_kit::{prelude::*, *};
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Ask the app to confirm and perform an orderly window close.
+    Quit,
     /// Native first-run setup gesture.
     Onboarding(crate::onboarding::OnboardingIntent),
     /// Native settings operation.
@@ -73,6 +75,8 @@ pub enum WorkbenchIntent {
 }
 /// Native application shell hosting the canonical conversation components.
 pub struct WorkbenchView {
+    pub(crate) center_focus: FocusHandle,
+    pub(crate) menu_bar: Option<Entity<gpui_kit::component::menu::AppMenuBar>>,
     pub(crate) font_size: u8,
     pub(crate) onboarding_view: Option<Entity<crate::onboarding::OnboardingView>>,
     onboarding_subscription: Option<Subscription>,
@@ -111,6 +115,34 @@ pub struct WorkbenchView {
 }
 impl EventEmitter<WorkbenchIntent> for WorkbenchView {}
 impl WorkbenchView {
+    /// Synchronize the composer's legacy Escape handling with effective app shortcuts.
+    pub fn set_escape_stops(&mut self, enabled: bool, cx: &mut Context<Self>) {
+        self.composer.update(cx, |c, _| c.set_escape_stops(enabled));
+    }
+    /// Share the native menu model with the Windows/Linux title bar.
+    pub fn set_menu_bar(
+        &mut self,
+        bar: Option<Entity<gpui_kit::component::menu::AppMenuBar>>,
+        cx: &mut Context<Self>,
+    ) {
+        self.menu_bar = bar;
+        cx.notify();
+    }
+    /// Route a menu mode gesture through the composer's existing transition policy.
+    pub fn cycle_mode_from_menu(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.conversation_visible() {
+            self.composer
+                .update(cx, |c, cx| c.cycle_from_menu(window, cx));
+        }
+    }
+    /// Whether conversation commands can target a visible conversation.
+    pub fn conversation_visible(&self) -> bool {
+        self.onboarding_view.is_none() && !self.settings_open
+    }
+    /// Whether first-run setup owns the window.
+    pub fn onboarding_visible(&self) -> bool {
+        self.onboarding_view.is_some()
+    }
     /// Construct the window immediately, while backend startup happens asynchronously.
     pub fn new(app_name: SharedString, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let settings_view = cx.new(crate::settings::SettingsView::new);
@@ -141,6 +173,8 @@ impl WorkbenchView {
             cx.emit(WorkbenchIntent::Chat(intent.clone()))
         });
         Self {
+            center_focus: cx.focus_handle(),
+            menu_bar: None,
             onboarding_view: None,
             onboarding_subscription: None,
             settings_view,

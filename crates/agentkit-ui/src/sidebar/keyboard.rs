@@ -1,7 +1,18 @@
 use super::*;
 gpui_kit::actions!(
     navigation,
-    [Up, Down, First, Last, Open, Rename, Delete, Clear]
+    [
+        Up,
+        Down,
+        First,
+        Last,
+        Open,
+        /// Rename the selected session after explicit input.
+        Rename,
+        /// Confirm deletion of the selected session.
+        Delete,
+        Clear
+    ]
 );
 #[derive(Default)]
 struct Bound;

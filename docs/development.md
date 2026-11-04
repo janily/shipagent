@@ -166,3 +166,15 @@ node tools/client-caps/smoke.mjs target/debug/examples/client_caps target/backen
 ```
 
 最后一项是 Linux 真实确认窗口检查，需要显示环境、Vulkan、xdotool 和 Python Pillow；输出路径必须尚不存在。macOS/Windows 路径替换及三平台契约说明见 [能力验证](verification-client-caps-2026-11-04.md)。
+
+## 原生菜单与 keymap（T-1-20）
+
+客户端数据目录中的 keymap.json 保存用户覆盖，设置的“键盘快捷键”页可打开并重新加载。默认键、固定作用域及 JSON 格式见 [menus 工具说明](../tools/menus/README.md)。macOS 使用系统菜单，Windows/Linux 使用同一菜单树的 Kit AppMenuBar。阶段2/3命令明确禁用。
+
+```sh
+cargo test -p agentkit-app --lib --features perf --locked
+cargo test -p agentkit-ui --features samples --test shell --test settings --test composer --locked
+node tools/menus/smoke.mjs target/debug/workbench target/backend/linux-x64 target/menus.json
+```
+
+最后一项需要 Linux 桌面/Vulkan/xdotool/Pillow，输出必须尚不存在。验证范围见 [菜单与快捷键验证](verification-menus-2026-11-04.md)。

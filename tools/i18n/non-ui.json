@@ -28,5 +28,10 @@
     "file": "crates/agentkit-ui/src/tools/model.rs",
     "literal": "--- a/\n+++ b/\n",
     "reason": "Unified diff header syntax after Rust format-field removal; file-side prefixes are protocol data"
+  },
+  {
+    "file": "crates/agentkit-app/src/keymap/catalog.rs",
+    "literal": "Composer > Input",
+    "reason": "GPUI focus-context predicate; not displayed product copy"
   }
 ]

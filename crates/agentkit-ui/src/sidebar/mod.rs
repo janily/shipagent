@@ -1,6 +1,8 @@
 //! Native workspace and session navigation; IO belongs to the application controller.
 mod dialog;
 mod keyboard;
+/// Scoped sidebar keyboard actions, shared with the application keymap.
+pub use keyboard::{Delete as DeleteAction, Rename as RenameAction};
 mod render;
 mod row;
 mod workspace;
@@ -74,6 +76,14 @@ impl SessionSidebar {
             scroll: VirtualListScrollHandle::new(),
             subscription: None,
             _subscriptions: vec![sub, input],
+        }
+    }
+    /// Focus search or the session list without changing selection.
+    pub fn focus_region(&self, search: bool, window: &mut Window, cx: &mut Context<Self>) {
+        if search {
+            self.search.read(cx).focus_handle(cx).focus(window, cx);
+        } else {
+            self.focus.focus(window, cx);
         }
     }
     /// Whether keyboard focus currently belongs to this navigation region.

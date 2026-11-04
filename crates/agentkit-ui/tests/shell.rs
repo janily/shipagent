@@ -254,3 +254,50 @@ fn minimum_native_size_keeps_composer_visible_and_uses_context_sheet(cx: &mut Te
     })
     .unwrap();
 }
+#[gpui_kit::test]
+fn focus_command_reveals_hidden_sidebar_and_leaves_settings(cx: &mut TestAppContext) {
+    let (w, v) = open(cx, 1440., true);
+    cx.update_window(w, |_, w, cx| {
+        v.update(cx, |v, cx| {
+            v.toggle_focus_mode(w, cx);
+            v.show_configuration(w, cx);
+        });
+        w.render_frame(cx);
+        v.update(cx, |v, cx| v.command_focus(true, true, w, cx));
+        w.render_frame(cx);
+        w.render_frame(cx);
+        assert!(!v.read(cx).settings_visible());
+        assert!(w.try_find("session-search").is_some());
+        w.input("needle", cx);
+        w.render_frame(cx);
+        assert!(w.try_find("new-session").is_some());
+    })
+    .unwrap();
+}
+gpui_kit::actions!(focus_probe, [CenterFocused]);
+#[gpui_kit::test]
+fn missing_model_focus_targets_the_rendered_conversation_region(cx: &mut TestAppContext) {
+    let (w, v) = open(cx, 1440., true);
+    let seen = Rc::new(std::cell::Cell::new(0));
+    let sink = seen.clone();
+    cx.update(|cx| {
+        cx.bind_keys([gpui_kit::KeyBinding::new(
+            "ctrl-j",
+            CenterFocused,
+            Some("Conversation"),
+        )]);
+        cx.on_action(move |_: &CenterFocused, _| sink.set(sink.get() + 1));
+    });
+    cx.update_window(w, |_, w, cx| {
+        v.update(cx, |v, cx| {
+            v.connected("W".into(), None, cx);
+            v.command_focus(false, false, w, cx);
+        });
+        w.render_frame(cx);
+        w.render_frame(cx);
+        w.press("ctrl-j", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    assert_eq!(seen.get(), 1);
+}

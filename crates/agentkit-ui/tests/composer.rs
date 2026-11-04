@@ -376,3 +376,35 @@ fn workspace_connection_and_model_override_global_startup_model(cx: &mut TestApp
     });
     assert_eq!(sent(&e), ["use workspace"]);
 }
+#[gpui_kit::test]
+fn removed_escape_shortcut_does_not_cancel_via_legacy_textinput_action(cx: &mut TestAppContext) {
+    let (w, v, s, e) = open(cx);
+    step(cx, w, |w, cx| {
+        s.update(cx, |s, cx| {
+            s.model.state.session.is_processing = true;
+            cx.notify();
+        });
+        v.update(cx, |v, cx| v.set_escape_stops(false, cx));
+        w.render_frame(cx);
+        w.click("composer", cx);
+        w.input("draft", cx);
+        w.press("escape", cx);
+    });
+    assert!(
+        !e.borrow()
+            .iter()
+            .any(|e| matches!(e, WorkbenchIntent::Cancel))
+    );
+    step(cx, w, |w, cx| {
+        v.update(cx, |v, cx| v.set_escape_stops(true, cx));
+        w.render_frame(cx);
+        w.press("escape", cx);
+    });
+    assert_eq!(
+        e.borrow()
+            .iter()
+            .filter(|e| matches!(e, WorkbenchIntent::Cancel))
+            .count(),
+        1
+    );
+}

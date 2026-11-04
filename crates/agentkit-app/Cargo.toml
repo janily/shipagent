@@ -36,3 +36,6 @@ workspace = true
 [features]
 default = []
 perf = ["gpui-kit/profiler"]
+
+[dev-dependencies]
+gpui-kit = {workspace=true,features=["test-support"]}

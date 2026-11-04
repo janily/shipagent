@@ -27,7 +27,8 @@ impl Composer {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.input.read(cx).focus_handle(cx).is_focused(window)
+        if self.escape_stops
+            && self.input.read(cx).focus_handle(cx).is_focused(window)
             && !self.composing(window, cx)
             && self.session(cx).is_some_and(|s| s.is_processing)
         {
@@ -66,6 +67,11 @@ impl Composer {
 }
 
 impl Composer {
+    /// Apply a menu gesture through the same IME and session gates as Shift+Tab.
+    pub fn cycle_from_menu(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.input.read(cx).focus_handle(cx).focus(window, cx);
+        self.cycle_mode(&gpui_kit::component::input::OutdentInline, window, cx);
+    }
     pub(super) fn cycle_mode(
         &mut self,
         _: &gpui_kit::component::input::OutdentInline,

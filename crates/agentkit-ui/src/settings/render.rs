@@ -9,6 +9,7 @@ impl Render for SettingsView {
         let general = cx.weak_entity();
         let appearance = general.clone();
         let models = general.clone();
+        let shortcuts = general.clone();
         v_flex()
             .id("settings-view")
             .test_support()
@@ -53,7 +54,9 @@ impl Render for SettingsView {
                     Settings::new(("native-settings", self.locale_generation))
                         .sidebar_width(px(220.))
                         .default_selected_index(gpui_kit::component::setting::SelectIndex {
-                            page_ix: if self.locale_generation == 0 { 2 } else { 0 },
+                            page_ix: self
+                                .selected_page
+                                .unwrap_or(if self.locale_generation == 0 { 2 } else { 0 }),
                             group_ix: None,
                         })
                         .pages(vec![
@@ -84,8 +87,69 @@ impl Render for SettingsView {
                                             .unwrap_or_else(|_| div().into_any_element())
                                     }),
                                 ])]),
+                            SettingPage::new(t!("ak.menu.shortcuts")).groups(vec![
+                                SettingGroup::new().items(vec![SettingItem::render(
+                                    move |_, _, cx| {
+                                        shortcuts
+                                            .update(cx, |s, cx| s.render_shortcuts(cx))
+                                            .unwrap_or_else(|_| div().into_any_element())
+                                    },
+                                )]),
+                            ]),
                         ]),
                 ),
             )
+    }
+}
+
+impl SettingsView {
+    fn render_shortcuts(&self, cx: &mut Context<Self>) -> AnyElement {
+        v_flex()
+            .id("shortcut-list")
+            .test_support()
+            .gap_3()
+            .when(self.keymap_invalid, |v| {
+                v.child(
+                    div()
+                        .id("invalid-keymap")
+                        .test_support()
+                        .role(Role::Alert)
+                        .text_color(cx.theme().danger)
+                        .child(t!("ak.menu.invalid_keymap")),
+                )
+            })
+            .child(div().text_sm().child(t!("ak.menu.keymap_hint")))
+            .child(
+                h_flex()
+                    .gap_2()
+                    .child(
+                        Button::new("open-keymap")
+                            .label(t!("ak.menu.open_keymap"))
+                            .on_click(
+                                cx.listener(|_, _, _, cx| cx.emit(SettingsIntent::OpenKeymap)),
+                            ),
+                    )
+                    .child(
+                        Button::new("reload-keymap")
+                            .label(t!("ak.menu.reload_keymap"))
+                            .on_click(
+                                cx.listener(|_, _, _, cx| cx.emit(SettingsIntent::ReloadKeymap)),
+                            ),
+                    ),
+            )
+            .children(self.shortcuts.iter().map(|(label, key, scope)| {
+                h_flex()
+                    .gap_4()
+                    .child(div().flex_1().child(label.clone()))
+                    .child(div().font_family("monospace").child(key.clone()))
+                    .child(
+                        div()
+                            .w_40()
+                            .text_xs()
+                            .text_color(cx.theme().muted_foreground)
+                            .child(scope.clone()),
+                    )
+            }))
+            .into_any_element()
     }
 }

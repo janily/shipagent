@@ -75,6 +75,10 @@ pub enum LocalChange {
 pub enum SettingsIntent {
     /// Return to the conversation.
     Back,
+    /// Open the client-owned keymap in the operating system editor.
+    OpenKeymap,
+    /// Reload client key bindings.
+    ReloadKeymap,
     /// Load server-owned settings.
     Reload,
     /// Persist a local setting immediately.
@@ -96,6 +100,9 @@ pub enum SettingsIntent {
 }
 /// Native Settings component with client values and a safe canonical connection catalog.
 pub struct SettingsView {
+    pub(super) shortcuts: Vec<(String, String, String)>,
+    pub(super) keymap_invalid: bool,
+    pub(super) selected_page: Option<usize>,
     focus: FocusHandle,
     prefs: DisplayPreferences,
     locale_generation: usize,
@@ -113,6 +120,9 @@ impl SettingsView {
     /// Construct without fetching any data.
     pub fn new(cx: &mut Context<Self>) -> Self {
         Self {
+            shortcuts: Vec::new(),
+            keymap_invalid: false,
+            selected_page: None,
             focus: cx.focus_handle(),
             prefs: Default::default(),
             locale_generation: 0,
@@ -125,6 +135,22 @@ impl SettingsView {
             notice: None,
             _subscription: None,
         }
+    }
+    /// Supply effective keys and optionally select the shortcuts page.
+    pub fn shortcuts(
+        &mut self,
+        rows: Vec<(String, String, String)>,
+        invalid: bool,
+        select: bool,
+        cx: &mut Context<Self>,
+    ) {
+        self.shortcuts = rows;
+        self.keymap_invalid = invalid;
+        if select {
+            self.selected_page = Some(3);
+            self.locale_generation = self.locale_generation.wrapping_add(1);
+        }
+        cx.notify();
     }
     /// Move focus away from hidden conversation inputs when settings opens.
     pub fn focus(&self, window: &mut Window, cx: &mut Context<Self>) {
