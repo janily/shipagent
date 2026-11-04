@@ -60,12 +60,28 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y clang pkg-config libfontconfig1-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libasound2-dev libvulkan-dev libxcb-shape0-dev libxcb-xfixes0-dev
       - run: cargo check --workspace --all-targets --all-features --locked
-      - run: cargo test -p agentkit-ui -p agentkit-app --features agentkit-app/perf,agentkit-ui/samples --locked
+      - run: cargo test -p agentkit-ui -p agentkit-app -p agentkit-capabilities --features agentkit-app/perf,agentkit-ui/samples --locked
       - run: cargo build -p workbench --locked
       - run: cargo build -p agentkit-ui --features samples --example components --locked
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - name: Build backend for native capability contracts
+        run: cargo xtask backend build --contract
+        env:
+          AGENTKIT_USE_NPMJS: '1'
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Real reverse RPC through native capability handlers
+        run: cargo test -p agentkit-capabilities --test rpc_contract --locked -- --ignored
+        env:
+          AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
+          AGENTKIT_CONTRACT_SERVER: ${{ github.workspace }}/target/contract/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}/transport.js
       - name: Open a real native window and render a frame
         if: runner.os != 'Linux'
         run: node tools/native-smoke/run.mjs

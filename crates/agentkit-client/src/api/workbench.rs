@@ -32,12 +32,18 @@ impl WorkbenchApi {
     }
     /// Open one workspace-bound connection.
     pub fn connect(endpoint: Endpoint, workspace_id: String) -> Self {
+        Self::connect_with_capabilities(endpoint, workspace_id, Default::default())
+    }
+    /// Install native handlers before handshake; default clients advertise no capabilities.
+    pub fn connect_with_capabilities(
+        endpoint: Endpoint,
+        workspace_id: String,
+        capabilities: std::collections::BTreeMap<String, crate::CapabilityHandler>,
+    ) -> Self {
+        let mut options = ClientOptions::local(endpoint.url, endpoint.token, workspace_id);
+        options.capabilities = capabilities;
         Self {
-            client: RpcClient::connect(ClientOptions::local(
-                endpoint.url,
-                endpoint.token,
-                workspace_id,
-            )),
+            client: RpcClient::connect(options),
         }
     }
     /// Capture connection identity before deferring a user intent.

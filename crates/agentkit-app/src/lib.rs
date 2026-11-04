@@ -86,6 +86,7 @@ pub fn run(brand_toml: &str) -> Result<()> {
         .with_assets(gpui_kit::assets::Assets)
         .run(move |cx| {
             gpui_kit::init(cx);
+            let capabilities = agentkit_capabilities::client_caps::NativeCapabilities::install(cx);
             keymap::bind(cx);
             let quitting = Rc::new(Cell::new(false));
             let action_runtime = runtime.clone();
@@ -173,7 +174,10 @@ pub fn run(brand_toml: &str) -> Result<()> {
                         runtime,
                         startup,
                         quitting,
-                        prefs.clone(),
+                        controller::WindowServices {
+                            preferences: prefs.clone(),
+                            capabilities: capabilities.clone(),
+                        },
                         window,
                         cx,
                     )

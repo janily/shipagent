@@ -3,3 +3,6 @@
 
 /// Private native system notification delivery.
 pub mod notifications;
+
+/// Native reverse-RPC dispatch and validated operating-system actions.
+pub mod client_caps;
