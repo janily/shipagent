@@ -20,6 +20,7 @@ impl Render for ConnectionEditor {
                 if this.provider == a.id {
                     return;
                 }
+                this.tested = false;
                 this.generation = this.generation.wrapping_add(1);
                 this.provider = a.id.clone();
                 this.key.update(cx, |s, cx| s.set_value("", window, cx));
@@ -55,7 +56,9 @@ impl Render for ConnectionEditor {
                                     .aria_label(t!("ak.settings.name"))
                                     .disabled(self.busy),
                             )
-                            .when(!self.oauth, |v| v.child(self.kind_buttons(cx)))
+                            .when(!self.oauth && !self.onboarding, |v| {
+                                v.child(self.kind_buttons(cx))
+                            })
                             .when(self.oauth, |v| {
                                 v.child(div().text_sm().child(t!("ak.settings.oauth_existing")))
                             })
@@ -162,7 +165,7 @@ impl Render for ConnectionEditor {
                         Button::new("connection-editor-save")
                             .primary()
                             .label(t!("ak.settings.save"))
-                            .disabled(self.busy)
+                            .disabled(self.busy || (self.onboarding && !self.tested))
                             .on_click(cx.listener(|this, _, _, cx| this.submit(false, cx))),
                     ),
             )

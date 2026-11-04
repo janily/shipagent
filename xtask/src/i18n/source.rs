@@ -353,7 +353,7 @@ impl<'ast> Visit<'ast> for Audit {
                     || p.path.segments.iter().any(|s| {
                         matches!(
                             s.ident.to_string().as_str(),
-                            "Button" | "Sidebar" | "Settings" | "MessageScroller"
+                            "Button" | "Sidebar" | "Settings" | "MessageScroller" | "Stepper"
                         )
                     });
                 let labels = p.path.segments.iter().any(|s| {

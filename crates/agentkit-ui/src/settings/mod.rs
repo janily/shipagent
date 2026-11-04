@@ -181,3 +181,7 @@ impl SettingsView {
 fn emit(owner: &WeakEntity<SettingsView>, intent: SettingsIntent, cx: &mut App) {
     let _ = owner.update(cx, |_, cx| cx.emit(intent));
 }
+
+mod editor_onboarding;
+
+mod editor_submission;

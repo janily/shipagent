@@ -8,6 +8,8 @@ mod composer_actions;
 mod list_refresh;
 #[path = "navigation.rs"]
 mod navigation;
+#[path = "onboarding.rs"]
+mod onboarding;
 #[cfg(feature = "perf")]
 #[path = "perf.rs"]
 mod perf;
@@ -233,7 +235,9 @@ async fn initialize(
     };
     anyhow::ensure!(!workspaces.is_empty(), agentkit_ui::t!("ak.no_workspace"));
     let workspace = workspaces[selected].clone();
-    initial.disable_browser().await?;
+    if !preferences.browser_initialized {
+        initial.disable_browser().await?;
+    }
     let connections = initial.connections_generated().await?;
     let model = connections
         .iter()
@@ -360,6 +364,7 @@ pub(crate) struct WorkbenchController {
     chat_dialog_subscription: Option<Subscription>,
     navigation_subscription: Option<Subscription>,
     navigation_pending: bool,
+    onboarding_saved: Option<(String, f64)>,
     settings_pending: bool,
     settings_providers: Vec<(String, String)>,
     settings_editor: Option<Entity<agentkit_ui::settings::ConnectionEditor>>,
@@ -444,6 +449,7 @@ impl WorkbenchController {
             chat_dialog_subscription: None,
             navigation_subscription: None,
             navigation_pending: false,
+            onboarding_saved: None,
             settings_pending: false,
             settings_providers: Vec::new(),
             settings_editor: None,
@@ -511,10 +517,14 @@ impl WorkbenchController {
             return;
         }
         self.save_draft(cx);
+        if self.view.read(cx).onboarding().is_some() {
+            self.view.update(cx, |v, cx| v.close_onboarding(window, cx));
+        }
         self.epoch = self.epoch.wrapping_add(1);
         self.loading = false;
         self.navigation_pending = false;
         self.settings_pending = false;
+        self.onboarding_saved = None;
         if let Some(editor) = self.settings_editor.take() {
             editor.update(cx, |e, cx| e.clear_key(window, cx));
             window.close_sheet(cx);
@@ -623,6 +633,7 @@ impl WorkbenchController {
             cx.notify();
         });
         self.preferences.update(|p| {
+            p.browser_initialized = true;
             p.workspace = Some(started.workspace.id.clone());
             p.session = Some(state.read(cx).model.state.session.id.clone());
         });
@@ -633,6 +644,16 @@ impl WorkbenchController {
             view.bind_context(self.app_state.clone(), self.workspace_store.clone(), cx);
             view.bind_session(state, window, cx);
         });
+        if !self
+            .app_state
+            .read(cx)
+            .connections
+            .iter()
+            .any(|c| c.is_authenticated)
+            && !self.preferences.value.borrow().onboarding_deferred
+        {
+            self.view.update(cx, |v, cx| v.show_onboarding(cx));
+        }
         #[cfg(feature = "perf")]
         perf::launch(self, window, cx);
         if self.view.read(cx).settings_visible() {
@@ -1097,6 +1118,15 @@ impl WorkbenchController {
         if self.quitting.get() {
             return;
         }
+        if let WorkbenchIntent::Onboarding(action) = intent {
+            self.handle_onboarding(action, window, cx);
+            return;
+        }
+        if self.view.read(cx).onboarding().is_some()
+            && !matches!(intent, WorkbenchIntent::Reconnect)
+        {
+            return;
+        }
         if let WorkbenchIntent::Settings(action) = intent {
             self.handle_settings(action, window, cx);
             return;
@@ -1159,9 +1189,8 @@ impl WorkbenchController {
             });
             return;
         }
-        let intent_epoch = self.epoch;
         match intent {
-            WorkbenchIntent::Settings(_) => {}
+            WorkbenchIntent::Settings(_) | WorkbenchIntent::Onboarding(_) => {}
             WorkbenchIntent::Sidebar(action) => self.handle_navigation(action, api, window, cx),
             selection @ (WorkbenchIntent::ModelChanged { .. }
             | WorkbenchIntent::ThinkingChanged(_)
@@ -1386,37 +1415,6 @@ impl WorkbenchController {
             }
             intent @ WorkbenchIntent::Permission { .. } => {
                 self.respond_to_permission(api, intent, window, cx)
-            }
-            WorkbenchIntent::Configure {
-                base_url,
-                model,
-                credential,
-            } => {
-                self.operations
-                    .push(cx.spawn_in(window, async move |weak, cx| {
-                        let result = api
-                            .setup_endpoint(&base_url, &model, credential.as_ref())
-                            .await;
-                        let _ = weak.update_in(cx, |this, window, cx| {
-                            if this.epoch != intent_epoch {
-                                return;
-                            }
-                            this.view.update(cx, |view, cx| {
-                                view.configuration_finished(result.is_ok(), window, cx);
-                                match result {
-                                    Ok(()) => view.connected(
-                                        this.workspace
-                                            .as_ref()
-                                            .map(|w| w.name.clone())
-                                            .unwrap_or_default(),
-                                        Some(model),
-                                        cx,
-                                    ),
-                                    Err(error) => view.show_error(error.to_string(), false, cx),
-                                }
-                            });
-                        });
-                    }));
             }
             WorkbenchIntent::Reconnect
             | WorkbenchIntent::DraftChanged { .. }

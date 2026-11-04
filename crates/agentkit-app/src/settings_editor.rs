@@ -79,7 +79,7 @@ impl WorkbenchController {
             );
         }
     }
-    fn editor_action(
+    pub(in crate::controller) fn editor_action(
         &mut self,
         editor: Entity<ConnectionEditor>,
         action: EditorIntent,
@@ -151,6 +151,10 @@ impl WorkbenchController {
             EditorIntent::Test(v) => (v, true),
             _ => return,
         };
-        self.submit_editor(api, editor, values, test, window, cx);
+        if self.view.read(cx).onboarding().is_some() {
+            self.submit_onboarding(api, editor, values, test, window, cx);
+        } else {
+            self.submit_editor(api, editor, values, test, window, cx);
+        }
     }
 }

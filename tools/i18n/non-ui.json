@@ -25,11 +25,6 @@
     "reason": "Sample file name data, preserved across languages"
   },
   {
-    "file": "crates/agentkit-ui/src/workbench.rs",
-    "literal": "http://127.0.0.1:11434/v1",
-    "reason": "Initial model endpoint URL data, not UI copy"
-  },
-  {
     "file": "crates/agentkit-ui/src/tools/model.rs",
     "literal": "--- a/\n+++ b/\n",
     "reason": "Unified diff header syntax after Rust format-field removal; file-side prefixes are protocol data"
