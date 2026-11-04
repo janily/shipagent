@@ -39,7 +39,7 @@ fn open(cx: &mut TestAppContext) -> Harness {
             gpui_kit::open_window(options(), cx, |_, cx| cx.new(SettingsView::new)).unwrap();
         v.update(cx, |s, cx| {
             s.bind(app, cx);
-            s.defaults(g::ThinkingLevel::Medium, Some(65536), cx);
+            s.defaults(g::ThinkingLevel::Medium, Some(200000), cx);
         });
         let e = Rc::new(RefCell::new(vec![]));
         let sink = e.clone();
@@ -294,4 +294,37 @@ fn changing_provider_clears_the_unsubmitted_credential(cx: &mut TestAppContext) 
     assert!(events.borrow().iter().any(
         |e| matches!(e,EditorIntent::Save(v) if v.provider=="openai"&&v.credential.is_none())
     ));
+}
+
+#[gpui_kit::test]
+fn compaction_choices_match_backend_bounds_and_none_restores_sdk_default(cx: &mut TestAppContext) {
+    let (w, _, events) = open(cx);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        for i in 0usize..5 {
+            w.click(("settings-compact", i), cx);
+        }
+    })
+    .unwrap();
+    let values: Vec<_> = events
+        .borrow()
+        .iter()
+        .filter_map(|e| {
+            if let SettingsIntent::Compact(tokens) = e {
+                Some(*tokens)
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert_eq!(
+        values,
+        vec![
+            None,
+            Some(100000),
+            Some(200000),
+            Some(500000),
+            Some(1000000)
+        ]
+    );
 }

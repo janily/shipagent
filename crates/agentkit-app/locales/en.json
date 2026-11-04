@@ -208,7 +208,6 @@
   "ak.settings.no_connections": "Add a connection to start a conversation.",
   "ak.settings.default_thinking": "Default thinking level",
   "ak.settings.compact": "Automatic context compaction",
-  "ak.settings.disabled": "Disabled",
   "ak.settings.tokens": "%{count} tokens",
   "ak.settings.current_threshold": "Current threshold: %{count} tokens",
   "ak.settings.preset": "API key preset",
@@ -236,5 +235,6 @@
   "ak.settings.delete_confirm": "Delete %{name} and its credential reference? Existing conversations are kept.",
   "ak.settings.check_auth": "Check saved authentication",
   "ak.settings.auth_config_ok": "Saved authentication is available",
-  "ak.settings.key_required": "Enter an API key for the provider preset"
+  "ak.settings.key_required": "Enter an API key for the provider preset",
+  "ak.settings.sdk_default": "SDK default"
 }

@@ -208,7 +208,6 @@
   "ak.settings.no_connections": "添加模型连接后即可开始对话。",
   "ak.settings.default_thinking": "默认思考等级",
   "ak.settings.compact": "自动压缩上下文",
-  "ak.settings.disabled": "关闭",
   "ak.settings.tokens": "%{count} tokens",
   "ak.settings.current_threshold": "当前阈值：%{count} tokens",
   "ak.settings.preset": "API Key 预设",
@@ -236,5 +235,6 @@
   "ak.settings.delete_confirm": "删除 %{name} 及其密钥引用？已有会话将保留。",
   "ak.settings.check_auth": "检查已保存的认证",
   "ak.settings.auth_config_ok": "已保存的认证配置可用",
-  "ak.settings.key_required": "请为供应商预设填写 API Key"
+  "ak.settings.key_required": "请为供应商预设填写 API Key",
+  "ak.settings.sdk_default": "使用 SDK 默认值"
 }

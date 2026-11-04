@@ -111,10 +111,10 @@ fn real_connection_lifecycle_unsaved_test_defaults_and_safe_metadata() {
             "Renamed local"
         );
         api.default_thinking(g::ThinkingLevel::High).await.unwrap();
-        api.auto_compact(Some(32768)).await.unwrap();
+        api.auto_compact(Some(200000)).await.unwrap();
         assert_eq!(
             api.model_defaults().await.unwrap(),
-            (g::ThinkingLevel::High, Some(32768))
+            (g::ThinkingLevel::High, Some(200000))
         );
         api.auto_compact(None).await.unwrap();
         assert_eq!(api.model_defaults().await.unwrap().1, None);

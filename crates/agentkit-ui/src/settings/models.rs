@@ -79,11 +79,10 @@ impl SettingsView {
                 h_flex().gap_2().flex_wrap().children(
                     [
                         None,
-                        Some(16384),
-                        Some(32768),
-                        Some(65536),
-                        Some(131072),
-                        Some(262144),
+                        Some(100000),
+                        Some(200000),
+                        Some(500000),
+                        Some(1000000),
                     ]
                     .into_iter()
                     .enumerate()
@@ -92,7 +91,7 @@ impl SettingsView {
                         Button::new(("settings-compact", i))
                             .small()
                             .label(tokens.map_or_else(
-                                || t!("ak.settings.disabled"),
+                                || t!("ak.settings.sdk_default"),
                                 |n| t!("ak.settings.tokens", count = n),
                             ))
                             .selected(self.compact == tokens)
