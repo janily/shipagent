@@ -78,6 +78,8 @@ impl SessionListStore {
 pub struct SessionStore {
     /// Pure mutable session cache.
     pub model: SessionModel,
+    /// Controller-owned session configuration RPC in flight; survives cached view switches.
+    pub selection_pending: bool,
 }
 impl EventEmitter<SessionStoreEvent> for SessionStore {}
 impl SessionStore {
@@ -85,6 +87,7 @@ impl SessionStore {
     pub fn new(session: g::Session) -> Self {
         Self {
             model: SessionModel::new(session),
+            selection_pending: false,
         }
     }
     /// Apply a session-specific batch; semantic failures become deferred error effects.

@@ -1,0 +1,5 @@
+# T-1-14 Composer
+
+Base f9d3779 after PR20. Implement 04 input behavior and F17/F18/F25/F29 as an independent native Entity: one-to-twelve-line Textarea, configurable Enter vs Cmd/Ctrl+Enter with IME guard, honest disabled/busy/approval placeholders, stop/Esc and queued submissions, authenticated connection/model grouping and session thinking/permission selection. Capture session/connection generation for asynchronous operations; errors preserve drafts, no view RPC. Empty-input history recalls only this session's last user text. Keep existing draft ownership and queue restoration.
+
+Send-key preference is local and selectable in the composer pending full settings T-2-02. Complete PermissionPrompt/execute warning/Shift+Tab follows T-1-15. Attachments T-2-06, mentions/skills T-2-07, backend draft persistence T-2-08, context usage T-2-12 remain separate. Add native interaction/IME/queue/model tests, typed wire/real-backend selection/cancel evidence, Linux real-window light/dark checks, independent spec/standards reviews and three-platform CI. Stage0, reference performance, physical desktops and signing/release remain open; preserve PR6. Next T-1-15.

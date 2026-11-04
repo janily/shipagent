@@ -113,6 +113,54 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
             .create_session(&workspaces[0].id, temp.path().to_str())
             .await
             .unwrap();
+        // Composer configuration reaches the real backend, persists, and applies to the next Agent round.
+        let connection = api
+            .connections_generated()
+            .await
+            .unwrap()
+            .into_iter()
+            .find(|c| c.is_authenticated)
+            .unwrap();
+        api.set_session_model(
+            &session.id,
+            &workspaces[0].id,
+            "fixture-model",
+            &connection.slug,
+        )
+        .await
+        .unwrap();
+        api.set_session_thinking(
+            &session.id,
+            agentkit_protocol::generated::ThinkingLevel::High,
+        )
+        .await
+        .unwrap();
+        api.set_session_mode(
+            &session.id,
+            agentkit_protocol::generated::PermissionMode::Ask,
+        )
+        .await
+        .unwrap();
+        let selected = api.session_generated(&session.id).await.unwrap();
+        assert_eq!(selected.model.as_deref(), Some("fixture-model"));
+        assert_eq!(
+            selected.llm_connection.as_deref(),
+            Some(connection.slug.as_str())
+        );
+        assert_eq!(
+            selected.thinking_level,
+            Some(agentkit_protocol::generated::ThinkingLevel::High)
+        );
+        assert_eq!(
+            selected.permission_mode,
+            Some(agentkit_protocol::generated::PermissionMode::Ask)
+        );
+        api.set_session_mode(
+            &session.id,
+            agentkit_protocol::generated::PermissionMode::Safe,
+        )
+        .await
+        .unwrap();
         let draft = agentkit_protocol::generated::SessionDraft {
             text: "typed API persisted draft".into(),
             attachments: None,
@@ -399,6 +447,7 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
         let did_cancel = smol::future::race(
             async {
                 let mut requested = false;
+                let mut cancelled_at = None;
                 loop {
                     let args = events.recv().await.unwrap();
                     let generated_event: agentkit_protocol::DecodedSessionEvent =
@@ -430,10 +479,16 @@ fn real_agent_streams_executes_read_and_persists_the_final_answer() {
                         .unwrap();
                     cancelled_state.apply(&event);
                     if event.kind == "text_delta" && !requested {
+                        cancelled_at = Some(std::time::Instant::now());
                         api.cancel(&cancelled_id).await.unwrap();
                         requested = true;
                     }
                     if event.kind == "interrupted" {
+                        assert!(
+                            cancelled_at
+                                .is_some_and(|time| time.elapsed() < Duration::from_secs(2)),
+                            "real cancellation did not finish within two seconds"
+                        );
                         break requested;
                     }
                     if event.kind == "complete" {

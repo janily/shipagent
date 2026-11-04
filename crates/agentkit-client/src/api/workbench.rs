@@ -147,6 +147,43 @@ impl WorkbenchApi {
             )
             .await
     }
+    /// Select a session model and authenticated connection; never change a workspace default.
+    pub async fn set_session_model(
+        &self,
+        id: &str,
+        workspace: &str,
+        model: &str,
+        connection: &str,
+    ) -> Result<(), RpcError> {
+        self.client
+            .sessions()
+            .set_model(id, workspace, Some(model), Some(connection))
+            .await
+    }
+    /// Set thinking for this session, acknowledged before enabling another selection.
+    pub async fn set_session_thinking(
+        &self,
+        id: &str,
+        level: g::ThinkingLevel,
+    ) -> Result<(), RpcError> {
+        self.client
+            .sessions()
+            .command(id, &g::SessionCommand::SetThinkingLevel { level })
+            .await?;
+        Ok(())
+    }
+    /// Explicit permission-mode selection for this session.
+    pub async fn set_session_mode(
+        &self,
+        id: &str,
+        mode: g::PermissionMode,
+    ) -> Result<(), RpcError> {
+        self.client
+            .sessions()
+            .command(id, &g::SessionCommand::SetPermissionMode { mode })
+            .await?;
+        Ok(())
+    }
     /// Send attachment-capable optimistic work once; uploads/picker remain controller concerns.
     pub async fn send_with_attachments(
         &self,

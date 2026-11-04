@@ -119,6 +119,11 @@ fn a_failed_send_keeps_the_draft_available_for_retry(cx: &mut TestAppContext) {
     })
     .unwrap();
     assert_eq!(*sent.borrow(), ["preserve", "preserve"]);
+    cx.update_window(w, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("session-error").is_none());
+    })
+    .unwrap();
 }
 #[gpui_kit::test]
 fn permission_buttons_emit_one_explicit_decision(cx: &mut TestAppContext) {
