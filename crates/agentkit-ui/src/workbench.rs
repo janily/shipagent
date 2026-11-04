@@ -7,7 +7,7 @@ use agentkit_store::entities::{AppState, SessionListStore, SessionStore, Workspa
 use gpui_kit::component::resizable::ResizableState;
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
-    input::{Input, InputEvent, InputState, TextareaState},
+    input::{Input, InputState},
     message_scroller::MessageScrollerState,
     *,
 };
@@ -17,6 +17,19 @@ use secrecy::SecretString;
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Select an authenticated connection and model for this session.
+    ModelChanged {
+        /// Connection identity.
+        connection: String,
+        /// Exact model ID.
+        model: String,
+    },
+    /// Session-specific thinking level.
+    ThinkingChanged(agentkit_protocol::generated::ThinkingLevel),
+    /// Explicit session permission mode choice.
+    ModeChanged(agentkit_protocol::generated::PermissionMode),
+    /// Persist the client keyboard preference.
+    SendKeyChanged(crate::composer::SendKey),
     /// Conversation component intent, resolved against canonical state by the controller.
     Chat(ChatIntent),
     /// Submit a draft; no credential or RPC channel appears in the view.
@@ -79,7 +92,7 @@ pub struct WorkbenchView {
     pub(crate) error: Option<String>,
     pub(crate) state: Option<Entity<SessionStore>>,
     pub(crate) sessions: Option<Entity<SessionListStore>>,
-    pub(crate) composer: Entity<TextareaState>,
+    pub(crate) composer: Entity<crate::composer::Composer>,
     pub(crate) scroll: Entity<MessageScrollerState>,
     pub(crate) chat: Entity<ChatView>,
     pub(crate) setup: bool,
@@ -93,28 +106,23 @@ pub struct WorkbenchView {
     _subscriptions: Vec<Subscription>,
     session_subscriptions: Vec<Subscription>,
     list_subscription: Option<Subscription>,
-    app_state: Option<Entity<AppState>>,
+    pub(crate) app_state: Option<Entity<AppState>>,
+    pub(crate) workspace_state: Option<Entity<WorkspaceStore>>,
     context_subscriptions: Vec<Subscription>,
 }
 impl EventEmitter<WorkbenchIntent> for WorkbenchView {}
 impl WorkbenchView {
     /// Construct the window immediately, while backend startup happens asynchronously.
     pub fn new(app_name: SharedString, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let composer = cx.new(|cx| {
-            TextareaState::new(window, cx)
-                .placeholder(t!("ak.placeholder"))
-                .auto_grow(2, 12)
-                .submit_on_enter(true)
+        let composer = cx.new(|cx| crate::composer::Composer::new(window, cx));
+        let input_subscription = cx.subscribe(&composer, |this, _, event: &WorkbenchIntent, cx| {
+            if matches!(event, WorkbenchIntent::Submit(_)) {
+                this.error = None;
+                this.submitting = true;
+            }
+            cx.emit(event.clone());
+            cx.notify();
         });
-        let input_subscription =
-            cx.subscribe_in(&composer, window, |this, _, event, _, cx| match event {
-                InputEvent::PressEnter { shift: false, .. } => this.submit(cx),
-                InputEvent::Change => {
-                    this.save_draft(cx);
-                    cx.notify();
-                }
-                _ => {}
-            });
         let chat = cx.new(ChatView::new);
         let scroll = chat.read(cx).scroll_state().clone();
         let chat_subscription = cx.subscribe(&chat, |_, _, intent, cx| {
@@ -153,6 +161,7 @@ impl WorkbenchView {
             session_subscriptions: Vec::new(),
             list_subscription: None,
             app_state: None,
+            workspace_state: None,
             context_subscriptions: Vec::new(),
         }
     }
@@ -195,6 +204,7 @@ impl WorkbenchView {
     ) {
         self.context_subscriptions.clear();
         self.app_state = Some(app.clone());
+        self.workspace_state = Some(workspace.clone());
         self.context_subscriptions
             .push(cx.observe(&app, |_, _, cx| cx.notify()));
         self.context_subscriptions
@@ -230,9 +240,13 @@ impl WorkbenchView {
             .update(cx, |chat, cx| chat.bind(store.clone(), cx));
         self.error = store.read(cx).model.last_error.clone();
         self.state = Some(store.clone());
+        self.composer.update(cx, |c, _| c.bind(Some(store.clone())));
 
         let draft = store.read(cx).model.draft.text.clone();
         self.composer
+            .read(cx)
+            .input()
+            .clone()
             .update(cx, |input, cx| input.set_value(draft, window, cx));
         self.session_subscriptions
             .push(cx.observe(&store, |this, _, cx| {
@@ -244,6 +258,9 @@ impl WorkbenchView {
                 .update(cx, |input, cx| input.focus(window, cx));
         } else {
             self.composer
+                .read(cx)
+                .input()
+                .clone()
                 .update(cx, |input, cx| input.focus(window, cx));
         }
         self.loading = false;
@@ -264,6 +281,11 @@ impl WorkbenchView {
             self.permission_id = request;
         }
     }
+    /// Inspect native text-input protocol in isolated component tests.
+    #[cfg(feature = "samples")]
+    pub fn composer_input(&self, cx: &App) -> Entity<gpui_kit::component::input::TextareaState> {
+        self.composer.read(cx).input().clone()
+    }
     /// Inspect virtual-list state in component and performance sample builds.
     #[cfg(feature = "samples")]
     pub fn scroll_state(&self) -> &Entity<MessageScrollerState> {
@@ -278,6 +300,7 @@ impl WorkbenchView {
     pub fn clear_session(&mut self, cx: &mut Context<Self>) {
         self.session_subscriptions.clear();
         self.state = None;
+        self.composer.update(cx, |c, _| c.bind(None));
         self.chat.update(cx, |chat, cx| chat.clear(cx));
         self.permission_id = None;
         self.permission_busy = false;
@@ -289,7 +312,7 @@ impl WorkbenchView {
         self.state.as_ref().map(|store| {
             (
                 store.read(cx).model.state.session.id.clone(),
-                self.composer.read(cx).value().to_string(),
+                self.composer.read(cx).input().read(cx).value().to_string(),
             )
         })
     }
@@ -301,8 +324,11 @@ impl WorkbenchView {
     }
     /// Restore text without overwriting newer user input.
     pub fn restore_draft(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {
-        if self.composer.read(cx).value().is_empty() {
+        if self.composer.read(cx).input().read(cx).value().is_empty() {
             self.composer
+                .read(cx)
+                .input()
+                .clone()
                 .update(cx, |input, cx| input.set_value(text, window, cx));
         }
     }
@@ -315,8 +341,11 @@ impl WorkbenchView {
         cx: &mut Context<Self>,
     ) {
         self.submitting = false;
-        if success && self.composer.read(cx).value().as_ref() == submitted {
+        if success && self.composer.read(cx).input().read(cx).value().as_ref() == submitted {
             self.composer
+                .read(cx)
+                .input()
+                .clone()
                 .update(cx, |input, cx| input.set_value("", window, cx));
         }
         cx.notify();
@@ -344,6 +373,7 @@ impl WorkbenchView {
         self.permission_busy = false;
         self.loading = false;
         if disconnected {
+            self.composer.update(cx, |c, cx| c.selection_finished(cx));
             self.ready = false;
             self.status_key = "ak.disconnected";
         }
@@ -359,20 +389,13 @@ impl WorkbenchView {
             .as_ref()
             .is_some_and(|store| store.read(cx).model.busy())
     }
-    pub(crate) fn submit(&mut self, cx: &mut Context<Self>) {
-        let text = self.composer.read(cx).value().to_string();
-        if self.state.is_some()
-            && self.ready
-            && !self.loading
-            && self.model.is_some()
-            && !self.submitting
-            && !text.trim().is_empty()
-        {
-            self.error = None;
-            self.submitting = true;
-            cx.emit(WorkbenchIntent::Submit(text));
-            cx.notify();
-        }
+    /// Apply the client's persisted sending shortcut.
+    pub fn set_send_key(&mut self, key: crate::composer::SendKey, cx: &mut Context<Self>) {
+        self.composer.update(cx, |c, cx| c.set_send_key(key, cx));
+    }
+    /// Unlock toolbar after a confirmed or failed session configuration operation.
+    pub fn selection_finished(&mut self, cx: &mut Context<Self>) {
+        self.composer.update(cx, |c, cx| c.selection_finished(cx));
     }
     fn endpoint_form(&self, cx: &mut Context<Self>) -> AnyElement {
         v_flex()

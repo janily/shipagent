@@ -2,6 +2,8 @@
 #![deny(missing_docs)]
 rust_i18n::i18n!("locales", fallback = "en");
 mod chat;
+/// Native session composer and safe model catalog.
+pub mod composer;
 /// Isolated, memory-only Kit component examples; enable with `samples`.
 #[cfg(feature = "samples")]
 pub mod samples;

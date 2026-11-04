@@ -1,7 +1,6 @@
 use crate::{WorkbenchIntent, WorkbenchView, t};
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
-    input::Textarea,
     *,
 };
 use gpui_kit::{prelude::*, *};
@@ -13,7 +12,45 @@ impl WorkbenchView {
         } else {
             self.chat.clone().into_any_element()
         };
-        let busy = self.busy(cx);
+        let connections = self
+            .app_state
+            .as_ref()
+            .map(|s| s.read(cx).connections.as_slice())
+            .unwrap_or_default();
+        let choices = crate::composer::model_choices(connections);
+        let settings = self
+            .workspace_state
+            .as_ref()
+            .and_then(|s| s.read(cx).settings.as_ref());
+        let session = self.state.as_ref().map(|s| &s.read(cx).model.state.session);
+        let (effective_model, selected_connection) = if self.app_state.is_some() {
+            crate::composer::resolved_model(connections, session, settings)
+        } else {
+            (
+                session
+                    .and_then(|s| s.model.clone())
+                    .or_else(|| self.model.clone()),
+                None,
+            )
+        };
+        let thinking = settings
+            .and_then(|s| s.thinking_level)
+            .unwrap_or(agentkit_protocol::generated::ThinkingLevel::Medium);
+        self.composer.update(cx, |c, cx| {
+            c.configure(
+                crate::composer::Config {
+                    store: self.state.clone(),
+                    ready: self.ready,
+                    submitting: self.submitting,
+                    loading: self.loading,
+                    choices,
+                    model: effective_model,
+                    connection: selected_connection,
+                    thinking,
+                },
+                cx,
+            )
+        });
         v_flex()
             .flex_1()
             .min_h_0()
@@ -105,84 +142,11 @@ impl WorkbenchView {
                 },
             )
             .child(
-                h_flex().justify_center().px_6().py_4().child(
-                    v_flex()
-                        .w_full()
-                        .max_w(px(820.))
-                        .border_1()
-                        .border_color(cx.theme().border)
-                        .rounded_lg()
-                        .p_3()
-                        .gap_3()
-                        .child(
-                            div()
-                                .id("composer")
-                                .w_full()
-                                .child(
-                                    Textarea::new(&self.composer)
-                                        .aria_label(t!("ak.composer"))
-                                        .appearance(false)
-                                        .bordered(false)
-                                        .disabled(
-                                            !self.ready
-                                                || self.state.is_none()
-                                                || self.loading
-                                                || self.model.is_none(),
-                                        ),
-                                )
-                                .test_support(),
-                        )
-                        .child(
-                            h_flex()
-                                .justify_between()
-                                .items_center()
-                                .child(
-                                    h_flex()
-                                        .gap_2()
-                                        .text_xs()
-                                        .text_color(cx.theme().muted_foreground)
-                                        .child(
-                                            div()
-                                                .px_2()
-                                                .py_1()
-                                                .border_1()
-                                                .border_color(cx.theme().border)
-                                                .rounded_full()
-                                                .child(match self.state.as_ref().and_then(|s|s.read(cx).model.state.session.permission_mode) {Some(agentkit_protocol::generated::PermissionMode::Ask)=>t!("ak.mode_ask"),Some(agentkit_protocol::generated::PermissionMode::AllowAll)=>t!("ak.mode_execute"),_=>t!("ak.safe")}),
-                                        )
-                                        .child(
-                                            self.model.clone().unwrap_or_else(|| t!("ak.no_model")),
-                                        )
-                                        .when(busy, |view| {
-                                            view.child(if self.state.as_ref().is_some_and(|s| {
-                                                    !s.read(cx).model.permissions.is_empty()
-                                                }) {
-                                                    t!("ak.permission_wait")
-                                                } else {
-                                                    t!("ak.processing")
-                                                })
-                                        }),
-                                )
-                                .when(busy, |v| {
-                                    v.child(Button::new("stop").label(t!("ak.stop")).on_click(
-                                        cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::Cancel)),
-                                    ))
-                                })
-                                .child(
-                                    Button::new("send")
-                                        .primary()
-                                        .label(t!("ak.send"))
-                                        .disabled(
-                                            !self.ready
-                                                || self.model.is_none()
-                                                || self.loading
-                                                || self.submitting
-                                                || self.composer.read(cx).value().trim().is_empty(),
-                                        )
-                                        .on_click(cx.listener(|this, _, _, cx| this.submit(cx))),
-                                ),
-                        ),
-                ),
+                h_flex()
+                    .justify_center()
+                    .px_6()
+                    .py_4()
+                    .child(self.composer.clone()),
             )
             .into_any_element()
     }

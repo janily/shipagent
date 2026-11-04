@@ -99,3 +99,44 @@ fn user_branch_sends_canonical_source_and_safe_permission_mode_once() {
     api.close();
     server.join().unwrap();
 }
+
+#[test]
+fn composer_configuration_is_session_scoped_and_preserves_model_connection_pair() {
+    let (endpoint, server) = serve_checked(
+        vec![
+            ("session:setModel", json!(null)),
+            ("sessions:command", json!(null)),
+            ("sessions:command", json!(null)),
+        ],
+        |request| {
+            if request["channel"] == "session:setModel" {
+                assert_eq!(
+                    request["args"],
+                    json!(["s", "w", "different-model", "authenticated-connection"])
+                );
+            } else {
+                assert_eq!(request["args"][0], "s");
+                let command = &request["args"][1];
+                match command["type"].as_str().unwrap() {
+                    "setThinkingLevel" => assert_eq!(command["level"], "high"),
+                    "setPermissionMode" => assert_eq!(command["mode"], "ask"),
+                    other => panic!("unexpected command: {other}"),
+                }
+            }
+        },
+    );
+    let api = WorkbenchApi::connect(endpoint, "w".into());
+    smol::block_on(async {
+        api.set_session_model("s", "w", "different-model", "authenticated-connection")
+            .await
+            .unwrap();
+        api.set_session_thinking("s", agentkit_protocol::generated::ThinkingLevel::High)
+            .await
+            .unwrap();
+        api.set_session_mode("s", agentkit_protocol::generated::PermissionMode::Ask)
+            .await
+            .unwrap();
+    });
+    api.close();
+    server.join().unwrap();
+}

@@ -1,5 +1,7 @@
 #[path = "chat_actions.rs"]
 mod chat_actions;
+#[path = "composer_actions.rs"]
+mod composer_actions;
 #[cfg(feature = "perf")]
 #[path = "perf.rs"]
 mod perf;
@@ -28,6 +30,7 @@ use agentkit_store::{
 type RecordingSender = async_channel::Sender<RecordingInput>;
 use agentkit_ui::{WorkbenchIntent, WorkbenchView};
 use anyhow::{Context as _, Result};
+use gpui_kit::component::WindowExt;
 use gpui_kit::*;
 use std::{
     cell::{Cell, RefCell},
@@ -225,7 +228,19 @@ async fn initialize(
         .iter()
         .find(|c| c.is_authenticated && c.is_default == Some(true))
         .or_else(|| connections.iter().find(|c| c.is_authenticated))
-        .map(|c| c.default_model.clone().unwrap_or_else(|| c.name.clone()));
+        .and_then(|c| {
+            c.default_model.clone().or_else(|| {
+                c.models.as_ref()?.first().map(|m| match m {
+                    agentkit_protocol::generated::LlmConnectionWithStatusModelsItem::String(id) => {
+                        id.clone()
+                    }
+                    agentkit_protocol::generated::LlmConnectionWithStatusModelsItem::Object {
+                        id,
+                        ..
+                    } => id.clone(),
+                })
+            })
+        });
     initial.close();
     if let Some(tx) = &recording {
         let _ = tx
@@ -340,6 +355,9 @@ impl WorkbenchController {
         cx: &mut Context<Self>,
     ) -> Self {
         let view = cx.new(|cx| WorkbenchView::new(brand.app_name.clone().into(), window, cx));
+        view.update(cx, |v, cx| {
+            v.set_send_key(preferences.value.borrow().send_key, cx)
+        });
         let subscription = cx.subscribe_in(&view, window, |this, _, intent, window, cx| {
             this.handle(intent.clone(), window, cx)
         });
@@ -952,6 +970,10 @@ impl WorkbenchController {
         if self.quitting.get() {
             return;
         }
+        if let WorkbenchIntent::SendKeyChanged(key) = intent {
+            self.preferences.update(|p| p.send_key = key);
+            return;
+        }
         match &intent {
             WorkbenchIntent::LayoutChanged(shell) => {
                 self.preferences.update(|p| p.shell = shell.clone());
@@ -1007,6 +1029,9 @@ impl WorkbenchController {
             return;
         }
         let Some(api) = self.api() else {
+            self.view.update(cx, |view, cx| {
+                view.show_error(agentkit_ui::t!("ak.connection_unavailable"), true, cx)
+            });
             return;
         };
         let Ok((api, snapshot)) = api.bind_connection() else {
@@ -1023,6 +1048,11 @@ impl WorkbenchController {
         }
         let intent_epoch = self.epoch;
         match intent {
+            selection @ (WorkbenchIntent::ModelChanged { .. }
+            | WorkbenchIntent::ThinkingChanged(_)
+            | WorkbenchIntent::ModeChanged(_)) => {
+                self.change_composer_selection(selection, api, window, cx);
+            }
             intent @ (WorkbenchIntent::Submit(_) | WorkbenchIntent::ResendMessage(_)) => {
                 let Some(store) = self.state.clone() else {
                     return;
@@ -1087,11 +1117,21 @@ impl WorkbenchController {
             }
             WorkbenchIntent::Cancel => {
                 if let Some(state) = &self.state {
+                    let state = state.clone();
                     let id = state.read(cx).model.state.session.id.clone();
+                    let epoch = self.epoch;
                     self.operations
                         .push(cx.spawn_in(window, async move |weak, cx| {
                             if let Err(error) = api.cancel(&id).await {
                                 let _ = weak.update_in(cx, |this, _, cx| {
+                                    if this.epoch != epoch
+                                        || this
+                                            .state
+                                            .as_ref()
+                                            .is_none_or(|s| s.entity_id() != state.entity_id())
+                                    {
+                                        return;
+                                    }
                                     this.view.update(cx, |view, cx| {
                                         view.show_error(error.to_string(), false, cx)
                                     })
@@ -1292,6 +1332,7 @@ impl WorkbenchController {
             | WorkbenchIntent::DraftChanged { .. }
             | WorkbenchIntent::LayoutChanged(_)
             | WorkbenchIntent::CycleAppearance
+            | WorkbenchIntent::SendKeyChanged(_)
             | WorkbenchIntent::Chat(_) => {}
         }
     }
@@ -1312,6 +1353,14 @@ impl Render for WorkbenchController {
             .on_action(cx.listener(|this, _: &ToggleFocusMode, window, cx| {
                 this.view
                     .update(cx, |v, cx| v.toggle_focus_mode(window, cx))
+            }))
+            .on_action(cx.listener(|this, _: &StopProcessing, window, cx| {
+                if !window.has_active_dialog(cx)
+                    && !window.has_active_sheet(cx)
+                    && this.state.as_ref().is_some_and(|s| s.read(cx).model.busy())
+                {
+                    this.handle(WorkbenchIntent::Cancel, window, cx);
+                }
             }))
             .on_action(cx.listener(|this, _: &NewChat, window, cx| {
                 this.handle(WorkbenchIntent::NewSession, window, cx)

@@ -11,6 +11,8 @@ gpui_kit::actions!(
         /// Hide or restore side regions.
         ToggleFocusMode,
         /// Create a conversation through the existing controller.
-        NewChat
+        NewChat,
+        /// Cancel the active session turn when no dialog/sheet consumes Escape.
+        StopProcessing
     ]
 );

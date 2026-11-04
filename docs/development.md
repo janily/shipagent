@@ -123,3 +123,5 @@ T-1-11 文案修改后运行 `cargo xtask i18n` 并提交生成资源；`cargo x
 T-1-12 对话组件、缓存/阶段与错误操作见 [验证报告](verification-chat-2026-11-03.md)。原生组件测试：`cargo test -p agentkit-ui --features samples --test transcript`。
 
 T-1-13 工具卡、Diff与完整只读内容见 [验证报告](verification-tools-2026-11-03.md)。原生组件测试：`cargo test -p agentkit-ui --features samples --test tools --locked`；长输出预览限制不改变会话中的原文。
+
+T-1-14 输入与会话选项见 [验证报告](verification-composer-2026-11-04.md)。原生输入协议与菜单测试：`cargo test -p agentkit-ui --features samples --test composer --locked`。发送键保存在客户端prefs的`send_key`，可在输入工具栏切换；完整后端草稿持久化按T-2-08推进。

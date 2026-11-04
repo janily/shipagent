@@ -53,6 +53,8 @@ pub struct Preferences {
     pub appearance: Appearance,
     /// Owned locale: zh-CN or en.
     pub language: String,
+    /// Client-owned Enter or Cmd/Ctrl+Enter send preference.
+    pub send_key: agentkit_ui::composer::SendKey,
     /// Last window dimensions and position.
     pub geometry: Option<Geometry>,
     /// Fixed-column shell preferences.
@@ -70,6 +72,7 @@ impl Default for Preferences {
             version: 1,
             appearance: Appearance::Light,
             language: "zh-CN".into(),
+            send_key: Default::default(),
             geometry: None,
             shell: ShellPreferences::default(),
             restore_session: true,
@@ -252,12 +255,14 @@ mod tests {
                 store.update(|p| {
                     p.session = Some(format!("s{i}"));
                     p.shell.right_open = true;
+                    p.send_key = agentkit_ui::composer::SendKey::CmdEnter;
                 });
             }
             store.finish().await.unwrap();
             let p = load(&path, Preferences::default()).unwrap();
             assert_eq!(p.session.as_deref(), Some("s99"));
             assert!(p.shell.right_open);
+            assert_eq!(p.send_key, agentkit_ui::composer::SendKey::CmdEnter);
             assert_eq!(std::fs::read_dir(t.path()).unwrap().count(), 1);
         });
     }
