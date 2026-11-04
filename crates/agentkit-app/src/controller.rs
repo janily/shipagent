@@ -133,6 +133,7 @@ async fn bootstrap(
     brand: Brand,
     recording: Option<RecordingSender>,
     preferences: Preferences,
+    capabilities: std::collections::BTreeMap<String, agentkit_client::CapabilityHandler>,
 ) -> Result<Started> {
     let mut sidecar = None;
     let endpoint = match (
@@ -183,7 +184,7 @@ async fn bootstrap(
         }
         _ => anyhow::bail!("Both AGENTKIT_REMOTE_URL and AGENTKIT_REMOTE_TOKEN are required"),
     };
-    match initialize(endpoint, recording.clone(), &preferences).await {
+    match initialize(endpoint, recording.clone(), &preferences, capabilities).await {
         Ok(mut started) => {
             if let Some(handle) = &sidecar {
                 let events = handle.events();
@@ -221,8 +222,13 @@ async fn initialize(
     endpoint: Endpoint,
     recording: Option<RecordingSender>,
     preferences: &Preferences,
+    capabilities: std::collections::BTreeMap<String, agentkit_client::CapabilityHandler>,
 ) -> Result<Started> {
-    let initial = WorkbenchApi::connect(endpoint.clone(), String::new());
+    let initial = WorkbenchApi::connect_with_capabilities(
+        endpoint.clone(),
+        String::new(),
+        capabilities.clone(),
+    );
     initial.health().await?;
     let workspaces = initial.workspaces_generated().await?;
     let selected = if preferences.restore_session {
@@ -262,7 +268,7 @@ async fn initialize(
             .send(RecordingInput::Redact(endpoint.token.clone()))
             .await;
     }
-    let api = WorkbenchApi::connect(endpoint, workspace.id.clone());
+    let api = WorkbenchApi::connect_with_capabilities(endpoint, workspace.id.clone(), capabilities);
     let recording = recording.map(|tx| {
         let receiver = api.session_events();
         smol::spawn(async move {
@@ -320,6 +326,7 @@ async fn initialize(
 pub(crate) struct WorkbenchController {
     #[cfg(feature = "perf")]
     perf: Option<perf::Capture>,
+    capabilities: agentkit_capabilities::client_caps::NativeCapabilities,
     view: Entity<WorkbenchView>,
     brand: Brand,
     runtime: RuntimeSlot,
@@ -370,16 +377,25 @@ pub(crate) struct WorkbenchController {
     settings_editor: Option<Entity<agentkit_ui::settings::ConnectionEditor>>,
     settings_editor_subscription: Option<Subscription>,
 }
+pub(crate) struct WindowServices {
+    pub preferences: PreferenceStore,
+    pub capabilities: agentkit_capabilities::client_caps::NativeCapabilities,
+}
 impl WorkbenchController {
     pub(crate) fn new(
         brand: Brand,
         runtime: RuntimeSlot,
         startup: StartupSlot,
         quitting: Rc<Cell<bool>>,
-        preferences: PreferenceStore,
+        services: WindowServices,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
+        let WindowServices {
+            preferences,
+            capabilities,
+        } = services;
+        capabilities.remember(window.window_handle());
         let view = cx.new(|cx| WorkbenchView::new(brand.app_name.clone().into(), window, cx));
         view.update(cx, |v, cx| {
             v.set_send_key(preferences.value.borrow().send_key, cx)
@@ -415,6 +431,7 @@ impl WorkbenchController {
                 .ok()
                 .flatten()
                 .map(|config| perf::Capture::new(config, window.window_handle().window_id())),
+            capabilities,
             view,
             brand,
             runtime,
@@ -469,6 +486,12 @@ impl WorkbenchController {
                 cx,
             )
         });
+        this._window_observers
+            .push(cx.observe_window_activation(window, |this, window, _| {
+                if window.is_window_active() {
+                    this.capabilities.remember(window.window_handle());
+                }
+            }));
         this._window_observers
             .push(cx.observe_window_bounds(window, |this, window, cx| {
                 let bounds = window.window_bounds();
@@ -544,6 +567,7 @@ impl WorkbenchController {
         self.viewing = None;
         let previous = self.runtime.borrow_mut().take();
         let brand = self.brand.clone();
+        let capabilities = self.capabilities.handlers();
         let recording = self.recording_sender.clone();
         let preferences = bootstrap_preferences(
             &self.preferences.value.borrow(),
@@ -557,7 +581,7 @@ impl WorkbenchController {
             // Environment and filesystem work stays off the GPUI foreground thread.
             let result = cx
                 .background_executor()
-                .spawn(async move { bootstrap(brand, recording, preferences).await })
+                .spawn(async move { bootstrap(brand, recording, preferences, capabilities).await })
                 .await;
             if quitting.get() {
                 if let Ok(started) = result {

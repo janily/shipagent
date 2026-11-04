@@ -154,3 +154,15 @@ node tools/onboarding/smoke.mjs target/debug/workbench target/backend/linux-x64 
 ```
 
 最后一项需要 Linux 1440×900 X11/Vulkan、xdotool、Python Pillow。报告必须不存在；使用全新隔离配置并监督清理进程，检查延期和重启，不访问用户凭据。真实模型探测需要 SDK 可写用户目录，本地受限环境的只读目录不作为模型可用证据。详见 [验证报告](verification-onboarding-2026-11-04.md)。
+
+## 原生客户端能力（T-1-19）
+
+```sh
+cargo test -p agentkit-capabilities --locked
+cargo xtask backend build --contract
+AGENTKIT_BACKEND_DIR="$PWD/target/backend/linux-x64" AGENTKIT_CONTRACT_SERVER="$PWD/target/contract/linux-x64/transport.js" cargo test -p agentkit-capabilities --test rpc_contract --locked -- --ignored
+cargo build -p agentkit-capabilities --example client_caps --locked
+node tools/client-caps/smoke.mjs target/debug/examples/client_caps target/backend/linux-x64 target/contract/linux-x64/transport.js target/client-caps.json
+```
+
+最后一项是 Linux 真实确认窗口检查，需要显示环境、Vulkan、xdotool 和 Python Pillow；输出路径必须尚不存在。macOS/Windows 路径替换及三平台契约说明见 [能力验证](verification-client-caps-2026-11-04.md)。
