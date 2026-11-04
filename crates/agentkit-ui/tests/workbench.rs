@@ -366,3 +366,50 @@ fn removing_a_transient_tail_preserves_the_readers_scroll_anchor(cx: &mut TestAp
     })
     .unwrap();
 }
+#[gpui_kit::test]
+fn opening_from_sidebar_keeps_keyboard_focus_for_rename(cx: &mut TestAppContext) {
+    use agentkit_store::entities::SessionListStore;
+    use agentkit_ui::sidebar::SidebarIntent;
+    let (w, view, store) = open(cx);
+    let events = Rc::new(RefCell::new(Vec::new()));
+    cx.update(|cx| {
+        let snapshot = store.read(cx).model.state.session.clone();
+        let mut other = snapshot.clone();
+        other.id = "other".into();
+        other.name = Some("Other".into());
+        other.last_message_at = 10;
+        let target = cx.new(|_| SessionStore::new(other.clone()));
+        let list = cx.new(|_| SessionListStore::default());
+        list.update(cx, |s, cx| s.replace(vec![snapshot, other], cx));
+        view.update(cx, |v, cx| v.bind_list(list, cx));
+        let sink = events.clone();
+        cx.subscribe(&view, move |v, intent: &WorkbenchIntent, cx| {
+            if let WorkbenchIntent::Sidebar(action) = intent {
+                sink.borrow_mut().push(action.clone());
+                if matches!(action,SidebarIntent::Open(id) if id=="other") {
+                    w.update(cx, |_, window, cx| {
+                        v.update(cx, |v, cx| v.bind_session(target.clone(), window, cx))
+                    })
+                    .unwrap();
+                }
+            }
+        })
+        .detach();
+    });
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("session:other", cx);
+    })
+    .unwrap();
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.press("f2", cx);
+    })
+    .unwrap();
+    assert!(
+        events
+            .borrow()
+            .iter()
+            .any(|e| matches!(e,SidebarIntent::Rename(id)if id=="other"))
+    );
+}

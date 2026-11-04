@@ -419,3 +419,15 @@ fn explicit_resend_never_owns_equal_or_empty_composer_drafts() {
         }
     }
 }
+#[test]
+fn workspace_refresh_waits_for_send_ack_even_after_canonical_echo_replaces_pending_message() {
+    let mut model = SessionModel::new(snapshot());
+    assert!(!model.has_pending_send());
+    model.begin_send("draft".into(), vec![], &ctx("u")).unwrap();
+    assert!(model.has_pending_send());
+    model.apply(&event(serde_json::json!({"type":"user_message","sessionId":"s","status":"accepted","optimisticMessageId":"u","message":{"id":"u","role":"user","content":"draft","timestamp":1700000000000_i64}})),&ctx("echo")).unwrap();
+    assert!(model.send_confirmed("u"));
+    assert!(model.has_pending_send());
+    model.finish_send("u", true);
+    assert!(!model.has_pending_send());
+}

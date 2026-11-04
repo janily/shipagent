@@ -1,4 +1,6 @@
-//! Native application facade and retained compatibility projections over typed RPC groups.
+#[path = "workbench_sidebar.rs"]
+mod sidebar;
+// Native application facade and retained compatibility projections over typed RPC groups.
 use crate::{ClientOptions, ConnectionState, Endpoint, RpcClient, RpcError};
 use agentkit_protocol::{
     generated as g,
