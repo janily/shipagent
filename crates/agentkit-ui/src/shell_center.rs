@@ -1,6 +1,6 @@
 use super::*;
 impl WorkbenchView {
-    pub(super) fn center(&self, cx: &mut Context<Self>) -> AnyElement {
+    pub(super) fn center(&self, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
         let title = self
             .state
             .as_ref()
@@ -29,7 +29,7 @@ impl WorkbenchView {
                 .child(self.endpoint_form(cx))
                 .into_any_element()
         } else {
-            self.chat_body(cx)
+            self.chat_body(window, cx)
         };
         v_flex()
             .flex_1()

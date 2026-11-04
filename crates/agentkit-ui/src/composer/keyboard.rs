@@ -64,3 +64,33 @@ impl Composer {
         cx.propagate();
     }
 }
+
+impl Composer {
+    pub(super) fn cycle_mode(
+        &mut self,
+        _: &gpui_kit::component::input::OutdentInline,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if !self.input.read(cx).focus_handle(cx).is_focused(window) {
+            cx.propagate();
+            return;
+        }
+        cx.stop_propagation();
+        if !self.selectable() || self.changing || self.composing(window, cx) {
+            return;
+        }
+        let mode = match self
+            .session(cx)
+            .and_then(|s| s.permission_mode)
+            .unwrap_or(g::PermissionMode::Safe)
+        {
+            g::PermissionMode::Safe => g::PermissionMode::Ask,
+            g::PermissionMode::Ask => g::PermissionMode::AllowAll,
+            g::PermissionMode::AllowAll => g::PermissionMode::Safe,
+        };
+        self.changing = true;
+        cx.emit(WorkbenchIntent::ModeChanged(mode));
+        cx.notify();
+    }
+}

@@ -1,3 +1,5 @@
+#[path = "approval_notifications.rs"]
+mod approval_notifications;
 #[path = "chat_actions.rs"]
 mod chat_actions;
 #[path = "composer_actions.rs"]
@@ -5,6 +7,8 @@ mod composer_actions;
 #[cfg(feature = "perf")]
 #[path = "perf.rs"]
 mod perf;
+#[path = "permission_actions.rs"]
+mod permission_actions;
 #[path = "tool_content.rs"]
 mod tool_content;
 #[cfg(feature = "perf")]
@@ -335,6 +339,7 @@ pub(crate) struct WorkbenchController {
     monitor: Option<Task<()>>,
     viewing: Option<Task<()>>,
     operations: Vec<Task<()>>,
+    approval_notifications: approval_notifications::ApprovalNotifications,
     recording_sender: Option<RecordingSender>,
     _recording_worker: Option<smol::Task<()>>,
     preferences: PreferenceStore,
@@ -414,6 +419,7 @@ impl WorkbenchController {
             monitor: None,
             viewing: None,
             operations: vec![],
+            approval_notifications: Default::default(),
             recording_sender,
             _recording_worker: recording_worker,
             _subscription: subscription,
@@ -777,6 +783,33 @@ impl WorkbenchController {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        self.operations.retain(|t| !t.is_ready());
+        for (event, _) in &events {
+            if let Some(agentkit_protocol::generated::SessionEvent::PermissionRequestEvent(e)) =
+                event.known()
+                && self.approval_notifications.should_send(
+                    &e.session_id,
+                    &e.request.request_id,
+                    window.is_window_active(),
+                    self.preferences.value.borrow().approval_notifications,
+                )
+            {
+                let name = self.brand.app_name.clone();
+                let bundle = self.brand.bundle_id.clone();
+                let body = agentkit_ui::t!("ak.approval.notification");
+                let worker = cx.background_executor().spawn(async move {
+                    agentkit_capabilities::notifications::approval(&name, &bundle, &body)
+                });
+                self.operations
+                    .push(cx.spawn_in(window, async move |weak, cx| {
+                        if worker.await.is_err() {
+                            let _ = weak.update_in(cx, |this, _, cx| {
+                                this.view.update(cx, |v, cx| v.notification_unavailable(cx));
+                            });
+                        }
+                    }));
+            }
+        }
         if self.refreshing_list {
             for (event, _) in &events {
                 if self.list_backlog.len() < 4096 {
@@ -839,6 +872,27 @@ impl WorkbenchController {
             };
             let effects = store.update(cx, |s, cx| s.apply_batch(&batch, cx));
             for effect in effects {
+                if let Effect::PermissionModeChanged {
+                    permission_mode,
+                    mode_version,
+                    ..
+                } = &effect
+                {
+                    store.update(cx, |s, cx| {
+                        if s.approval.mode_changed(
+                            *mode_version,
+                            *permission_mode,
+                            s.annotations.current(),
+                        ) {
+                            cx.emit(
+                                agentkit_store::core::session::SessionStoreEvent::TurnsChanged {
+                                    from_turn: 0,
+                                },
+                            );
+                            cx.notify();
+                        }
+                    });
+                }
                 if self
                     .state
                     .as_ref()
@@ -1090,6 +1144,7 @@ impl WorkbenchController {
                             .begin_send(text.clone(), attachments.clone(), &context)
                     };
                     if p.is_some() {
+                        s.refresh_annotations();
                         cx.emit(
                             agentkit_store::core::session::SessionStoreEvent::TurnsChanged {
                                 from_turn: 0,
@@ -1241,6 +1296,7 @@ impl WorkbenchController {
                                         let _ = store.model.apply(&event, &context);
                                     }
                                     this.backlog.clear();
+                                    store.refresh_annotations();
                                     let store = cx.new(|_| store);
                                     this.stores.insert(id.clone(), store.clone());
                                     this.state = Some(store.clone());
@@ -1263,39 +1319,8 @@ impl WorkbenchController {
                         });
                     }));
             }
-            WorkbenchIntent::Permission {
-                request_id,
-                allowed,
-                always,
-            } => {
-                let Some(state) = &self.state else {
-                    return;
-                };
-                let id = state.read(cx).model.state.session.id.clone();
-                self.operations
-                    .push(cx.spawn_in(window, async move |weak, cx| {
-                        let result = api
-                            .respond_permission(&id, &request_id, allowed, always)
-                            .await;
-                        let _ = weak.update_in(cx, |this, _, cx| match result {
-                            _ if this.epoch != intent_epoch => {}
-                            Ok(()) => {
-                                if let Some(store) = this.stores.get(&id).cloned() {
-                                    store.update(cx, |s, cx| {
-                                        s.model.permission_responded(&request_id);
-                                        cx.notify();
-                                    });
-                                    this.list.update(cx, |s, cx| {
-                                        s.model.permission_responded(&id, &request_id);
-                                        cx.notify();
-                                    });
-                                }
-                            }
-                            Err(error) => this.view.update(cx, |view, cx| {
-                                view.show_error(error.to_string(), false, cx)
-                            }),
-                        });
-                    }));
+            intent @ WorkbenchIntent::Permission { .. } => {
+                self.respond_to_permission(api, intent, window, cx)
             }
             WorkbenchIntent::Configure {
                 base_url,

@@ -6,7 +6,7 @@ use gpui_kit::component::{
 use gpui_kit::{prelude::*, *};
 
 impl WorkbenchView {
-    pub(crate) fn chat_body(&self, cx: &mut Context<Self>) -> AnyElement {
+    pub(crate) fn chat_body(&self, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
         let history = if self.loading {
             div().flex_1().child(t!("ak.loading")).into_any_element()
         } else {
@@ -36,6 +36,9 @@ impl WorkbenchView {
         let thinking = settings
             .and_then(|s| s.thinking_level)
             .unwrap_or(agentkit_protocol::generated::ThinkingLevel::Medium);
+        let execute = session.is_some_and(|s| {
+            s.permission_mode == Some(agentkit_protocol::generated::PermissionMode::AllowAll)
+        });
         self.composer.update(cx, |c, cx| {
             c.configure(
                 crate::composer::Config {
@@ -51,96 +54,67 @@ impl WorkbenchView {
                 cx,
             )
         });
+        self.permission_prompt.update(cx, |p, cx| {
+            p.bind(self.state.clone(), window, cx);
+            p.set_ready(self.ready && !self.loading, window, cx);
+        });
         v_flex()
             .flex_1()
             .min_h_0()
+            .when_some(self.state.as_ref(), |v, s| {
+                v.child(crate::permissions::render_notices(s.read(cx), None, cx))
+            })
             .child(history)
-            .when_some(
+            .when(
                 self.state
                     .as_ref()
-                    .and_then(|s| s.read(cx).model.permissions.first().cloned()),
-                |view, permission| {
-                    let allow_id = permission.request_id.clone();
-                    let deny_id = permission.request_id.clone();
-                    let always_id = permission.request_id.clone();
-                    view.child(
-                        h_flex().justify_center().px_6().py_2().child(
-                            v_flex()
-                                .id("permission-card")
-                                .w_full()
-                                .max_w(px(820.))
-                                .border_1()
-                                .border_color(cx.theme().warning)
-                                .bg(cx.theme().muted)
-                                .rounded_lg()
-                                .p_4()
-                                .gap_3()
-                                .child(div().font_semibold().child(t!("ak.permission")))
-                                .child(permission.description)
-                                .when_some(permission.command, |view, command| {
-                                    view.child(
-                                        div()
-                                            .font_family(cx.theme().mono_font_family.clone())
-                                            .child(command),
-                                    )
-                                })
-                                .child(
-                                    h_flex()
-                                        .gap_2()
-                                        .child(
-                                            Button::new("permission-allow")
-                                                .primary()
-                                                .label(t!("ak.allow"))
-                                                .disabled(!self.ready || self.permission_busy)
-                                                .on_click(cx.listener(move |this, _, _, cx| {
-                                                    this.permission_busy = true;
-                                                    cx.emit(WorkbenchIntent::Permission {
-                                                        request_id: allow_id.clone(),
-                                                        allowed: true,
-                                                        always: false,
-                                                    });
-                                                    cx.notify();
-                                                })),
-                                        )
-                                        .when(permission.can_always_allow == Some(true), |view| {
-                                            view.child(
-                                                Button::new("permission-always")
-                                                    .outline()
-                                                    .label(t!("ak.always"))
-                                                    .disabled(!self.ready || self.permission_busy)
-                                                    .on_click(cx.listener(
-                                                        move |this, _, _, cx| {
-                                                            this.permission_busy = true;
-                                                            cx.emit(WorkbenchIntent::Permission {
-                                                                request_id: always_id.clone(),
-                                                                allowed: true,
-                                                                always: true,
-                                                            });
-                                                            cx.notify();
-                                                        },
-                                                    )),
-                                            )
-                                        })
-                                        .child(
-                                            Button::new("permission-deny")
-                                                .outline()
-                                                .label(t!("ak.deny"))
-                                                .disabled(!self.ready || self.permission_busy)
-                                                .on_click(cx.listener(move |this, _, _, cx| {
-                                                    this.permission_busy = true;
-                                                    cx.emit(WorkbenchIntent::Permission {
-                                                        request_id: deny_id.clone(),
-                                                        allowed: false,
-                                                        always: false,
-                                                    });
-                                                    cx.notify();
-                                                })),
-                                        ),
-                                ),
-                        ),
+                    .is_some_and(|s| !s.read(cx).model.permissions.is_empty()),
+                |v| {
+                    v.child(
+                        h_flex()
+                            .justify_center()
+                            .px_6()
+                            .py_2()
+                            .child(self.permission_prompt.clone()),
                     )
                 },
             )
+            .when(execute, |v| {
+                v.child(
+                    h_flex().justify_center().px_6().child(
+                        h_flex()
+                            .id("execute-warning")
+                            .w_full()
+                            .max_w(px(820.))
+                            .gap_2()
+                            .p_2()
+                            .border_1()
+                            .border_color(cx.theme().warning)
+                            .rounded_md()
+                            .child(Icon::new(IconName::Info))
+                            .child(div().flex_1().child(t!("ak.approval.execute_warning")))
+                            .child(
+                                Button::new("return-safe")
+                                    .ghost()
+                                    .label(t!("ak.approval.return_safe"))
+                                    .disabled(
+                                        !self.ready
+                                            || self.loading
+                                            || self
+                                                .state
+                                                .as_ref()
+                                                .is_some_and(|s| s.read(cx).selection_pending),
+                                    )
+                                    .on_click(cx.listener(|_, _, _, cx| {
+                                        cx.emit(WorkbenchIntent::ModeChanged(
+                                            agentkit_protocol::generated::PermissionMode::Safe,
+                                        ))
+                                    })),
+                            )
+                            .test_support(),
+                    ),
+                )
+            })
             .child(
                 h_flex()
                     .justify_center()

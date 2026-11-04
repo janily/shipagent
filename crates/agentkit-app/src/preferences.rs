@@ -55,6 +55,8 @@ pub struct Preferences {
     pub language: String,
     /// Client-owned Enter or Cmd/Ctrl+Enter send preference.
     pub send_key: agentkit_ui::composer::SendKey,
+    /// Alert for approval requests arriving while the window is in the background.
+    pub approval_notifications: bool,
     /// Last window dimensions and position.
     pub geometry: Option<Geometry>,
     /// Fixed-column shell preferences.
@@ -73,6 +75,7 @@ impl Default for Preferences {
             appearance: Appearance::Light,
             language: "zh-CN".into(),
             send_key: Default::default(),
+            approval_notifications: true,
             geometry: None,
             shell: ShellPreferences::default(),
             restore_session: true,

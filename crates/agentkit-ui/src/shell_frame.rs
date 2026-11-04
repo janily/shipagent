@@ -17,7 +17,7 @@ impl WorkbenchView {
         let left = self.shell.sidebar_visible(width);
         let right = self.shell.right_visible() && !self.shell.right_is_sheet(width);
         let sidebar = self.sidebar(cx);
-        let center = self.center(cx);
+        let center = self.center(window, cx);
         let panel = self.right_panel(cx);
         let weak = cx.weak_entity();
         let columns = h_resizable("workbench-columns")

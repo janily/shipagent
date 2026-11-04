@@ -58,6 +58,7 @@ impl Render for Composer {
             .capture_action(cx.listener(Self::enter))
             .capture_action(cx.listener(Self::escape))
             .capture_action(cx.listener(Self::history))
+            .capture_action(cx.listener(Self::cycle_mode))
             .on_action(cx.listener(|this, a: &ChooseModel, _, cx| {
                 if this.selectable()
                     && !this.changing
