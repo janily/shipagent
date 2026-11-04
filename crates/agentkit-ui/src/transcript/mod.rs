@@ -58,6 +58,7 @@ pub enum ChatIntent {
 }
 #[derive(Default)]
 struct Cache {
+    reduce_stream_fade: bool,
     markdown: HashMap<String, (usize, Entity<MarkdownView>, Subscription)>,
     details: HashSet<String>,
     cards: HashMap<String, (usize, Entity<TurnCard>, Subscription)>,
@@ -80,6 +81,17 @@ impl ChatView {
             cache: Rc::default(),
             subscriptions: Vec::new(),
         }
+    }
+    /// Update existing and future Markdown documents in this chat instance.
+    pub fn set_stream_fade(&mut self, enabled: bool, cx: &mut Context<Self>) {
+        let mut cache = self.cache.borrow_mut();
+        cache.reduce_stream_fade = !enabled;
+        let views: Vec<_> = cache.markdown.values().map(|(_, v, _)| v.clone()).collect();
+        drop(cache);
+        for view in views {
+            view.update(cx, |v, cx| v.set_stream_fade(enabled, cx));
+        }
+        cx.notify();
     }
     /// Access virtual-list scroll policy for host actions and native tests.
     pub fn scroll_state(&self) -> &Entity<MessageScrollerState> {
@@ -136,7 +148,11 @@ impl ChatView {
     pub fn clear(&mut self, cx: &mut Context<Self>) {
         self.subscriptions.clear();
         self.store = None;
-        *self.cache.borrow_mut() = Cache::default();
+        let reduce_stream_fade = self.cache.borrow().reduce_stream_fade;
+        *self.cache.borrow_mut() = Cache {
+            reduce_stream_fade,
+            ..Default::default()
+        };
         self.scroll.update(cx, |s, cx| s.reset(0, cx));
         cx.notify();
     }

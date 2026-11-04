@@ -12,6 +12,15 @@ pub(crate) fn bind(cx: &mut App) {
         KeyBinding::new(keys[2], ToggleRightPanel, Some("Workbench")),
         KeyBinding::new(keys[3], ToggleFocusMode, Some("Workbench")),
         KeyBinding::new(keys[4], NewChat, Some("Workbench")),
+        KeyBinding::new(
+            if cfg!(target_os = "macos") {
+                "cmd-,"
+            } else {
+                "ctrl-,"
+            },
+            OpenSettings,
+            Some("Workbench"),
+        ),
         KeyBinding::new("escape", StopProcessing, Some("Workbench")),
     ]);
 }

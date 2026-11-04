@@ -300,16 +300,8 @@ fn hidden_prompt_does_not_steal_connection_configuration_focus(cx: &mut TestAppC
     step(cx, w, |window, cx| {
         window.render_frame(cx);
         assert!(window.try_find("permission-card").is_none());
-        window.input("keep-focus", cx);
-        assert!(
-            window
-                .within("endpoint-url")
-                .find("input-state")
-                .value()
-                .unwrap()
-                .contains("keep-focus")
-        );
-        window.click("back-chat", cx);
+        assert_eq!(window.find("settings-view").focused(), Some(true));
+        v.update(cx, |v, cx| v.close_settings(window, cx));
         window.render_frame(cx);
         window.press("enter", cx);
     });

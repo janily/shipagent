@@ -5,6 +5,7 @@ pub struct MarkdownView {
     text: String,
     state: Entity<TextViewState>,
     streaming: bool,
+    fade: bool,
 }
 impl MarkdownView {
     /// Build a Kit Markdown document with syntax highlighting and tables.
@@ -13,6 +14,14 @@ impl MarkdownView {
             text: text.into(),
             state: cx.new(|cx| TextViewState::markdown(text, cx)),
             streaming,
+            fade: true,
+        }
+    }
+    /// Apply the owning chat view's display preference without a global mutable copy.
+    pub fn set_stream_fade(&mut self, enabled: bool, cx: &mut Context<Self>) {
+        if self.fade != enabled {
+            self.fade = enabled;
+            cx.notify();
         }
     }
     /// Append an authoritative streaming delta without rebuilding the document.
@@ -51,7 +60,7 @@ impl Render for MarkdownView {
             .child(
                 TextView::new(&self.state)
                     .selectable(true)
-                    .stream_fade(self.streaming)
+                    .stream_fade(self.streaming && self.fade)
                     .on_link_click(move |url, _, _, cx| {
                         let url = url.to_string();
                         let _ = weak.update(cx, |_, cx| cx.emit(ChatIntent::LinkClicked(url)));

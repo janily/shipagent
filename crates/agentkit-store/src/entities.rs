@@ -31,6 +31,8 @@ pub struct AppState {
     pub background_tasks: usize,
     /// Safe connection catalog, including authentication availability.
     pub connections: Vec<g::LlmConnectionWithStatus>,
+    /// Global default reasoning for sessions without an override.
+    pub default_thinking: Option<g::ThinkingLevel>,
 }
 /// Window-local workspace context; no controller or RPC handles are retained.
 #[derive(Default)]

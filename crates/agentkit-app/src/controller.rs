@@ -13,6 +13,8 @@ mod navigation;
 mod perf;
 #[path = "permission_actions.rs"]
 mod permission_actions;
+#[path = "settings_actions.rs"]
+mod settings_actions;
 #[path = "tool_content.rs"]
 mod tool_content;
 #[cfg(feature = "perf")]
@@ -358,6 +360,10 @@ pub(crate) struct WorkbenchController {
     chat_dialog_subscription: Option<Subscription>,
     navigation_subscription: Option<Subscription>,
     navigation_pending: bool,
+    settings_pending: bool,
+    settings_providers: Vec<(String, String)>,
+    settings_editor: Option<Entity<agentkit_ui::settings::ConnectionEditor>>,
+    settings_editor_subscription: Option<Subscription>,
 }
 impl WorkbenchController {
     pub(crate) fn new(
@@ -438,12 +444,17 @@ impl WorkbenchController {
             chat_dialog_subscription: None,
             navigation_subscription: None,
             navigation_pending: false,
+            settings_pending: false,
+            settings_providers: Vec::new(),
+            settings_editor: None,
+            settings_editor_subscription: None,
             preferences,
             focus_handle: cx.focus_handle(),
             _window_observers: Vec::new(),
             _preference_monitor: None,
         };
         this.focus_handle.focus(window, cx);
+        this.apply_display_preferences(window, cx);
         this.view.update(cx, |view, cx| {
             view.apply_shell(
                 this.preferences.value.borrow().shell.clone(),
@@ -470,7 +481,7 @@ impl WorkbenchController {
         this._window_observers
             .push(cx.observe_window_appearance(window, |this, window, cx| {
                 if this.preferences.value.borrow().appearance == Appearance::System {
-                    gpui_kit::component::Theme::sync_system_appearance(Some(window), cx);
+                    this.apply_display_preferences(window, cx);
                 }
             }));
         let failures = this.preferences.failures();
@@ -503,6 +514,16 @@ impl WorkbenchController {
         self.epoch = self.epoch.wrapping_add(1);
         self.loading = false;
         self.navigation_pending = false;
+        self.settings_pending = false;
+        if let Some(editor) = self.settings_editor.take() {
+            editor.update(cx, |e, cx| e.clear_key(window, cx));
+            window.close_sheet(cx);
+        }
+        self.settings_editor_subscription = None;
+        self.view
+            .read(cx)
+            .settings()
+            .update(cx, |s, cx| s.reset(cx));
         self.workspace_switching = false;
         self.list_refresh.invalidate();
         self.list_backlog.clear();
@@ -614,6 +635,9 @@ impl WorkbenchController {
         });
         #[cfg(feature = "perf")]
         perf::launch(self, window, cx);
+        if self.view.read(cx).settings_visible() {
+            self.handle_settings(agentkit_ui::settings::SettingsIntent::Reload, window, cx);
+        }
         let events = started.events;
         self.events = Some(cx.spawn_in(window, async move |weak, cx| {
             while let Ok(first) = events.recv().await {
@@ -1073,8 +1097,13 @@ impl WorkbenchController {
         if self.quitting.get() {
             return;
         }
+        if let WorkbenchIntent::Settings(action) = intent {
+            self.handle_settings(action, window, cx);
+            return;
+        }
         if let WorkbenchIntent::SendKeyChanged(key) = intent {
             self.preferences.update(|p| p.send_key = key);
+            self.apply_display_preferences(window, cx);
             return;
         }
         match &intent {
@@ -1090,26 +1119,7 @@ impl WorkbenchController {
                         Appearance::Dark => Appearance::System,
                     }
                 });
-                let appearance = self.preferences.value.borrow().appearance;
-                match appearance {
-                    Appearance::System => {
-                        gpui_kit::component::Theme::sync_system_appearance(Some(window), cx)
-                    }
-                    Appearance::Light => gpui_kit::component::Theme::change(
-                        gpui_kit::component::ThemeMode::Light,
-                        Some(window),
-                        cx,
-                    ),
-                    Appearance::Dark => gpui_kit::component::Theme::change(
-                        gpui_kit::component::ThemeMode::Dark,
-                        Some(window),
-                        cx,
-                    ),
-                };
-                self.app_state.update(cx, |s, cx| {
-                    s.theme = format!("{appearance:?}").to_lowercase();
-                    cx.notify();
-                });
+                self.apply_display_preferences(window, cx);
                 return;
             }
             _ => {}
@@ -1151,6 +1161,7 @@ impl WorkbenchController {
         }
         let intent_epoch = self.epoch;
         match intent {
+            WorkbenchIntent::Settings(_) => {}
             WorkbenchIntent::Sidebar(action) => self.handle_navigation(action, api, window, cx),
             selection @ (WorkbenchIntent::ModelChanged { .. }
             | WorkbenchIntent::ThinkingChanged(_)
@@ -1440,6 +1451,10 @@ impl Render for WorkbenchController {
                 {
                     this.handle(WorkbenchIntent::Cancel, window, cx);
                 }
+            }))
+            .on_action(cx.listener(|this, _: &OpenSettings, window, cx| {
+                this.view
+                    .update(cx, |v, cx| v.show_configuration(window, cx))
             }))
             .on_action(cx.listener(|this, _: &NewChat, window, cx| {
                 this.handle(WorkbenchIntent::NewSession, window, cx)

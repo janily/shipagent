@@ -1,3 +1,5 @@
+#[path = "workbench_settings.rs"]
+mod settings;
 #[path = "workbench_sidebar.rs"]
 mod sidebar;
 // Native application facade and retained compatibility projections over typed RPC groups.

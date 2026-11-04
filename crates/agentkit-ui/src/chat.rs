@@ -35,6 +35,11 @@ impl WorkbenchView {
         };
         let thinking = settings
             .and_then(|s| s.thinking_level)
+            .or_else(|| {
+                self.app_state
+                    .as_ref()
+                    .and_then(|a| a.read(cx).default_thinking)
+            })
             .unwrap_or(agentkit_protocol::generated::ThinkingLevel::Medium);
         let execute = session.is_some_and(|s| {
             s.permission_mode == Some(agentkit_protocol::generated::PermissionMode::AllowAll)

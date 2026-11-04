@@ -173,7 +173,12 @@ pub(super) fn markdown(
         *position = row;
         return view.clone();
     }
-    let view = cx.new(|cx| MarkdownView::new(text, streaming, cx));
+    let fade = !cache.borrow().reduce_stream_fade;
+    let view = cx.new(|cx| {
+        let mut view = MarkdownView::new(text, streaming, cx);
+        view.set_stream_fade(fade, cx);
+        view
+    });
     let subscription = cx.subscribe(&view, move |_, event: &ChatIntent, cx| {
         let _ = parent.update(cx, |_, cx| cx.emit(event.clone()));
     });
