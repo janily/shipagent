@@ -61,47 +61,76 @@ impl WorkbenchView {
                                     .state
                                     .as_ref()
                                     .is_some_and(|s| s.read(cx).model.state.session.id == id);
-                                Button::new(SharedString::from(format!("session:{id}")))
-                                    .ghost()
+                                let pending = self.sessions.as_ref().is_some_and(|list| {
+                                    list.read(cx)
+                                        .model
+                                        .awaiting
+                                        .get(&id)
+                                        .is_some_and(|r| !r.is_empty())
+                                });
+                                h_flex()
                                     .w_full()
-                                    .justify_start()
-                                    .label({
-                                        let pending = self.sessions.as_ref().is_some_and(|list| {
-                                            list.read(cx)
-                                                .model
-                                                .awaiting
-                                                .get(&id)
-                                                .is_some_and(|r| !r.is_empty())
-                                        });
-                                        let plan = self.sessions.as_ref().is_some_and(|list| {
-                                            list.read(cx).model.plans.contains(&id)
-                                        });
-                                        let name = session
-                                            .name
-                                            .clone()
-                                            .or(session.preview.clone())
-                                            .unwrap_or_else(|| t!("ak.new"));
-                                        format!(
-                                            "{}{}{}{}",
-                                            if session.is_processing { "• " } else { "" },
-                                            if pending {
-                                                format!("{} · ", t!("ak.permission_wait"))
-                                            } else {
-                                                String::new()
-                                            },
-                                            if plan {
-                                                format!("{} · ", t!("ak.plan"))
-                                            } else {
-                                                String::new()
-                                            },
-                                            name
+                                    .gap_2()
+                                    .when(pending && !active, |v| {
+                                        v.child(
+                                            div()
+                                                .id(SharedString::from(format!(
+                                                    "approval-dot:{id}"
+                                                )))
+                                                .size_2()
+                                                .rounded_full()
+                                                .bg(cx.theme().warning)
+                                                .test_support(),
                                         )
                                     })
-                                    .disabled(!self.ready || self.loading)
-                                    .when(active, |button| button.bg(cx.theme().sidebar_accent))
-                                    .on_click(cx.listener(move |_, _, _, cx| {
-                                        cx.emit(WorkbenchIntent::OpenSession(id.clone()))
-                                    }))
+                                    .child(
+                                        Button::new(SharedString::from(format!("session:{id}")))
+                                            .ghost()
+                                            .flex_1()
+                                            .min_w_0()
+                                            .justify_start()
+                                            .label({
+                                                let pending =
+                                                    self.sessions.as_ref().is_some_and(|list| {
+                                                        list.read(cx)
+                                                            .model
+                                                            .awaiting
+                                                            .get(&id)
+                                                            .is_some_and(|r| !r.is_empty())
+                                                    });
+                                                let plan =
+                                                    self.sessions.as_ref().is_some_and(|list| {
+                                                        list.read(cx).model.plans.contains(&id)
+                                                    });
+                                                let name = session
+                                                    .name
+                                                    .clone()
+                                                    .or(session.preview.clone())
+                                                    .unwrap_or_else(|| t!("ak.new"));
+                                                format!(
+                                                    "{}{}{}{}",
+                                                    if session.is_processing { "• " } else { "" },
+                                                    if pending {
+                                                        format!("{} · ", t!("ak.permission_wait"))
+                                                    } else {
+                                                        String::new()
+                                                    },
+                                                    if plan {
+                                                        format!("{} · ", t!("ak.plan"))
+                                                    } else {
+                                                        String::new()
+                                                    },
+                                                    name
+                                                )
+                                            })
+                                            .disabled(!self.ready || self.loading)
+                                            .when(active, |button| {
+                                                button.bg(cx.theme().sidebar_accent)
+                                            })
+                                            .on_click(cx.listener(move |_, _, _, cx| {
+                                                cx.emit(WorkbenchIntent::OpenSession(id.clone()))
+                                            })),
+                                    )
                             }),
                     ),
             )

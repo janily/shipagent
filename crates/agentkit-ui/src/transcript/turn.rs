@@ -164,6 +164,11 @@ impl Render for TurnCard {
                     .test_support(),
             );
         }
+        body = body.child(crate::permissions::render_notices(
+            self.store.read(cx),
+            Some(self.row),
+            cx,
+        ));
         if let Some(response) = &turn.response
             && let Some(id) = &response.message_id
             && let Some((_, view, _)) = cache.borrow().markdown.get(id)

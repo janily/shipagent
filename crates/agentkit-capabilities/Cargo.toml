@@ -8,7 +8,14 @@ publish = false
 
 [dependencies]
 agentkit-protocol.workspace = true
+thiserror.workspace = true
 gpui-kit.workspace = true
 
 [lints]
 workspace = true
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+notify-rust = "4.18.2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+notify-rust = { version = "4.18.2", features = ["preview-macos-un"] }

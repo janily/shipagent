@@ -1,4 +1,10 @@
 //! GPUI wrappers around pure caches. RPC and filesystem work belongs to controllers.
+/// Indexed placement of ephemeral conversation annotations.
+#[path = "entities_annotations.rs"]
+pub mod annotations;
+/// Ephemeral native approval leases and acknowledged annotations.
+#[path = "entities_permissions.rs"]
+pub mod permissions;
 use crate::core::{
     reducer::{Context as ReductionContext, Effect},
     session::{SessionModel, SessionStoreEvent, SessionSummaries},
@@ -80,15 +86,28 @@ pub struct SessionStore {
     pub model: SessionModel,
     /// Controller-owned session configuration RPC in flight; survives cached view switches.
     pub selection_pending: bool,
+    /// Controller-owned approval operation and conversation annotations.
+    pub approval: permissions::ApprovalState,
+    /// Stable row identities for native conversation annotations.
+    pub annotations: annotations::AnnotationIndex,
 }
 impl EventEmitter<SessionStoreEvent> for SessionStore {}
 impl SessionStore {
     /// Open an authoritative snapshot once; no RPC occurs here.
     pub fn new(session: g::Session) -> Self {
+        let model = SessionModel::new(session);
+        let mut annotations = annotations::AnnotationIndex::default();
+        annotations.rebuild(&model.turns);
         Self {
-            model: SessionModel::new(session),
+            model,
+            annotations,
             selection_pending: false,
+            approval: Default::default(),
         }
+    }
+    /// Refresh placement after controller-owned optimistic sends or initial backlog application.
+    pub fn refresh_annotations(&mut self) {
+        self.annotations.rebuild(&self.model.turns);
     }
     /// Apply a session-specific batch; semantic failures become deferred error effects.
     /// Valid neighbors remain ordered and one Entity notification follows.
@@ -134,6 +153,7 @@ impl SessionStore {
             }
         }
         if let Some(from_turn) = from {
+            self.annotations.rebuild(&self.model.turns);
             cx.emit(SessionStoreEvent::TurnsChanged { from_turn });
         } else {
             for event in output {

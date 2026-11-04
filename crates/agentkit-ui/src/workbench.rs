@@ -51,6 +51,8 @@ pub enum WorkbenchIntent {
     OpenSession(String),
     /// Explicit tool permission decision.
     Permission {
+        /// Session captured when the user made the decision.
+        session_id: String,
         /// Backend request identifier.
         request_id: String,
         /// User granted this invocation.
@@ -98,8 +100,7 @@ pub struct WorkbenchView {
     pub(crate) setup: bool,
     pub(crate) submitting: bool,
     configuring: bool,
-    pub(crate) permission_busy: bool,
-    permission_id: Option<String>,
+    pub(crate) permission_prompt: Entity<crate::permissions::PermissionPrompt>,
     base_url: Entity<InputState>,
     model_id: Entity<InputState>,
     api_key: Entity<InputState>,
@@ -123,6 +124,11 @@ impl WorkbenchView {
             cx.emit(event.clone());
             cx.notify();
         });
+        let permission_prompt = cx.new(crate::permissions::PermissionPrompt::new);
+        let permission_subscription = cx
+            .subscribe(&permission_prompt, |_, _, event: &WorkbenchIntent, cx| {
+                cx.emit(event.clone())
+            });
         let chat = cx.new(ChatView::new);
         let scroll = chat.read(cx).scroll_state().clone();
         let chat_subscription = cx.subscribe(&chat, |_, _, intent, cx| {
@@ -151,13 +157,16 @@ impl WorkbenchView {
             setup: false,
             submitting: false,
             configuring: false,
-            permission_busy: false,
-            permission_id: None,
+            permission_prompt,
             base_url: cx
                 .new(|cx| InputState::new(window, cx).placeholder("http://127.0.0.1:11434/v1")),
             model_id: cx.new(|cx| InputState::new(window, cx)),
             api_key: cx.new(|cx| InputState::new(window, cx).masked(true)),
-            _subscriptions: vec![input_subscription, chat_subscription],
+            _subscriptions: vec![
+                input_subscription,
+                chat_subscription,
+                permission_subscription,
+            ],
             session_subscriptions: Vec::new(),
             list_subscription: None,
             app_state: None,
@@ -167,6 +176,7 @@ impl WorkbenchView {
     }
     /// Show the existing local model connection form without changing drafts.
     pub fn show_configuration(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
         self.setup = true;
         self.base_url
             .update(cx, |input, cx| input.focus(window, cx));
@@ -180,6 +190,9 @@ impl WorkbenchView {
         self.reload_required = false;
         self.status_key = "ak.connected";
         self.setup = self.model.is_none();
+        if self.setup {
+            self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
+        }
         self.error = None;
         cx.notify();
     }
@@ -249,8 +262,7 @@ impl WorkbenchView {
             .clone()
             .update(cx, |input, cx| input.set_value(draft, window, cx));
         self.session_subscriptions
-            .push(cx.observe(&store, |this, _, cx| {
-                this.sync_permissions(cx);
+            .push(cx.observe(&store, |_, _, cx| {
                 cx.notify();
             }));
         if self.setup {
@@ -263,23 +275,11 @@ impl WorkbenchView {
                 .clone()
                 .update(cx, |input, cx| input.focus(window, cx));
         }
+        self.permission_prompt
+            .update(cx, |p, cx| p.bind(Some(store), window, cx));
         self.loading = false;
         self.submitting = false;
-        self.permission_busy = false;
         cx.notify();
-    }
-    fn sync_permissions(&mut self, cx: &mut Context<Self>) {
-        let request = self.state.as_ref().and_then(|s| {
-            s.read(cx)
-                .model
-                .permissions
-                .first()
-                .map(|r| r.request_id.clone())
-        });
-        if self.permission_id != request {
-            self.permission_busy = false;
-            self.permission_id = request;
-        }
     }
     /// Inspect native text-input protocol in isolated component tests.
     #[cfg(feature = "samples")]
@@ -299,11 +299,10 @@ impl WorkbenchView {
     /// Detach a deleted session; the backend connection remains available for new sessions.
     pub fn clear_session(&mut self, cx: &mut Context<Self>) {
         self.session_subscriptions.clear();
+        self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
         self.state = None;
         self.composer.update(cx, |c, _| c.bind(None));
         self.chat.update(cx, |chat, cx| chat.clear(cx));
-        self.permission_id = None;
-        self.permission_busy = false;
         self.scroll.update(cx, |s, cx| s.reset(0, cx));
         cx.notify();
     }
@@ -370,9 +369,9 @@ impl WorkbenchView {
         self.error = Some(error);
         self.submitting = false;
         self.configuring = false;
-        self.permission_busy = false;
         self.loading = false;
         if disconnected {
+            self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
             self.composer.update(cx, |c, cx| c.selection_finished(cx));
             self.ready = false;
             self.status_key = "ak.disconnected";
@@ -381,6 +380,7 @@ impl WorkbenchView {
     }
     /// Show session loading without replacing its message history with false content.
     pub fn set_loading(&mut self, cx: &mut Context<Self>) {
+        self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
         self.loading = true;
         cx.notify();
     }
@@ -388,6 +388,11 @@ impl WorkbenchView {
         self.state
             .as_ref()
             .is_some_and(|store| store.read(cx).model.busy())
+    }
+    /// Report a recoverable OS alert failure without disabling approval controls.
+    pub fn notification_unavailable(&mut self, cx: &mut Context<Self>) {
+        self.error = Some(t!("ak.approval.notification_unavailable"));
+        cx.notify();
     }
     /// Apply the client's persisted sending shortcut.
     pub fn set_send_key(&mut self, key: crate::composer::SendKey, cx: &mut Context<Self>) {

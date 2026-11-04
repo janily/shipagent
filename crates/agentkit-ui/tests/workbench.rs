@@ -136,6 +136,7 @@ fn permission_buttons_emit_one_explicit_decision(cx: &mut TestAppContext) {
                 request_id,
                 allowed,
                 always,
+                ..
             } = e
             {
                 sent.borrow_mut()

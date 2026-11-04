@@ -41,7 +41,6 @@
   "ak.no_plan": "No plan submitted in this session",
   "ak.no_tasks": "No background tasks",
   "ak.no_workspace": "No backend workspace available",
-  "ak.permission": "Your approval is required",
   "ak.permission_wait": "Waiting for approval",
   "ak.plan": "Plan",
   "ak.prefs_readonly": "Preferences are read-only",
@@ -135,5 +134,17 @@
   "ak.compose.thinking_xhigh": "Thinking · Extra high",
   "ak.compose.thinking_max": "Thinking · Max",
   "ak.compose.choose_model": "Choose an available model to start",
-  "ak.compose.key_cmd_enter_mac": "⌘+Enter to send"
+  "ak.compose.key_cmd_enter_mac": "⌘+Enter to send",
+  "ak.approval.title": "Approval required: %{tool}",
+  "ak.approval.queue": "%{current} / %{total}",
+  "ak.approval.reason": "Reason: %{text}",
+  "ak.approval.impact": "Impact: %{text}",
+  "ak.approval.execute_warning": "Execute mode: Agent can write files and run commands without confirmation",
+  "ak.approval.return_safe": "Return to Explore",
+  "ak.approval.allowed_receipt": "Allowed · %{tool}",
+  "ak.approval.denied_receipt": "Denied · %{tool}",
+  "ak.approval.always_receipt": "Always allowed for this session · %{tool}",
+  "ak.approval.mode_changed": "Permission mode changed to %{mode}",
+  "ak.approval.notification": "A conversation needs your approval. Return to the workbench to review it.",
+  "ak.approval.notification_unavailable": "System notification could not be shown. Review pending approvals in the workbench."
 }
