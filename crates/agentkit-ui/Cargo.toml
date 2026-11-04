@@ -22,6 +22,7 @@ secrecy.workspace = true
 agentkit-store = { workspace = true, features = ["entities"] }
 gpui-kit.workspace = true
 rust-i18n.workspace = true
+similar = "2.7"
 
 [lints]
 workspace = true

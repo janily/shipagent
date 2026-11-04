@@ -118,8 +118,17 @@ impl ChatView {
         });
         // Suffix regrouping may change row identities. Existing card objects read
         // their current canonical Turn by index; stale keys are dropped on render.
-        for (_, view, _) in self.cache.borrow().cards.values() {
-            view.update(cx, |_, cx| cx.notify());
+        for (_, view, _) in self
+            .cache
+            .borrow()
+            .cards
+            .values()
+            .filter(|(row, _, _)| *row >= from)
+        {
+            view.update(cx, |card, cx| {
+                card.invalidate_outputs();
+                cx.notify();
+            });
         }
         self.prune(cx);
         cx.notify();

@@ -3,6 +3,8 @@ mod chat_actions;
 #[cfg(feature = "perf")]
 #[path = "perf.rs"]
 mod perf;
+#[path = "tool_content.rs"]
+mod tool_content;
 #[cfg(feature = "perf")]
 pub(crate) fn validate_perf() -> Result<()> {
     perf::Config::from_env().map(|_| ())

@@ -31,6 +31,13 @@ pub use turn::{TurnCard, turn_markdown};
 /// Conversation actions handled by the application, never by RPC in the views.
 #[derive(Clone, Debug)]
 pub enum ChatIntent {
+    /// Open original canonical tool content in a read-only native editor.
+    OpenToolContent {
+        /// Stable activity/message ID.
+        activity_id: String,
+        /// Original result, input packet or selected input field.
+        content: crate::tools::ToolContent,
+    },
     /// Copy a canonical message or completed assistant turn.
     CopyMessage(String),
     /// Show canonical assistant turn Markdown in a details dialog.

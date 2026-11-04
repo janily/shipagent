@@ -14,6 +14,10 @@ impl WorkbenchController {
             return;
         };
         match action {
+            ChatIntent::OpenToolContent {
+                activity_id,
+                content,
+            } => self.open_tool_content(&activity_id, &content, window, cx),
             ChatIntent::CopyMessage(ref id) | ChatIntent::ViewTurn(ref id) => {
                 let detail = matches!(action, ChatIntent::ViewTurn(_));
                 let model = &store.read(cx).model;

@@ -5,6 +5,8 @@ mod chat;
 /// Isolated, memory-only Kit component examples; enable with `samples`.
 #[cfg(feature = "samples")]
 pub mod samples;
+/// Native tool summaries, bounded previews and full read-only result editors.
+pub mod tools;
 /// Virtualized transcript, assistant cards and streaming Markdown documents.
 pub mod transcript;
 mod workbench;

@@ -1,96 +1,145 @@
 use super::*;
-use gpui_kit::component::spinner::Spinner;
+use crate::tools::{ToolCard, ToolOutputView};
+type Outputs = HashMap<String, (Entity<ToolOutputView>, Vec<Subscription>)>;
 pub(super) fn render(
     activities: Vec<&Activity>,
     cache: &Rc<RefCell<Cache>>,
     expanded: &HashSet<String>,
+    outputs: &Outputs,
+    collapsed: &HashSet<String>,
     cx: &Context<TurnCard>,
 ) -> AnyElement {
+    let grouped = crate::tools::grouped(&activities);
+    let originals: HashMap<_, _> = activities.iter().map(|a| (a.id.as_str(), *a)).collect();
     let mut area = v_flex().gap_2().w_full();
-    for activity in activities {
-        if activity.kind == ActivityType::Intermediate {
-            if let Some((_, view, _)) = cache.borrow().markdown.get(&activity.id) {
-                area = area.child(view.clone());
+    let mut seen = HashSet::new();
+    for item in grouped {
+        match item {
+            ActivityOrGroup::Activity(a) => {
+                if seen.insert(a.id.clone()) {
+                    let canonical = originals.get(a.id.as_str()).copied().unwrap_or(&a);
+                    area = area.child(row(
+                        canonical,
+                        a.depth.unwrap_or(0).max(0) as usize,
+                        cache,
+                        expanded,
+                        outputs,
+                        cx,
+                    ));
+                }
             }
-            continue;
-        }
-        if matches!(activity.kind, ActivityType::Status | ActivityType::Thinking) {
-            if let Some(content) = &activity.content {
-                area =
-                    area.child(Marker::new().content(MarkerContent::new().text(content.clone())));
-            }
-            continue;
-        }
-        let id = activity.id.clone();
-        let tool_open = expanded.contains(&id);
-        let status = match activity.status {
-            ActivityStatus::Error => t!("common.failed"),
-            ActivityStatus::Completed => t!("ak.tool_done"),
-            ActivityStatus::Backgrounded => t!("ak.chat.background"),
-            _ => t!("ak.tool_running"),
-        };
-        let name = activity
-            .display_name
-            .clone()
-            .or(activity.tool_name.clone())
-            .unwrap_or_else(|| t!("ak.plan"));
-        let mut heading = h_flex().gap_2().items_center();
-        if activity.status == ActivityStatus::Running {
-            heading = heading.child(Spinner::new());
-        }
-        heading = heading.child(
-            Button::new(SharedString::from(format!("tool:{id}")))
-                .ghost()
-                .label(format!("{name} · {status}"))
-                .accessibility_label(t!("ak.chat.toggle_tool"))
-                .on_click(cx.listener(move |this, _, _, cx| {
-                    if !this.tools.remove(&id) {
-                        this.tools.insert(id.clone());
+            ActivityOrGroup::Group(group) => {
+                let id = group.parent.id.clone();
+                let hidden = collapsed.contains(&id);
+                if seen.insert(id.clone()) {
+                    let canonical = originals.get(id.as_str()).copied();
+                    if let Some(canonical) = canonical {
+                        area = area.child(row(canonical, 0, cache, expanded, outputs, cx));
+                    } else {
+                        let toggle = id.clone();
+                        area = area.child(ToolCard::new(&group.parent, !hidden).on_toggle(
+                            cx.listener(move |this, _, _, cx| {
+                                if !this.collapsed_groups.remove(&toggle) {
+                                    this.collapsed_groups.insert(toggle.clone());
+                                }
+                                this.remeasure(cx);
+                                cx.notify();
+                            }),
+                        ));
                     }
-                    this.remeasure(cx);
-                    cx.notify();
-                })),
-        );
-        if let Some(intent) = &activity.intent {
-            heading = heading.child(
-                div()
-                    .text_sm()
-                    .text_color(cx.theme().muted_foreground)
-                    .child(intent.clone()),
-            );
-        }
-        let seconds = activity.elapsed_seconds.or_else(|| {
-            (activity.status == ActivityStatus::Running).then(|| {
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map_or(0., |d| {
-                        ((d.as_millis() as i128 - i128::from(activity.timestamp)).max(0) as f64)
-                            / 1000.
-                    })
-            })
-        });
-        if let Some(seconds) = seconds {
-            heading = heading.child(format_duration(seconds * 1000.));
-        }
-        let mut tool = v_flex()
-            .border_1()
-            .border_color(cx.theme().border)
-            .rounded_md()
-            .child(heading);
-        if tool_open {
-            tool = tool
-                .child(serde_json::to_string(&activity.tool_input).unwrap_or_default())
-                .child(
-                    activity
-                        .content
-                        .as_deref()
-                        .unwrap_or_default()
-                        .chars()
-                        .take(2000)
-                        .collect::<String>(),
+                }
+                let toggle = id.clone();
+                area = area.child(
+                    Button::new(SharedString::from(format!("tool-children:{id}")))
+                        .ghost()
+                        .label(t!("ak.tools.children", count = group.children.len()))
+                        .icon(if hidden {
+                            IconName::ChevronRight
+                        } else {
+                            IconName::ChevronDown
+                        })
+                        .on_click(cx.listener(move |this, _, _, cx| {
+                            if !this.collapsed_groups.remove(&toggle) {
+                                this.collapsed_groups.insert(toggle.clone());
+                            }
+                            this.remeasure(cx);
+                            cx.notify();
+                        })),
                 );
+                if let Some(data) = group.task_output_data {
+                    area = area.child(
+                        div()
+                            .text_xs()
+                            .text_color(cx.theme().muted_foreground)
+                            .child(t!(
+                                "ak.tools.usage",
+                                input = format_tokens(data.input_tokens.unwrap_or(0.)),
+                                output = format_tokens(data.output_tokens.unwrap_or(0.))
+                            )),
+                    );
+                }
+                for child in group.children {
+                    if !seen.insert(child.id.clone()) {
+                        continue;
+                    }
+                    if !hidden {
+                        let canonical = originals.get(child.id.as_str()).copied().unwrap_or(&child);
+                        area = area.child(row(
+                            canonical,
+                            1 + child.depth.unwrap_or(0).max(0) as usize,
+                            cache,
+                            expanded,
+                            outputs,
+                            cx,
+                        ));
+                    }
+                }
+            }
         }
-        area = area.child(tool);
+    }
+    // Malformed cyclic parent chains must not silently remove actual activities.
+    for activity in activities {
+        if activity.tool_name.as_deref() != Some("TaskOutput") && !seen.contains(&activity.id) {
+            area = area.child(row(
+                activity,
+                activity.depth.unwrap_or(0).max(0) as usize,
+                cache,
+                expanded,
+                outputs,
+                cx,
+            ));
+        }
     }
     area.into_any_element()
+}
+fn row(
+    activity: &Activity,
+    depth: usize,
+    cache: &Rc<RefCell<Cache>>,
+    expanded: &HashSet<String>,
+    outputs: &Outputs,
+    cx: &Context<TurnCard>,
+) -> AnyElement {
+    if activity.kind == ActivityType::Intermediate {
+        return cache
+            .borrow()
+            .markdown
+            .get(&activity.id)
+            .map(|(_, view, _)| view.clone().into_any_element())
+            .unwrap_or_else(|| div().into_any_element());
+    }
+    if matches!(activity.kind, ActivityType::Status | ActivityType::Thinking) {
+        return Marker::new()
+            .content(MarkerContent::new().text(activity.content.clone().unwrap_or_default()))
+            .into_any_element();
+    }
+    let id = activity.id.clone();
+    let open = expanded.contains(&id);
+    let mut card = ToolCard::new(activity, open)
+        .depth(depth)
+        .on_toggle(cx.listener(move |this, _, window, cx| this.toggle_tool(&id, window, cx)));
+    if let Some((view, _)) = outputs.get(&activity.id) {
+        card = card.content(view.clone());
+    }
+    card.into_any_element()
 }
