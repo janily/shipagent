@@ -127,3 +127,5 @@ T-1-13 工具卡、Diff与完整只读内容见 [验证报告](verification-tool
 T-1-14 输入与会话选项见 [验证报告](verification-composer-2026-11-04.md)。原生输入协议与菜单测试：`cargo test -p agentkit-ui --features samples --test composer --locked`。发送键保存在客户端prefs的`send_key`，可在输入工具栏切换；完整后端草稿持久化按T-2-08推进。
 
 T-1-15 权限审批见 [验证报告](verification-permissions-2026-11-04.md)。原生专项：`cargo test -p agentkit-ui --features samples --test permissions --locked`；真实后端及原生窗口命令见 [审批验证工具](../tools/permissions/README.md)。`approval_notifications` 控制本地后台审批提醒；完整通知设置按 T-2-15 推进。
+
+T-1-16 原生侧栏与工作区切换见 [验证报告](verification-sidebar-2026-11-04.md)。专项命令与千条真实会话窗口工具见 [导航验证](../tools/sidebar/README.md)；默认不包含正文搜索、视图筛选或多窗口操作。

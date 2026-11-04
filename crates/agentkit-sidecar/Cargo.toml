@@ -31,3 +31,7 @@ process-wrap = { version = "=8.2.1", default-features = false, features = ["std"
 
 [target.'cfg(windows)'.dependencies]
 command-group = "=5.0.1"
+
+[[example]]
+name = "navigation-fixture"
+path = "../../tools/sidebar/seed.rs"

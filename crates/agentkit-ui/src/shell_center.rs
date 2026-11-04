@@ -42,7 +42,28 @@ impl WorkbenchView {
                     .border_b_1()
                     .border_color(cx.theme().border)
                     .justify_between()
-                    .child(div().font_semibold().child(title))
+                    .child(
+                        div()
+                            .id("session-title")
+                            .font_semibold()
+                            .child(title)
+                            .on_mouse_down(
+                                MouseButton::Left,
+                                cx.listener(|this, e: &MouseDownEvent, _, cx| {
+                                    if e.click_count == 2
+                                        && this.ready
+                                        && !this.loading
+                                        && let Some(s) = &this.state
+                                    {
+                                        cx.emit(WorkbenchIntent::Sidebar(
+                                            crate::sidebar::SidebarIntent::Rename(
+                                                s.read(cx).model.state.session.id.clone(),
+                                            ),
+                                        ));
+                                    }
+                                }),
+                            ),
+                    )
                     .child(
                         div()
                             .text_xs()

@@ -395,3 +395,26 @@ fn repeated_backend_mode_callbacks_make_one_notice_but_real_transitions_remain()
     assert!(s.mode_changed(None, g::PermissionMode::Ask, anchor));
     assert_eq!(s.modes.len(), 3);
 }
+#[gpui_kit::test]
+fn workspace_snapshot_keeps_approval_queue_lease_draft_and_entity_identity(
+    cx: &mut TestAppContext,
+) {
+    let (w, _, store, _) = open(cx);
+    cx.update(|cx| {
+        requests(&store, &["r"], cx);
+        store.update(cx, |s, cx| {
+            s.model.set_draft("keep across workspace".into());
+            let lease = s.approval.begin("r").unwrap();
+            let snapshot = s.model.state.session.clone();
+            s.refresh_snapshot(snapshot, cx);
+            assert_eq!(s.model.permissions[0].request_id, "r");
+            assert_eq!(s.model.draft.text, "keep across workspace");
+            assert!(s.approval.finish("r", lease));
+        });
+    });
+    step(cx, w, |w, cx| {
+        w.render_frame(cx);
+        assert!(w.try_find("permission-card").is_some());
+        w.press("enter", cx);
+    });
+}

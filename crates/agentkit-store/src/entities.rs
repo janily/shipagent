@@ -35,6 +35,8 @@ pub struct AppState {
 /// Window-local workspace context; no controller or RPC handles are retained.
 #[derive(Default)]
 pub struct WorkspaceStore {
+    /// Authoritative registered workspace catalog.
+    pub catalog: Vec<g::Workspace>,
     /// Workspace identity.
     pub id: String,
     /// Display name.
@@ -61,6 +63,24 @@ impl SessionListStore {
     ) {
         let mut changed = false;
         for event in events {
+            let id = event.raw().get("sessionId").and_then(|s| s.as_str());
+            if let Some(s) = id.and_then(|id| self.model.sessions.iter_mut().find(|s| s.id == id)) {
+                match event.known() {
+                    Some(g::SessionEvent::UserMessageEvent(e)) => {
+                        s.last_message_at = s.last_message_at.max(e.message.timestamp);
+                        s.preview = Some(e.message.content.chars().take(200).collect());
+                    }
+                    Some(g::SessionEvent::CompleteEvent(e)) => {
+                        if let Some(unread) = e.has_unread {
+                            s.has_unread = Some(unread);
+                        }
+                    }
+                    Some(
+                        g::SessionEvent::TextDeltaEvent(_) | g::SessionEvent::ToolStartEvent(_),
+                    ) if s.is_processing => continue,
+                    _ => {}
+                }
+            }
             changed |= self.model.apply(event);
         }
         if changed {
@@ -104,6 +124,21 @@ impl SessionStore {
             selection_pending: false,
             approval: Default::default(),
         }
+    }
+    /// Refresh authoritative content in the same Entity, preserving local approvals and drafts.
+    /// Controllers serialize this against optimistic sends; backend snapshots omit permission requests.
+    pub fn refresh_snapshot(&mut self, session: g::Session, cx: &mut Context<Self>) {
+        let mut model = SessionModel::new(session);
+        model.draft = self.model.draft.clone();
+        model.draft_attachments = self.model.draft_attachments.clone();
+        model.last_error = self.model.last_error.clone();
+        if model.state.session.is_processing {
+            model.permissions = self.model.permissions.clone();
+        }
+        self.model = model;
+        self.refresh_annotations();
+        cx.emit(SessionStoreEvent::TurnsChanged { from_turn: 0 });
+        cx.notify();
     }
     /// Refresh placement after controller-owned optimistic sends or initial backlog application.
     pub fn refresh_annotations(&mut self) {

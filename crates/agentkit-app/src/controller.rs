@@ -4,6 +4,10 @@ mod approval_notifications;
 mod chat_actions;
 #[path = "composer_actions.rs"]
 mod composer_actions;
+#[path = "list_refresh.rs"]
+mod list_refresh;
+#[path = "navigation.rs"]
+mod navigation;
 #[cfg(feature = "perf")]
 #[path = "perf.rs"]
 mod perf;
@@ -108,6 +112,7 @@ struct ContextEvents {
     connections: async_channel::Receiver<Result<(), agentkit_client::RpcError>>,
 }
 struct Started {
+    workspaces: Vec<Workspace>,
     running: Running,
     context: ContextEvents,
     workspace: Workspace,
@@ -215,7 +220,7 @@ async fn initialize(
 ) -> Result<Started> {
     let initial = WorkbenchApi::connect(endpoint.clone(), String::new());
     initial.health().await?;
-    let mut workspaces = initial.workspaces_generated().await?;
+    let workspaces = initial.workspaces_generated().await?;
     let selected = if preferences.restore_session {
         workspaces
             .iter()
@@ -225,7 +230,7 @@ async fn initialize(
         0
     };
     anyhow::ensure!(!workspaces.is_empty(), agentkit_ui::t!("ak.no_workspace"));
-    let workspace = workspaces.swap_remove(selected);
+    let workspace = workspaces[selected].clone();
     initial.disable_browser().await?;
     let connections = initial.connections_generated().await?;
     let model = connections
@@ -292,6 +297,7 @@ async fn initialize(
     };
     Ok(Started {
         running,
+        workspaces,
         context,
         workspace,
         sessions,
@@ -312,6 +318,7 @@ pub(crate) struct WorkbenchController {
     brand: Brand,
     runtime: RuntimeSlot,
     workspace: Option<Workspace>,
+    workspace_sessions: std::collections::HashMap<String, String>,
     state: Option<Entity<SessionStore>>,
     stores: std::collections::HashMap<String, Entity<SessionStore>>,
     app_state: Entity<AppState>,
@@ -319,7 +326,7 @@ pub(crate) struct WorkbenchController {
     list: Entity<SessionListStore>,
     backlog: Vec<(DecodedSessionEvent, ReductionContext)>,
     backlog_overflow: bool,
-    refreshing_list: bool,
+    list_refresh: list_refresh::ListRefresh,
     list_backlog: Vec<DecodedSessionEvent>,
     list_overflow: bool,
     epoch: u64,
@@ -333,6 +340,7 @@ pub(crate) struct WorkbenchController {
     >,
     quitting: Rc<Cell<bool>>,
     loading: bool,
+    workspace_switching: bool,
     transport_epoch: u64,
     startup: StartupSlot,
     events: Option<Task<()>>,
@@ -348,6 +356,8 @@ pub(crate) struct WorkbenchController {
     _preference_monitor: Option<Task<()>>,
     _subscription: Subscription,
     chat_dialog_subscription: Option<Subscription>,
+    navigation_subscription: Option<Subscription>,
+    navigation_pending: bool,
 }
 impl WorkbenchController {
     pub(crate) fn new(
@@ -398,6 +408,7 @@ impl WorkbenchController {
             brand,
             runtime,
             workspace: None,
+            workspace_sessions: Default::default(),
             state: None,
             stores: std::collections::HashMap::new(),
             app_state,
@@ -405,7 +416,7 @@ impl WorkbenchController {
             list: cx.new(|_| SessionListStore::default()),
             backlog: Vec::new(),
             backlog_overflow: false,
-            refreshing_list: false,
+            list_refresh: Default::default(),
             list_backlog: Vec::new(),
             list_overflow: false,
             epoch: 0,
@@ -413,6 +424,7 @@ impl WorkbenchController {
             drafts: std::collections::HashMap::new(),
             quitting,
             loading: false,
+            workspace_switching: false,
             transport_epoch: 0,
             startup,
             events: None,
@@ -424,6 +436,8 @@ impl WorkbenchController {
             _recording_worker: recording_worker,
             _subscription: subscription,
             chat_dialog_subscription: None,
+            navigation_subscription: None,
+            navigation_pending: false,
             preferences,
             focus_handle: cx.focus_handle(),
             _window_observers: Vec::new(),
@@ -488,7 +502,9 @@ impl WorkbenchController {
         self.save_draft(cx);
         self.epoch = self.epoch.wrapping_add(1);
         self.loading = false;
-        self.refreshing_list = false;
+        self.navigation_pending = false;
+        self.workspace_switching = false;
+        self.list_refresh.invalidate();
         self.list_backlog.clear();
         self.list_overflow = false;
         self.context_events.clear();
@@ -561,6 +577,7 @@ impl WorkbenchController {
         self.state = Some(state.clone());
         self.workspace = Some(started.workspace.clone());
         self.workspace_store.update(cx, |s, cx| {
+            s.catalog = started.workspaces;
             s.id = started.workspace.id.clone();
             s.name = started.workspace.name.clone();
             s.workspace = Some(started.workspace.clone());
@@ -810,7 +827,7 @@ impl WorkbenchController {
                     }));
             }
         }
-        if self.refreshing_list {
+        if self.list_refresh.pending() {
             for (event, _) in &events {
                 if self.list_backlog.len() < 4096 {
                     self.list_backlog.push(event.clone());
@@ -834,6 +851,13 @@ impl WorkbenchController {
             else {
                 continue;
             };
+            if self.loading && self.workspace_switching {
+                if self.backlog.len() < 4096 {
+                    self.backlog.push((event.clone(), context.clone()));
+                } else {
+                    self.backlog_overflow = true;
+                }
+            }
             if matches!(
                 event.known(),
                 Some(agentkit_protocol::generated::SessionEvent::SessionDeletedEvent(_))
@@ -858,7 +882,7 @@ impl WorkbenchController {
             }
             if self.stores.contains_key(&id) {
                 groups.entry(id).or_default().push((event, context));
-            } else if self.loading {
+            } else if self.loading && !self.workspace_switching {
                 if self.backlog.len() < 4096 {
                     self.backlog.push((event, context));
                 } else {
@@ -929,20 +953,32 @@ impl WorkbenchController {
                 cx.notify();
             });
         }
-        if self.list.read(cx).model.refresh_required && !self.refreshing_list {
-            self.refreshing_list = true;
+        if self.list.read(cx).model.refresh_required
+            && !self.list_refresh.pending()
+            && !self.workspace_switching
+        {
+            let Some(lease) = self.list_refresh.begin() else {
+                return;
+            };
             self.list_backlog.clear();
             self.list_overflow = false;
             let generation = self.epoch;
+            let refresh_workspace = self.workspace.as_ref().map(|w| w.id.clone());
             if let Some(api) = self.api() {
                 self.operations
                     .push(cx.spawn_in(window, async move |weak, cx| {
                         let sessions = api.sessions_generated().await;
                         let _ = weak.update_in(cx, |this, window, cx| {
-                            if this.epoch != generation {
+                            if this.epoch != generation
+                                || this.workspace_switching
+                                || this.workspace.as_ref().map(|w| &w.id)
+                                    != refresh_workspace.as_ref()
+                            {
                                 return;
                             }
-                            this.refreshing_list = false;
+                            if !this.list_refresh.finish(lease) {
+                                return;
+                            }
                             let fetched = sessions.is_ok();
                             match sessions {
                                 Ok(sessions) => {
@@ -992,7 +1028,20 @@ impl WorkbenchController {
         let workspace = workspace.id.clone();
         let epoch = self.epoch;
         self.viewing = Some(cx.spawn_in(window, async move |weak, cx| {
-            if let Err(error) = api.view_session(&id, &workspace).await {
+            let result = api.view_session(&id, &workspace).await;
+            if result.is_ok() {
+                let _ = weak.update_in(cx, |this, _, cx| {
+                    if this.epoch == epoch {
+                        this.list.update(cx, |s, cx| {
+                            if let Some(s) = s.model.sessions.iter_mut().find(|s| s.id == id) {
+                                s.has_unread = Some(false);
+                            }
+                            cx.notify();
+                        });
+                    }
+                });
+            }
+            if let Err(error) = result {
                 let _ = weak.update_in(cx, |this, _, cx| {
                     if this.epoch == epoch
                         && this
@@ -1102,6 +1151,7 @@ impl WorkbenchController {
         }
         let intent_epoch = self.epoch;
         match intent {
+            WorkbenchIntent::Sidebar(action) => self.handle_navigation(action, api, window, cx),
             selection @ (WorkbenchIntent::ModelChanged { .. }
             | WorkbenchIntent::ThinkingChanged(_)
             | WorkbenchIntent::ModeChanged(_)) => {
@@ -1198,7 +1248,7 @@ impl WorkbenchController {
             WorkbenchIntent::NewSession
             | WorkbenchIntent::OpenSession(_)
             | WorkbenchIntent::Chat(agentkit_ui::transcript::ChatIntent::BranchFrom(_)) => {
-                if self.loading {
+                if self.loading || self.navigation_pending {
                     return;
                 }
                 self.save_draft(cx);
@@ -1244,6 +1294,13 @@ impl WorkbenchController {
                     return;
                 };
                 let workspace = workspace.id.clone();
+                let working_directory = std::env::var("AGENTKIT_WORKING_DIR").ok().or_else(|| {
+                    self.workspace_store
+                        .read(cx)
+                        .settings
+                        .as_ref()
+                        .and_then(|s| s.working_directory.clone())
+                });
                 let generation = self.epoch;
                 self.loading = true;
                 self.backlog.clear();
@@ -1262,11 +1319,8 @@ impl WorkbenchController {
                             )
                             .await
                         } else {
-                            api.create_session_generated(
-                                &workspace,
-                                std::env::var("AGENTKIT_WORKING_DIR").ok().as_deref(),
-                            )
-                            .await
+                            api.create_session_generated(&workspace, working_directory.as_deref())
+                                .await
                         };
                         let summaries = api.sessions_generated().await;
                         let _ = weak.update_in(cx, |this, window, cx| {

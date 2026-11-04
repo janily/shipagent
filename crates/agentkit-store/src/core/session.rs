@@ -115,6 +115,10 @@ impl SessionModel {
     pub fn turn_index(&self, id: &str) -> Option<usize> {
         self.locations.get(id).map(|(turn, _)| *turn)
     }
+    /// Whether a submission acknowledgement still owns private optimistic state.
+    pub fn has_pending_send(&self) -> bool {
+        !self.pending.is_empty()
+    }
     /// Whether work or a permission decision is outstanding.
     pub fn busy(&self) -> bool {
         self.state.session.is_processing || !self.permissions.is_empty()

@@ -17,6 +17,8 @@ use secrecy::SecretString;
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Session/workspace navigation bound to stable identities.
+    Sidebar(crate::sidebar::SidebarIntent),
     /// Select an authenticated connection and model for this session.
     ModelChanged {
         /// Connection identity.
@@ -78,6 +80,7 @@ pub enum WorkbenchIntent {
 }
 /// Native application shell hosting the canonical conversation components.
 pub struct WorkbenchView {
+    pub(crate) sidebar_view: Entity<crate::sidebar::SessionSidebar>,
     pub(crate) app_name: SharedString,
     shell: ShellPreferences,
     panel_sizes: Entity<ResizableState>,
@@ -115,6 +118,10 @@ impl EventEmitter<WorkbenchIntent> for WorkbenchView {}
 impl WorkbenchView {
     /// Construct the window immediately, while backend startup happens asynchronously.
     pub fn new(app_name: SharedString, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let sidebar_view = cx.new(|cx| crate::sidebar::SessionSidebar::new(window, cx));
+        let sidebar_sub = cx.subscribe(&sidebar_view, |_, _, intent, cx| {
+            cx.emit(WorkbenchIntent::Sidebar(intent.clone()))
+        });
         let composer = cx.new(|cx| crate::composer::Composer::new(window, cx));
         let input_subscription = cx.subscribe(&composer, |this, _, event: &WorkbenchIntent, cx| {
             if matches!(event, WorkbenchIntent::Submit(_)) {
@@ -135,6 +142,7 @@ impl WorkbenchView {
             cx.emit(WorkbenchIntent::Chat(intent.clone()))
         });
         Self {
+            sidebar_view,
             app_name,
             shell: ShellPreferences::default(),
             panel_sizes: cx.new(|_| ResizableState::default()),
@@ -163,6 +171,7 @@ impl WorkbenchView {
             model_id: cx.new(|cx| InputState::new(window, cx)),
             api_key: cx.new(|cx| InputState::new(window, cx).masked(true)),
             _subscriptions: vec![
+                sidebar_sub,
                 input_subscription,
                 chat_subscription,
                 permission_subscription,
@@ -196,6 +205,12 @@ impl WorkbenchView {
         self.error = None;
         cx.notify();
     }
+    /// Update the workspace label without altering connection setup state.
+    pub fn workspace_changed(&mut self, name: String, cx: &mut Context<Self>) {
+        self.workspace = name.into();
+        self.loading = false;
+        cx.notify();
+    }
     /// Recover transport availability; stale state requires an explicit reload.
     pub fn transport_recovered(&mut self, full_refresh: bool, cx: &mut Context<Self>) {
         self.reload_required |= full_refresh;
@@ -218,6 +233,8 @@ impl WorkbenchView {
         self.context_subscriptions.clear();
         self.app_state = Some(app.clone());
         self.workspace_state = Some(workspace.clone());
+        self.sidebar_view
+            .update(cx, |s, cx| s.bind_workspace(workspace.clone(), cx));
         self.context_subscriptions
             .push(cx.observe(&app, |_, _, cx| cx.notify()));
         self.context_subscriptions
@@ -229,6 +246,8 @@ impl WorkbenchView {
     /// Read sidebar summaries from the window's list Entity.
     pub fn bind_list(&mut self, list: Entity<SessionListStore>, cx: &mut Context<Self>) {
         self.list_subscription = Some(cx.observe(&list, |_, _, cx| cx.notify()));
+        self.sidebar_view
+            .update(cx, |s, cx| s.bind_list(list.clone(), cx));
         self.sessions = Some(list);
         cx.notify();
     }
@@ -268,7 +287,7 @@ impl WorkbenchView {
         if self.setup {
             self.base_url
                 .update(cx, |input, cx| input.focus(window, cx));
-        } else {
+        } else if !self.sidebar_view.read(cx).focused(window, cx) {
             self.composer
                 .read(cx)
                 .input()
