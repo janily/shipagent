@@ -1,6 +1,7 @@
 //! One thread serializes every child generation and lifecycle command.
 use crate::{
-    Control, Reply, Shared, SidecarConfig, SidecarError, SidecarEvent, launch::Process, lock,
+    Control, Reply, Shared, SidecarConfig, SidecarError, SidecarEvent, SupervisorState,
+    launch::Process, lock,
 };
 use agentkit_protocol::Endpoint;
 use std::{
@@ -47,6 +48,7 @@ fn failure(
     error: SidecarError,
 ) -> bool {
     *lock(&shared.error) = Some(error.clone());
+    *lock(&shared.state) = SupervisorState::Fatal;
     replies(pending, Err(error.clone()));
     shared.emit(SidecarEvent::Fatal {
         reason: error.clone(),
@@ -75,6 +77,7 @@ pub(crate) fn run(
     loop {
         match commands.recv_timeout(Duration::from_millis(10)) {
             Ok(Control::Shutdown(grace, reply)) => {
+                *lock(&shared.state) = SupervisorState::Stopped;
                 let result = process.as_mut().map(|p| p.finish(grace)).unwrap_or(Ok(()));
                 replies(&mut pending, Err(SidecarError::Stopped));
                 if let Some(ready) = ready.take() {
@@ -87,6 +90,7 @@ pub(crate) fn run(
             }
             Ok(Control::Restart(reply)) => {
                 pending.push(reply);
+                *lock(&shared.state) = SupervisorState::Restarting { attempt: 1 };
                 *lock(&shared.error) = None;
                 if !matches!(phase, Phase::Waiting) {
                     if let Some(mut old) = process.take() {
@@ -130,6 +134,7 @@ pub(crate) fn run(
             if let Some(startup) = startup {
                 match startup {
                     Ok(()) => {
+                        *lock(&shared.state) = SupervisorState::Running;
                         let endpoint = child.endpoint.clone();
                         *lock(&shared.endpoint) = endpoint.clone();
                         replies(&mut pending, Ok(endpoint.clone()));
@@ -183,6 +188,9 @@ pub(crate) fn run(
                     stderr_tail: tail,
                 });
                 if budget.record(Instant::now()) {
+                    *lock(&shared.state) = SupervisorState::Restarting {
+                        attempt: budget.exits.len() as u32,
+                    };
                     phase = Phase::Backoff(Instant::now() + Duration::from_secs(1));
                 } else {
                     let _ = failure(

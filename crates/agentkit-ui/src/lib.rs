@@ -8,6 +8,8 @@ pub mod composer;
 pub mod onboarding;
 /// Native approval queue, focus and acknowledged conversation notices.
 pub mod permissions;
+/// Connection, restart and fatal-state presentation.
+pub mod recovery;
 /// Isolated, memory-only Kit component examples; enable with `samples`.
 #[cfg(feature = "samples")]
 pub mod samples;

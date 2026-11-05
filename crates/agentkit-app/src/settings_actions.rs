@@ -26,7 +26,10 @@ impl WorkbenchController {
             .settings()
             .update(cx, |s, cx| s.status(busy, error, notice, cx));
     }
-    pub(in crate::controller) fn settings_api(&self) -> Option<WorkbenchApi> {
+    pub(in crate::controller) fn settings_api(&self, cx: &App) -> Option<WorkbenchApi> {
+        if !self.view.read(cx).connection_ready() {
+            return None;
+        }
         let (api, snapshot) = self.api()?.bind_connection().ok()?;
         transport_is_current(&snapshot, self.transport_epoch).then_some(api)
     }
@@ -55,7 +58,7 @@ impl WorkbenchController {
         if self.settings_pending {
             return;
         }
-        let Some(api) = self.settings_api() else {
+        let Some(api) = self.settings_api(cx) else {
             self.settings_status(
                 false,
                 Some(agentkit_ui::t!("ak.connection_unavailable")),

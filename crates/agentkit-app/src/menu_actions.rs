@@ -89,7 +89,9 @@ impl WorkbenchController {
     }
     pub(super) fn menu_status(&self, cx: &App) -> crate::menus::Status {
         crate::menus::Status {
-            ready: self.api().is_some() && !self.loading && !self.navigation_pending,
+            ready: self.view.read(cx).connection_ready()
+                && !self.loading
+                && !self.navigation_pending,
             session: self.state.is_some(),
             busy: self.state.as_ref().is_some_and(|s| s.read(cx).model.busy()),
             blocked: !self.view.read(cx).conversation_visible(),

@@ -170,8 +170,7 @@ fn loading_and_stale_recovery_preserve_the_draft_and_block_send(cx: &mut TestApp
         window.press("enter", cx);
         v.update(cx, |v, cx| {
             v.show_error("offline".into(), true, cx);
-            v.transport_recovered(true, cx);
-            v.transport_recovered(false, cx);
+            v.set_connection_state(agentkit_ui::recovery::Phase::Refreshing, false, cx);
         });
         window.render_frame(cx);
         window.click("send", cx);
@@ -412,4 +411,160 @@ fn opening_from_sidebar_keeps_keyboard_focus_for_rename(cx: &mut TestAppContext)
             .iter()
             .any(|e| matches!(e,SidebarIntent::Rename(id)if id=="other"))
     );
+}
+
+#[gpui_kit::test]
+fn recovery_keeps_transcript_and_draft_readable_until_refresh_commits(cx: &mut TestAppContext) {
+    use agentkit_ui::recovery::Phase;
+    let (w, v, s) = open(cx);
+    cx.update(|cx| apply(&s,vec![serde_json::json!({"type":"text_delta","sessionId":"s","turnId":"t","delta":"partial"})],cx));
+    cx.update_window(w, |_, window, cx| {
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input("unsent", cx);
+        v.update(cx, |v, cx| {
+            v.set_connection_state(
+                Phase::Reconnecting {
+                    attempt: 2,
+                    seconds: 3,
+                },
+                true,
+                cx,
+            )
+        });
+        window.render_frame(cx);
+        assert!(window.try_find("connection-banner").is_some());
+        assert_eq!(window.find(("message", 0usize)).label(), Some("partial"));
+        assert!(!v.read(cx).connection_ready());
+        assert_eq!(v.read(cx).current_draft(cx).unwrap().1, "unsent");
+        v.update(cx, |v, cx| {
+            v.set_connection_state(Phase::Refreshing, true, cx)
+        });
+        window.render_frame(cx);
+        assert!(!v.read(cx).connection_ready());
+        v.update(cx, |v, cx| v.set_connection_state(Phase::Online, true, cx));
+        window.render_frame(cx);
+        assert!(v.read(cx).connection_ready());
+        assert_eq!(v.read(cx).current_draft(cx).unwrap().1, "unsent");
+    })
+    .unwrap();
+}
+#[gpui_kit::test]
+fn fatal_blocks_conversation_and_exposes_recovery_actions(cx: &mut TestAppContext) {
+    use agentkit_ui::recovery::Phase;
+    let (w, v, _) = open(cx);
+    let events = Rc::new(RefCell::new(Vec::new()));
+    let observed = events.clone();
+    cx.update(|cx| {
+        cx.subscribe(&v, move |_, event: &WorkbenchIntent, _| {
+            observed.borrow_mut().push(event.clone())
+        })
+        .detach()
+    });
+    cx.update_window(w, |_, window, cx| {
+        v.update(cx, |v, cx| {
+            v.set_connection_state(
+                Phase::Fatal {
+                    message: "fixture failure".into(),
+                },
+                true,
+                cx,
+            )
+        });
+        window.render_frame(cx);
+        assert!(window.try_find("fatal-page").is_some());
+        assert!(window.try_find("composer").is_none());
+        window.click("open-recovery-logs", cx);
+        window.click("export-recovery", cx);
+        window.click("fatal-retry", cx);
+    })
+    .unwrap();
+    let events = events.borrow();
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, WorkbenchIntent::OpenRecoveryLogs))
+    );
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, WorkbenchIntent::ExportRecovery))
+    );
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, WorkbenchIntent::Reconnect))
+    );
+}
+#[gpui_kit::test]
+fn failed_load_retries_and_empty_prompt_only_fills_draft(cx: &mut TestAppContext) {
+    let (w, v, _) = open(cx);
+    let events = Rc::new(RefCell::new(Vec::new()));
+    let observed = events.clone();
+    cx.update(|cx| {
+        cx.subscribe(&v, move |_, event: &WorkbenchIntent, _| {
+            observed.borrow_mut().push(event.clone())
+        })
+        .detach()
+    });
+    cx.update_window(w, |_, window, cx| {
+        window.render_frame(cx);
+        window.click(("example-prompt", 0usize), cx);
+        window.render_frame(cx);
+        assert!(!v.read(cx).current_draft(cx).unwrap().1.is_empty());
+        assert!(
+            !events
+                .borrow()
+                .iter()
+                .any(|e| matches!(e, WorkbenchIntent::Submit(_)))
+        );
+        v.update(cx, |v, cx| v.set_loading(cx));
+        window.render_frame(cx);
+        assert!(window.try_find("session-loading-skeleton").is_none());
+        v.update(cx, |v, cx| v.session_load_failed(cx));
+        window.render_frame(cx);
+        window.click("retry-session", cx);
+    })
+    .unwrap();
+    assert!(
+        events
+            .borrow()
+            .iter()
+            .any(|e| matches!(e, WorkbenchIntent::RetrySession))
+    );
+}
+
+#[gpui_kit::test]
+fn slow_session_load_shows_skeleton_after_150ms_and_fast_bind_cancels_it(cx: &mut TestAppContext) {
+    let (w, v, s) = open(cx);
+    cx.update(|cx| v.update(cx, |v, cx| v.set_loading(cx)));
+    cx.run_until_parked();
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(149));
+    cx.update_window(w, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("session-loading-skeleton").is_none());
+    })
+    .unwrap();
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(1));
+    cx.run_until_parked();
+    cx.update_window(w, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("session-loading-skeleton").is_some());
+        v.update(cx, |v, cx| {
+            v.bind_session(s.clone(), window, cx);
+            v.set_loading(cx);
+            v.bind_session(s, window, cx);
+        });
+    })
+    .unwrap();
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(200));
+    cx.run_until_parked();
+    cx.update_window(w, |_, window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("session-loading-skeleton").is_none());
+    })
+    .unwrap();
 }

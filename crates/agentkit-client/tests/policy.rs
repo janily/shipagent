@@ -227,3 +227,87 @@ fn typed_session_stream_reports_bad_known_payload_and_keeps_future_event() {
     client.close();
     server.join().unwrap();
 }
+
+#[test]
+fn shutdown_notice_allows_an_explicit_sidecar_endpoint_replacement() {
+    let (send_url, receive_url) = std::sync::mpsc::channel();
+    let server = std::thread::spawn(move || {
+        smol::block_on(async {
+            let listener = async_net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            send_url
+                .send(format!("ws://{}", listener.local_addr().unwrap()))
+                .unwrap();
+            let (tcp, _) = listener.accept().await.unwrap();
+            let mut ws = async_tungstenite::accept_async(tcp).await.unwrap();
+            let _ = frame(&mut ws).await;
+            send(
+                &mut ws,
+                json!({"type":"handshake_ack","clientId":"old","registeredChannels":[]}),
+            )
+            .await;
+            send(
+                &mut ws,
+                json!({"type":"event","channel":"server:shuttingDown","seq":1,"args":[]}),
+            )
+            .await;
+            let _ = bounded(ws.next()).await;
+            let (tcp, _) = bounded(listener.accept()).await.unwrap().unwrap();
+            let mut ws = async_tungstenite::accept_async(tcp).await.unwrap();
+            let handshake = frame(&mut ws).await;
+            assert!(handshake.get("reconnectClientId").is_none());
+            send(
+                &mut ws,
+                json!({"type":"handshake_ack","clientId":"new","registeredChannels":["echo"]}),
+            )
+            .await;
+            send(
+                &mut ws,
+                json!({"type":"event","channel":"after-replace","seq":1,"args":["recovered"]}),
+            )
+            .await;
+            let request = frame(&mut ws).await;
+            send(
+                &mut ws,
+                json!({"type":"response","id":request["id"],"result":42}),
+            )
+            .await;
+        })
+    });
+    let url = receive_url.recv().unwrap();
+    let client = RpcClient::connect(ClientOptions::local(
+        url.clone(),
+        "old".into(),
+        "workspace".into(),
+    ));
+    let states = client.state_changes();
+    smol::block_on(async {
+        loop {
+            if bounded(states.recv()).await.unwrap().unwrap() == ConnectionState::Disconnected {
+                break;
+            }
+        }
+        // A consumer may begin observing while the backend is intentionally stopped.
+        let states = client.state_changes();
+        assert_eq!(
+            bounded(states.recv()).await.unwrap().unwrap(),
+            ConnectionState::Disconnected
+        );
+        let events = client.subscribe("after-replace");
+        client.replace_endpoint(agentkit_client::Endpoint {
+            url,
+            token: "new".into(),
+        });
+        loop {
+            if bounded(states.recv()).await.unwrap().unwrap() == ConnectionState::Connected {
+                break;
+            }
+        }
+        assert_eq!(client.invoke::<u32>("echo", vec![]).await.unwrap(), 42);
+        assert_eq!(
+            bounded(events.recv()).await.unwrap().unwrap(),
+            vec![json!("recovered")]
+        );
+    });
+    client.close();
+    server.join().unwrap();
+}

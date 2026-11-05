@@ -336,7 +336,7 @@ fn session_selection_lock_survives_roundtrip_and_disconnect_rejection_unlocks(
     step(cx, w, |window, cx| {
         v.update(cx, |v, cx| {
             v.show_error("unavailable".into(), true, cx);
-            v.transport_recovered(false, cx);
+            v.set_connection_state(agentkit_ui::recovery::Phase::Online, false, cx);
         });
         window.render_frame(cx);
         window.click("composer", cx);

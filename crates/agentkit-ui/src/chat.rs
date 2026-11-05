@@ -7,11 +7,71 @@ use gpui_kit::{prelude::*, *};
 
 impl WorkbenchView {
     pub(crate) fn chat_body(&self, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
-        let history = if self.loading {
-            div().flex_1().child(t!("ak.loading")).into_any_element()
-        } else {
-            self.chat.clone().into_any_element()
-        };
+        let history =
+            if let Some(error) = self.session_error.clone() {
+                v_flex()
+                    .id("session-load-failed")
+                    .test_support()
+                    .flex_1()
+                    .items_center()
+                    .justify_center()
+                    .gap_3()
+                    .child(error)
+                    .child(Button::new("retry-session").label(t!("ak.retry")).on_click(
+                        cx.listener(|_, _, _, cx| cx.emit(WorkbenchIntent::RetrySession)),
+                    ))
+                    .into_any_element()
+            } else if self.loading && self.loading_visible {
+                v_flex()
+                    .id("session-loading-skeleton")
+                    .test_support()
+                    .flex_1()
+                    .gap_4()
+                    .p_6()
+                    .child(skeleton::Skeleton::new())
+                    .child(skeleton::Skeleton::new())
+                    .into_any_element()
+            } else if !self.loading
+                && self
+                    .state
+                    .as_ref()
+                    .is_some_and(|s| s.read(cx).model.turns.is_empty())
+            {
+                v_flex()
+                    .id("new-session-empty")
+                    .test_support()
+                    .flex_1()
+                    .items_center()
+                    .justify_center()
+                    .gap_3()
+                    .child(div().text_xl().font_semibold().child(self.app_name.clone()))
+                    .children(
+                        [
+                            t!("ak.recovery.prompt1"),
+                            t!("ak.recovery.prompt2"),
+                            t!("ak.recovery.prompt3"),
+                        ]
+                        .into_iter()
+                        .enumerate()
+                        .map(|(index, text)| {
+                            Button::new(("example-prompt", index))
+                                .outline()
+                                .label(text.clone())
+                                .disabled(!self.ready)
+                                .on_click(cx.listener(move |this, _, window, cx| {
+                                    this.composer
+                                        .read(cx)
+                                        .input()
+                                        .clone()
+                                        .update(cx, |s, cx| s.set_value(text.clone(), window, cx));
+                                    this.command_focus(false, false, window, cx);
+                                }))
+                        }),
+                    )
+                    .into_any_element()
+            } else {
+                self.chat.clone().into_any_element()
+            };
         let connections = self
             .app_state
             .as_ref()
