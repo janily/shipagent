@@ -15,6 +15,47 @@ use gpui_kit::component::{
 };
 
 impl WorkbenchView {
+    /// Reveal the requested conversation region and restore keyboard focus.
+    pub fn command_focus(
+        &mut self,
+        sidebar: bool,
+        search: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.onboarding_view.is_some() {
+            return;
+        }
+        if self.settings_open {
+            self.close_settings(window, cx);
+        }
+        if sidebar {
+            self.shell.focus_mode = false;
+            self.shell.sidebar_open = true;
+            self.sidebar_sheet = f32::from(window.bounds().size.width) < 1100.;
+            self.persist_shell(cx);
+            self.sync_sheet(window, cx);
+            let sidebar = self.sidebar_view.clone();
+            window.defer(cx, move |window, cx| {
+                sidebar.update(cx, |s, cx| s.focus_region(search, window, cx))
+            });
+        } else {
+            if self.sidebar_sheet {
+                self.sidebar_sheet = false;
+                self.sync_sheet(window, cx);
+            }
+            if self.setup {
+                self.center_focus.focus(window, cx);
+            } else {
+                self.composer
+                    .read(cx)
+                    .input()
+                    .clone()
+                    .update(cx, |s, cx| s.focus(window, cx));
+            }
+        }
+        cx.notify();
+    }
     /// Show that local layout preferences can no longer be saved.
     pub fn set_preferences_writable(&mut self, writable: bool, cx: &mut Context<Self>) {
         self.preferences_writable = writable;

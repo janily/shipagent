@@ -41,6 +41,8 @@ impl WorkbenchView {
             self.chat_body(window, cx)
         };
         v_flex()
+            .track_focus(&self.center_focus)
+            .key_context("Conversation")
             .flex_1()
             .min_w_0()
             .h_full()

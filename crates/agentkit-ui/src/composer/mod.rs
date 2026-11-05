@@ -23,6 +23,7 @@ pub(crate) struct Config {
 }
 /// Independent native message editor and session toolbar.
 pub struct Composer {
+    pub(super) escape_stops: bool,
     input: Entity<TextareaState>,
     store: Option<Entity<SessionStore>>,
     ready: bool,
@@ -63,6 +64,7 @@ impl Composer {
             }
         });
         Self {
+            escape_stops: true,
             input,
             store: None,
             ready: false,
@@ -77,6 +79,10 @@ impl Composer {
             status: (false, false, None, None),
             _subscription: sub,
         }
+    }
+    /// Enable legacy TextInput Escape cancellation only when the effective keymap retains it.
+    pub fn set_escape_stops(&mut self, enabled: bool) {
+        self.escape_stops = enabled;
     }
     /// Native text state, shared with the containing workbench's draft bridge.
     pub fn input(&self) -> &Entity<TextareaState> {

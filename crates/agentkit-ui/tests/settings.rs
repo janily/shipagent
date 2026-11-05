@@ -328,3 +328,41 @@ fn compaction_choices_match_backend_bounds_and_none_restores_sdk_default(cx: &mu
         ]
     );
 }
+#[gpui_kit::test]
+fn shortcuts_page_shows_effective_keys_and_reports_invalid_files(cx: &mut TestAppContext) {
+    let (w, v, events) = open(cx);
+    cx.update_window(w, |_, w, cx| {
+        v.update(cx, |v, cx| {
+            v.shortcuts(
+                vec![(
+                    "New conversation".into(),
+                    "ctrl-k".into(),
+                    "Workbench".into(),
+                )],
+                true,
+                true,
+                cx,
+            )
+        });
+        w.render_frame(cx);
+        w.render_frame(cx);
+        assert!(w.try_find("shortcut-list").is_some());
+        assert!(w.try_find("invalid-keymap").is_some());
+        w.click("reload-keymap", cx);
+        w.click("open-keymap", cx);
+    })
+    .unwrap();
+    cx.run_until_parked();
+    assert!(
+        events
+            .borrow()
+            .iter()
+            .any(|e| matches!(e, SettingsIntent::ReloadKeymap))
+    );
+    assert!(
+        events
+            .borrow()
+            .iter()
+            .any(|e| matches!(e, SettingsIntent::OpenKeymap))
+    );
+}

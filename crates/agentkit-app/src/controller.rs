@@ -6,6 +6,8 @@ mod chat_actions;
 mod composer_actions;
 #[path = "list_refresh.rs"]
 mod list_refresh;
+#[path = "menu_actions.rs"]
+mod menu_actions;
 #[path = "navigation.rs"]
 mod navigation;
 #[path = "onboarding.rs"]
@@ -324,6 +326,7 @@ async fn initialize(
 }
 
 pub(crate) struct WorkbenchController {
+    history: RefCell<crate::history::History>,
     #[cfg(feature = "perf")]
     perf: Option<perf::Capture>,
     capabilities: agentkit_capabilities::client_caps::NativeCapabilities,
@@ -397,6 +400,7 @@ impl WorkbenchController {
         } = services;
         capabilities.remember(window.window_handle());
         let view = cx.new(|cx| WorkbenchView::new(brand.app_name.clone().into(), window, cx));
+        view.update(cx, |v, cx| v.set_menu_bar(crate::menus::bar(cx), cx));
         view.update(cx, |v, cx| {
             v.set_send_key(preferences.value.borrow().send_key, cx)
         });
@@ -431,6 +435,7 @@ impl WorkbenchController {
                 .ok()
                 .flatten()
                 .map(|config| perf::Capture::new(config, window.window_handle().window_id())),
+            history: RefCell::new(Default::default()),
             capabilities,
             view,
             brand,
@@ -486,6 +491,10 @@ impl WorkbenchController {
                 cx,
             )
         });
+        this._window_observers
+            .push(cx.observe(&this.view, |_, _, cx| cx.notify()));
+        this._window_observers
+            .push(cx.observe(&this.list, |_, _, cx| cx.notify()));
         this._window_observers
             .push(cx.observe_window_activation(window, |this, window, _| {
                 if window.is_window_active() {
@@ -631,6 +640,7 @@ impl WorkbenchController {
             .insert(state.read(cx).model.state.session.id.clone(), state.clone());
         self.state = Some(state.clone());
         self.workspace = Some(started.workspace.clone());
+        self.remember_session(cx);
         self.workspace_store.update(cx, |s, cx| {
             s.catalog = started.workspaces;
             s.id = started.workspace.id.clone();
@@ -1078,6 +1088,9 @@ impl WorkbenchController {
         if let Some(store) = &self.state {
             let id = store.read(cx).model.state.session.id.clone();
             let workspace = self.workspace.as_ref().map(|w| w.id.clone());
+            self.history
+                .borrow_mut()
+                .record(workspace.as_deref().unwrap_or_default(), &id);
             self.preferences.update(|p| {
                 p.session = Some(id);
                 p.workspace = workspace;
@@ -1139,6 +1152,10 @@ impl WorkbenchController {
         }
     }
     fn handle(&mut self, intent: WorkbenchIntent, window: &mut Window, cx: &mut Context<Self>) {
+        if matches!(intent, WorkbenchIntent::Quit) {
+            window.dispatch_action(Box::new(Quit), cx);
+            return;
+        }
         if self.quitting.get() {
             return;
         }
@@ -1338,6 +1355,7 @@ impl WorkbenchController {
                 } else {
                     None
                 };
+                let focus_composer = !matches!(intent, WorkbenchIntent::OpenSession(_));
                 let id = if let WorkbenchIntent::OpenSession(id) = intent {
                     Some(id)
                 } else {
@@ -1426,6 +1444,9 @@ impl WorkbenchController {
                                     }
                                     this.view.update(cx, |v, cx| {
                                         v.bind_session(store, window, cx);
+                                        if focus_composer {
+                                            v.command_focus(false, false, window, cx);
+                                        }
                                     });
                                     this.remember_session(cx);
                                     this.mark_viewed(window, cx);
@@ -1441,6 +1462,7 @@ impl WorkbenchController {
                 self.respond_to_permission(api, intent, window, cx)
             }
             WorkbenchIntent::Reconnect
+            | WorkbenchIntent::Quit
             | WorkbenchIntent::DraftChanged { .. }
             | WorkbenchIntent::LayoutChanged(_)
             | WorkbenchIntent::CycleAppearance
@@ -1451,35 +1473,107 @@ impl WorkbenchController {
 }
 impl Render for WorkbenchController {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        crate::exit::track(
+            self.list.downgrade(),
+            self.stores.values().map(|s| s.downgrade()).collect(),
+            cx,
+        );
+        crate::menus::refresh(self.menu_status(cx), cx);
         div()
             .size_full()
             .track_focus(&self.focus_handle)
             .key_context("Workbench")
             .on_action(cx.listener(|this, _: &ToggleSidebar, window, cx| {
-                this.view.update(cx, |v, cx| v.toggle_sidebar(window, cx))
+                if this.view.read(cx).conversation_visible() && !window.has_active_dialog(cx) {
+                    this.view.update(cx, |v, cx| v.toggle_sidebar(window, cx));
+                }
             }))
             .on_action(cx.listener(|this, _: &ToggleRightPanel, window, cx| {
-                this.view
-                    .update(cx, |v, cx| v.toggle_right_panel(window, cx))
+                if this.view.read(cx).conversation_visible() && !window.has_active_dialog(cx) {
+                    this.view
+                        .update(cx, |v, cx| v.toggle_right_panel(window, cx));
+                }
             }))
             .on_action(cx.listener(|this, _: &ToggleFocusMode, window, cx| {
-                this.view
-                    .update(cx, |v, cx| v.toggle_focus_mode(window, cx))
+                if this.view.read(cx).conversation_visible() && !window.has_active_dialog(cx) {
+                    this.view
+                        .update(cx, |v, cx| v.toggle_focus_mode(window, cx));
+                }
             }))
             .on_action(cx.listener(|this, _: &StopProcessing, window, cx| {
                 if !window.has_active_dialog(cx)
                     && !window.has_active_sheet(cx)
+                    && this.view.read(cx).conversation_visible()
                     && this.state.as_ref().is_some_and(|s| s.read(cx).model.busy())
                 {
                     this.handle(WorkbenchIntent::Cancel, window, cx);
                 }
             }))
             .on_action(cx.listener(|this, _: &OpenSettings, window, cx| {
+                if window.has_active_dialog(cx) {
+                    return;
+                }
+                this.shortcut_page(false, window, cx);
                 this.view
                     .update(cx, |v, cx| v.show_configuration(window, cx))
             }))
             .on_action(cx.listener(|this, _: &NewChat, window, cx| {
-                this.handle(WorkbenchIntent::NewSession, window, cx)
+                if !window.has_active_dialog(cx)
+                    && !window.has_active_sheet(cx)
+                    && !this.view.read(cx).onboarding_visible()
+                {
+                    this.view.update(cx, |v, cx| {
+                        if v.settings_visible() {
+                            v.close_settings(window, cx);
+                        }
+                    });
+                    this.handle(WorkbenchIntent::NewSession, window, cx);
+                }
+            }))
+            .on_action(cx.listener(|this, _: &CyclePermissionMode, w, cx| {
+                if !w.has_active_dialog(cx) && !w.has_active_sheet(cx) {
+                    this.view.update(cx, |v, cx| v.cycle_mode_from_menu(w, cx));
+                }
+            }))
+            .on_action(cx.listener(|this, _: &ToggleTheme, w, cx| this.toggle_theme(w, cx)))
+            .on_action(cx.listener(|this, _: &Search, w, cx| this.menu_focus(true, true, w, cx)))
+            .on_action(
+                cx.listener(|this, _: &FocusSidebar, w, cx| this.menu_focus(true, false, w, cx)),
+            )
+            .on_action(
+                cx.listener(|this, _: &FocusChat, w, cx| this.menu_focus(false, false, w, cx)),
+            )
+            .on_action(cx.listener(|this, _: &GoBack, w, cx| this.history_step(-1, w, cx)))
+            .on_action(cx.listener(|this, _: &GoForward, w, cx| this.history_step(1, w, cx)))
+            .on_action(cx.listener(|this, _: &KeyboardShortcuts, w, cx| {
+                if !w.has_active_dialog(cx) {
+                    this.shortcut_page(true, w, cx);
+                }
+            }))
+            .on_action(cx.listener(|this, _: &OpenKeymap, _, cx| this.keymap_file(false, cx)))
+            .on_action(cx.listener(|this, _: &ReloadKeymap, _, cx| this.keymap_file(true, cx)))
+            .on_action(cx.listener(|this, _: &ZoomIn, w, cx| this.change_font(1, w, cx)))
+            .on_action(cx.listener(|this, _: &ZoomOut, w, cx| this.change_font(-1, w, cx)))
+            .on_action(cx.listener(|this, _: &ActualSize, w, cx| this.change_font(0, w, cx)))
+            .on_action(
+                cx.listener(|this, _: &RenameSession, w, cx| this.session_command(false, w, cx)),
+            )
+            .on_action(
+                cx.listener(|this, _: &DeleteSession, w, cx| this.session_command(true, w, cx)),
+            )
+            .on_action(cx.listener(|this, _: &NewWorkspace, w, cx| {
+                if !w.has_active_dialog(cx)
+                    && !w.has_active_sheet(cx)
+                    && this.view.read(cx).conversation_visible()
+                {
+                    this.handle(
+                        WorkbenchIntent::Sidebar(
+                            agentkit_ui::sidebar::SidebarIntent::CreateWorkspace,
+                        ),
+                        w,
+                        cx,
+                    );
+                }
             }))
             .child(self.view.clone())
     }

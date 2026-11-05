@@ -38,9 +38,17 @@ impl WorkbenchController {
             v.localize(window, cx);
             v.settings().update(cx, |s, cx| s.preferences(prefs, cx));
         });
+        let rows = crate::keymap::rows(cx);
+        let invalid = cx
+            .try_global::<crate::keymap::State>()
+            .is_some_and(|s| s.invalid);
+        self.view
+            .read(cx)
+            .settings()
+            .update(cx, |s, cx| s.shortcuts(rows, invalid, false, cx));
         cx.refresh_windows();
     }
-    pub(super) fn local_setting(
+    pub(in crate::controller) fn local_setting(
         &mut self,
         change: LocalChange,
         window: &mut Window,
