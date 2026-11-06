@@ -15,6 +15,23 @@ use std::{
     time::Duration,
 };
 
+/// Resolve the embedded backend relative to a macOS app executable, even when
+/// resources are missing. Installed apps must fail locally rather than use a
+/// developer checkout. Unrelated layouts return `None`.
+pub fn bundled_backend_directory(executable: &std::path::Path) -> Option<PathBuf> {
+    let macos = executable.parent()?;
+    let contents = macos.parent()?;
+    let app = contents.parent()?;
+    if macos.file_name()? == "MacOS"
+        && contents.file_name()? == "Contents"
+        && app.extension()? == "app"
+    {
+        Some(contents.join("Resources/backend"))
+    } else {
+        None
+    }
+}
+
 /// Headless backend launch configuration. Reserved transport variables are always owned by the supervisor.
 #[derive(Clone)]
 pub struct SidecarConfig {

@@ -22,6 +22,7 @@ quote = "1"
 proc-macro2 = { version = "1", features = ["span-locations"] }
 serde.workspace = true
 tempfile.workspace = true
+toml.workspace = true
 
 [lints]
 workspace = true
