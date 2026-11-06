@@ -1,11 +1,7 @@
 use super::*;
 impl WorkbenchView {
     fn status_label(&self) -> String {
-        match self.status_key {
-            "ak.connected" => t!("ak.connected"),
-            "ak.disconnected" => t!("ak.disconnected"),
-            _ => t!("ak.starting"),
-        }
+        self.connection.label()
     }
 
     pub(crate) fn render_shell(
@@ -13,6 +9,9 @@ impl WorkbenchView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        if matches!(self.connection, crate::recovery::Phase::Fatal { .. }) {
+            return self.fatal_page(cx);
+        }
         if let Some(onboarding) = self.onboarding_view.clone() {
             return v_flex()
                 .size_full()
@@ -45,6 +44,7 @@ impl WorkbenchView {
                             ),
                     )
                 })
+                .when_some(self.connection_banner(cx), |v, b| v.child(b))
                 .child(div().flex_1().min_h_0().child(onboarding))
                 .into_any_element();
         }
@@ -69,13 +69,28 @@ impl WorkbenchView {
                             .child(t!("ak.prefs_readonly")),
                     )
                 })
+                .when_some(self.connection_banner(cx), |v, b| v.child(b))
                 .child(div().flex_1().min_h_0().child(self.settings_view.clone()))
                 .into_any_element();
         }
         let width = f32::from(window.bounds().size.width);
         let left = self.shell.sidebar_visible(width);
         let right = self.shell.right_visible() && !self.shell.right_is_sheet(width);
-        let sidebar = self.sidebar(cx);
+        let sidebar = if self.connection == crate::recovery::Phase::Starting {
+            v_flex()
+                .id("startup-sidebar-skeleton")
+                .test_support()
+                .h_full()
+                .bg(cx.theme().sidebar)
+                .p_4()
+                .gap_4()
+                .child(Skeleton::new())
+                .child(Skeleton::new().w_32())
+                .child(Skeleton::new())
+                .into_any_element()
+        } else {
+            self.sidebar(cx)
+        };
         let center = self.center(window, cx);
         let panel = self.right_panel(cx);
         let weak = cx.weak_entity();
@@ -181,6 +196,7 @@ impl WorkbenchView {
                             ),
                     ),
             )
+            .when_some(self.connection_banner(cx), |v, b| v.child(b))
             .child(div().flex_1().min_h_0().child(columns))
             .child(
                 StatusBar::new()
@@ -191,6 +207,18 @@ impl WorkbenchView {
                         div()
                             .id("connection-status")
                             .role(Role::Status)
+                            .text_color(
+                                if matches!(
+                                    self.connection,
+                                    crate::recovery::Phase::Reconnecting { .. }
+                                        | crate::recovery::Phase::Restarting { .. }
+                                        | crate::recovery::Phase::RefreshFailed
+                                ) {
+                                    cx.theme().warning
+                                } else {
+                                    cx.theme().foreground
+                                },
+                            )
                             .aria_label(self.status_label())
                             .child(self.status_label())
                             .test_support(),
@@ -203,6 +231,17 @@ impl WorkbenchView {
                             .child(t!("ak.task_count", count = tasks))
                             .test_support(),
                     )
+                    .when(self.can_restart && self.connection_ready(), |bar| {
+                        bar.right(
+                            Button::new("restart-backend")
+                                .ghost()
+                                .small()
+                                .label(t!("ak.recovery.restart"))
+                                .on_click(cx.listener(|_, _, _, cx| {
+                                    cx.emit(WorkbenchIntent::RestartBackend)
+                                })),
+                        )
+                    })
                     .right(div().text_xs().child(format!(
                         "{} · {} {version}",
                         self.model.clone().unwrap_or_else(|| t!("ak.no_model")),

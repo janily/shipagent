@@ -64,7 +64,7 @@ impl WorkbenchController {
         });
         self.apply_display_preferences(window, cx);
         if let LocalChange::SendKey(key) = change
-            && let Some(api) = self.settings_api()
+            && let Some(api) = self.settings_api(cx)
         {
             let epoch = self.epoch;
             self.operations.push(cx.spawn(async move |weak, cx| {

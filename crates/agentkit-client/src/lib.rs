@@ -134,6 +134,7 @@ pub struct RpcClient {
     timeout: Duration,
     stop: async_channel::Sender<()>,
     endpoints: async_channel::Sender<Endpoint>,
+    retry: async_channel::Sender<()>,
     bound_generation: Option<u64>,
 }
 impl RpcClient {
@@ -142,6 +143,7 @@ impl RpcClient {
         let (commands, receiver) = async_channel::unbounded();
         let (stop, stopping) = async_channel::bounded(1);
         let (endpoints, updates) = async_channel::unbounded();
+        let (retry, retries) = async_channel::bounded(1);
         let shared = Arc::new(Shared::new(options.capabilities.clone()));
         let handle = Self {
             commands,
@@ -149,6 +151,7 @@ impl RpcClient {
             timeout: options.request_timeout,
             stop,
             endpoints,
+            retry,
             bound_generation: None,
         };
         let thread_shared = shared.clone();
@@ -161,6 +164,7 @@ impl RpcClient {
                     thread_shared,
                     stopping,
                     updates,
+                    retries,
                 ))
             })
             .is_err()
@@ -345,7 +349,7 @@ impl RpcClient {
     pub fn subscribe(&self, channel: &str) -> async_channel::Receiver<Vec<Value>> {
         let (send, receive) = async_channel::unbounded();
         let info = locked(&self.shared.info);
-        if info.snapshot.state != ConnectionState::Disconnected {
+        if !info.finished {
             locked(&self.shared.subscribers)
                 .entry(channel.into())
                 .or_default()
@@ -404,6 +408,12 @@ impl RpcClient {
     /// Replace token/address after sidecar restart; never reuse the old reconnect cursor.
     pub fn replace_endpoint(&self, endpoint: Endpoint) {
         let _ = self.endpoints.try_send(endpoint);
+    }
+    /// Wake a scheduled reconnect without discarding the server replay cursor.
+    pub fn retry_now(&self) {
+        if matches!(self.state(), ConnectionState::Reconnecting { .. }) {
+            let _ = self.retry.try_send(());
+        }
     }
     /// Stop retries and reject outstanding requests. Shared by every clone.
     pub fn close(&self) {

@@ -57,6 +57,7 @@ pub(crate) struct Info {
     pub snapshot: ConnectionSnapshot,
     pub failure: Option<RpcError>,
     pub generation: u64,
+    pub finished: bool,
 }
 pub(crate) struct Shared {
     pub info: Mutex<Info>,
@@ -82,6 +83,7 @@ impl Shared {
                 },
                 failure: None,
                 generation: 0,
+                finished: false,
             }),
             subscribers: Arc::new(Mutex::new(HashMap::new())),
             states: Mutex::new(Vec::new()),
@@ -120,7 +122,7 @@ impl Shared {
         let (send, receive) = async_channel::unbounded();
         let info = locked(&self.info);
         let _ = send.try_send(info.snapshot.state.clone());
-        if info.snapshot.state != ConnectionState::Disconnected {
+        if !info.finished {
             locked(&self.states).push(send);
         }
         receive
@@ -132,6 +134,10 @@ impl Shared {
     }
     pub fn finish(&self) {
         self.set_state(ConnectionState::Disconnected);
+        // A server shutdown pause remains observable until its owner closes the
+        // client. Only final transport termination closes new subscriptions.
+        let mut info = locked(&self.info);
+        info.finished = true;
         locked(&self.subscribers).clear();
         locked(&self.states).clear();
     }

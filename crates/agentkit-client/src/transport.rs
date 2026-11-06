@@ -17,6 +17,7 @@ enum Exit {
     Lost(RpcError),
     Replace(Endpoint),
     Closed,
+    ServerStopped,
 }
 #[derive(Default)]
 struct Cursor {
@@ -416,7 +417,7 @@ async fn session(socket: &mut Socket, ack: &Envelope, context: SessionContext<'_
                                 if channel
                                     == agentkit_protocol::constants::channels::server::SHUTTING_DOWN
                                 {
-                                    return Err(Exit::Closed);
+                                    return Err(Exit::ServerStopped);
                                 }
                             }
                         }
@@ -489,6 +490,7 @@ pub(super) async fn run(
     shared: Arc<Shared>,
     stop: async_channel::Receiver<()>,
     updates: async_channel::Receiver<Endpoint>,
+    retries: async_channel::Receiver<()>,
 ) {
     let mut cursor = Cursor::default();
     let mut backoff = Backoff::default();
@@ -497,6 +499,7 @@ pub(super) async fn run(
         if stop.is_closed() || !stop.is_empty() {
             break;
         }
+        while retries.try_recv().is_ok() {}
         shared.set_state(ConnectionState::Connecting);
         let outcome = io(
             connect(&options, &shared, &cursor),
@@ -566,6 +569,26 @@ pub(super) async fn run(
         };
         match exit {
             Exit::Closed => break,
+            Exit::ServerStopped => {
+                // A shutdown notice stops automatic retries, but a sidecar owner
+                // may deliberately replace the backend and its credentials.
+                shared.set_state(ConnectionState::Disconnected);
+                let endpoint = smol::future::race(
+                    async {
+                        let _ = stop.recv().await;
+                        None
+                    },
+                    async { updates.recv().await.ok() },
+                )
+                .await;
+                let Some(endpoint) = endpoint else {
+                    break;
+                };
+                options.endpoint = endpoint;
+                cursor = Cursor::default();
+                backoff = Backoff::default();
+                continue;
+            }
             Exit::Replace(endpoint) => {
                 if !invalidated {
                     shared.invalidate(&commands, RpcError::Disconnected);
@@ -609,14 +632,20 @@ pub(super) async fn run(
                     attempt: backoff.attempt,
                     next_retry_ms: delay.as_millis().min(u64::MAX as u128) as u64,
                 });
-                match io(
+                match smol::future::race(
+                    io(
+                        async {
+                            smol::Timer::after(delay).await;
+                            Ok(())
+                        },
+                        delay + Duration::from_secs(1),
+                        &stop,
+                        &updates,
+                    ),
                     async {
-                        smol::Timer::after(delay).await;
+                        let _ = retries.recv().await;
                         Ok(())
                     },
-                    delay + Duration::from_secs(1),
-                    &stop,
-                    &updates,
                 )
                 .await
                 {

@@ -86,7 +86,7 @@ impl WorkbenchController {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let Some(api) = self.settings_api() else {
+        let Some(api) = self.settings_api(cx) else {
             editor.update(cx, |e, cx| {
                 e.status(
                     false,

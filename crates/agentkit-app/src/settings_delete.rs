@@ -56,7 +56,7 @@ impl WorkbenchController {
         if self.settings_pending {
             return;
         }
-        let Some(api) = self.settings_api() else {
+        let Some(api) = self.settings_api(cx) else {
             return;
         };
         if !self

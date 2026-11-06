@@ -84,6 +84,10 @@ jobs:
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
           AGENTKIT_CONTRACT_SERVER: ${{ github.workspace }}/target/contract/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}/transport.js
+      - name: Native controller recovers after owned backend replacement
+        run: cargo test -p agentkit-app --lib recovery_contract_parent --locked -- --ignored
+        env:
+          AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
       - name: Open a real native window and render a frame
         if: runner.os != 'Linux'
         run: node tools/native-smoke/run.mjs

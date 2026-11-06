@@ -17,6 +17,8 @@ mod onboarding;
 mod perf;
 #[path = "permission_actions.rs"]
 mod permission_actions;
+#[path = "recovery/mod.rs"]
+mod recovery;
 #[path = "settings_actions.rs"]
 mod settings_actions;
 #[path = "tool_content.rs"]
@@ -168,17 +170,9 @@ async fn bootstrap(
                     .context("User profile directory unavailable")?;
                 PathBuf::from(home).join(&brand.data_dir_name)
             };
-            let config = SidecarConfig::new(backend, config);
-            #[cfg(target_os = "macos")]
-            let config = {
-                let mut config = config;
-                if let Some(home) = std::env::var_os("HOME") {
-                    config.log_dir = PathBuf::from(home)
-                        .join("Library/Logs")
-                        .join(&brand.bundle_id);
-                }
-                config
-            };
+            let mut launch = SidecarConfig::new(backend, config);
+            launch.log_dir = backend_log_dir(&brand, &launch.config_dir);
+            let config = launch;
             let handle = SidecarHandle::start(config).await?;
             let endpoint = handle.endpoint();
             sidecar = Some(handle);
@@ -358,6 +352,7 @@ pub(crate) struct WorkbenchController {
     loading: bool,
     workspace_switching: bool,
     transport_epoch: u64,
+    recovery: recovery::Recovery,
     startup: StartupSlot,
     events: Option<Task<()>>,
     monitor: Option<Task<()>>,
@@ -459,6 +454,7 @@ impl WorkbenchController {
             loading: false,
             workspace_switching: false,
             transport_epoch: 0,
+            recovery: Default::default(),
             startup,
             events: None,
             monitor: None,
@@ -548,6 +544,8 @@ impl WorkbenchController {
         {
             return;
         }
+        self.recovery = Default::default();
+        self.set_phase(agentkit_ui::recovery::Phase::Starting, cx);
         self.save_draft(cx);
         if self.view.read(cx).onboarding().is_some() {
             self.view.update(cx, |v, cx| v.close_onboarding(window, cx));
@@ -601,16 +599,15 @@ impl WorkbenchController {
             let mut result = Some(result);
             let _ = weak.update_in(cx, |this, window, cx| match result.take() {
                 Some(Ok(started)) => this.started(started, window, cx),
-                Some(Err(error)) => this.view.update(cx, |view, cx| {
-                    view.show_error(
-                        error
+                Some(Err(error)) => this.set_phase(
+                    agentkit_ui::recovery::Phase::Fatal {
+                        message: error
                             .downcast_ref::<agentkit_sidecar::SidecarError>()
                             .map(sidecar_message)
-                            .unwrap_or_else(|| error.to_string()),
-                        true,
-                        cx,
-                    )
-                }),
+                            .unwrap_or_else(|| agentkit_ui::t!("ak.recovery.backend_failed")),
+                    },
+                    cx,
+                ),
                 None => {}
             });
             if let Some(Ok(started)) = result {
@@ -816,62 +813,8 @@ impl WorkbenchController {
             }
         }));
         self.mark_viewed(window, cx);
-        let mut observed = api.snapshot();
-        self.monitor = Some(cx.spawn_in(window, async move |weak, cx| {
-            loop {
-                cx.background_executor()
-                    .timer(Duration::from_millis(250))
-                    .await;
-                let snapshot = api.snapshot();
-                if snapshot.state != observed.state || snapshot.recovery_id != observed.recovery_id
-                {
-                    let recovered = snapshot.state == ConnectionState::Connected
-                        && snapshot.recovery_id != observed.recovery_id;
-                    let terminal = snapshot.state == ConnectionState::Disconnected;
-                    let message = api
-                        .last_error()
-                        .map(|e| e.to_string())
-                        .unwrap_or_else(|| agentkit_ui::t!("ak.reconnecting"));
-                    if weak
-                        .update_in(cx, |this, _, cx| {
-                            this.app_state.update(cx, |s, cx| {
-                                s.connected = snapshot.state == ConnectionState::Connected;
-                                cx.notify();
-                            });
-                            let message = this
-                                .runtime
-                                .borrow()
-                                .as_ref()
-                                .and_then(|r| r.sidecar.as_ref())
-                                .and_then(SidecarHandle::last_error)
-                                .map(|e| sidecar_message(&e))
-                                .unwrap_or(message);
-                            if recovered {
-                                let reload = snapshot.refresh_epoch > this.transport_epoch;
-                                if !reload {
-                                    this.transport_epoch = snapshot.recovery_id;
-                                }
-                                this.view
-                                    .update(cx, |v, cx| v.transport_recovered(reload, cx));
-                            } else if snapshot.state != ConnectionState::Connected {
-                                this.view
-                                    .update(cx, |v, cx| v.show_error(message, true, cx));
-                            }
-                        })
-                        .is_err()
-                    {
-                        break;
-                    }
-                    observed = snapshot;
-                    if terminal {
-                        break;
-                    }
-                }
-                if weak.upgrade().is_none() {
-                    break;
-                }
-            }
-        }));
+        self.set_phase(agentkit_ui::recovery::Phase::Online, cx);
+        self.start_monitor(api, window, cx);
     }
     fn route(
         &mut self,
@@ -880,6 +823,16 @@ impl WorkbenchController {
         cx: &mut Context<Self>,
     ) {
         self.operations.retain(|t| !t.is_ready());
+        if self.recovery.pending {
+            for event in events {
+                if self.recovery.events.len() < 4096 {
+                    self.recovery.events.push(event);
+                } else {
+                    self.recovery.overflow = true;
+                }
+            }
+            return;
+        }
         for (event, _) in &events {
             if let Some(agentkit_protocol::generated::SessionEvent::PermissionRequestEvent(e)) =
                 event.known()
@@ -1159,6 +1112,31 @@ impl WorkbenchController {
         if self.quitting.get() {
             return;
         }
+        match intent {
+            WorkbenchIntent::Reconnect => {
+                self.retry_connection(window, cx);
+                return;
+            }
+            WorkbenchIntent::RestartBackend => {
+                self.restart_backend(true, window, cx);
+                return;
+            }
+            WorkbenchIntent::OpenRecoveryLogs => {
+                self.recovery_logs(cx);
+                return;
+            }
+            WorkbenchIntent::ExportRecovery => {
+                self.export_recovery(window, cx);
+                return;
+            }
+            WorkbenchIntent::RetrySession => {
+                if let Some(id) = self.recovery.retry_load.clone() {
+                    self.handle(WorkbenchIntent::OpenSession(id), window, cx);
+                }
+                return;
+            }
+            _ => {}
+        }
         if let WorkbenchIntent::Onboarding(action) = intent {
             self.handle_onboarding(action, window, cx);
             return;
@@ -1208,8 +1186,7 @@ impl WorkbenchController {
             return;
         }
         self.operations.retain(|task| !task.is_ready());
-        if matches!(intent, WorkbenchIntent::Reconnect) {
-            self.start(window, cx);
+        if !self.view.read(cx).connection_ready() {
             return;
         }
         let Some(api) = self.api() else {
@@ -1383,6 +1360,7 @@ impl WorkbenchController {
                         .as_ref()
                         .and_then(|s| s.working_directory.clone())
                 });
+                self.recovery.retry_load = id.clone();
                 let generation = self.epoch;
                 self.loading = true;
                 self.backlog.clear();
@@ -1418,6 +1396,7 @@ impl WorkbenchController {
                             }
                             match result {
                                 Ok(session) => {
+                                    this.recovery.retry_load = None;
                                     let id = session.id.clone();
                                     let mut store = SessionStore::new(session);
                                     if let Some((draft, attachments)) = this.drafts.remove(&id) {
@@ -1451,9 +1430,13 @@ impl WorkbenchController {
                                     this.remember_session(cx);
                                     this.mark_viewed(window, cx);
                                 }
-                                Err(e) => this
-                                    .view
-                                    .update(cx, |v, cx| v.show_error(e.to_string(), false, cx)),
+                                Err(e) => this.view.update(cx, |v, cx| {
+                                    if this.recovery.retry_load.is_some() {
+                                        v.session_load_failed(cx);
+                                    } else {
+                                        v.show_error(e.to_string(), false, cx);
+                                    }
+                                }),
                             }
                         });
                     }));
@@ -1462,6 +1445,10 @@ impl WorkbenchController {
                 self.respond_to_permission(api, intent, window, cx)
             }
             WorkbenchIntent::Reconnect
+            | WorkbenchIntent::RestartBackend
+            | WorkbenchIntent::RetrySession
+            | WorkbenchIntent::OpenRecoveryLogs
+            | WorkbenchIntent::ExportRecovery
             | WorkbenchIntent::Quit
             | WorkbenchIntent::DraftChanged { .. }
             | WorkbenchIntent::LayoutChanged(_)
@@ -1580,7 +1567,9 @@ impl Render for WorkbenchController {
 }
 
 fn transport_is_current(snapshot: &agentkit_client::ConnectionSnapshot, loaded_epoch: u64) -> bool {
-    snapshot.state == ConnectionState::Connected && snapshot.refresh_epoch <= loaded_epoch
+    snapshot.state == ConnectionState::Connected
+        && snapshot.recovery_id == loaded_epoch
+        && snapshot.refresh_epoch <= loaded_epoch
 }
 #[cfg(test)]
 mod transport_policy_tests {
@@ -1602,8 +1591,8 @@ mod transport_policy_tests {
         snapshot.recovery_id = 2;
         snapshot.needs_refresh = false;
         assert!(
-            transport_is_current(&snapshot, 1),
-            "unbroken resume keeps loaded history valid"
+            !transport_is_current(&snapshot, 1),
+            "even a valid resume must wait for its recovery transaction"
         );
         snapshot.recovery_id = 3;
         snapshot.refresh_epoch = 3;
@@ -1806,4 +1795,14 @@ mod shell_policy_tests {
         }
         assert_eq!(running_background_tasks([&two, &one]), 0);
     }
+}
+
+fn backend_log_dir(_brand: &Brand, config: &std::path::Path) -> PathBuf {
+    #[cfg(target_os = "macos")]
+    if let Some(home) = std::env::var_os("HOME") {
+        return PathBuf::from(home)
+            .join("Library/Logs")
+            .join(&_brand.bundle_id);
+    }
+    config.join("logs")
 }

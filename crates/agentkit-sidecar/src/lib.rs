@@ -97,6 +97,23 @@ impl From<std::io::Error> for SidecarError {
         Self::Io(Arc::new(value))
     }
 }
+/// Safe supervision status, independent of credentials and stderr output.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SupervisorState {
+    /// Launching the initial process.
+    Starting,
+    /// A process reached readiness.
+    Running,
+    /// Replacing a process after a crash or explicit request.
+    Restarting {
+        /// One-based attempt.
+        attempt: u32,
+    },
+    /// Automatic retries stopped; inspect the sanitized error category.
+    Fatal,
+    /// Ownership ended.
+    Stopped,
+}
 /// Broadcast lifecycle events. Each subscription receives its own copy.
 #[derive(Clone, Debug)]
 pub enum SidecarEvent {
@@ -127,6 +144,7 @@ pub(crate) struct Bus {
     last: Option<SidecarEvent>,
 }
 pub(crate) struct Shared {
+    state: Mutex<SupervisorState>,
     stop: AtomicBool,
     endpoint: Mutex<Endpoint>,
     bus: Mutex<Bus>,
@@ -155,6 +173,7 @@ impl SidecarHandle {
     /// Launch the supervisor and await initial readiness without blocking the caller's thread.
     pub async fn start(config: SidecarConfig) -> Result<Self, SidecarError> {
         let shared = Arc::new(Shared {
+            state: Mutex::new(SupervisorState::Starting),
             stop: AtomicBool::new(false),
             endpoint: Mutex::new(Endpoint {
                 url: String::new(),
@@ -195,13 +214,27 @@ impl SidecarHandle {
     pub fn last_error(&self) -> Option<SidecarError> {
         lock(&self.shared.error).clone()
     }
+    /// Current supervision state without exposing process output or token.
+    pub fn state(&self) -> SupervisorState {
+        lock(&self.shared.state).clone()
+    }
+    /// Queue a restart immediately; the returned future owns its reply, not a handle borrow.
+    pub fn request_restart(
+        &self,
+    ) -> impl std::future::Future<Output = Result<Endpoint, SidecarError>> + Send + 'static {
+        let (send, receive) = async_channel::bounded(1);
+        let queued = self
+            .send
+            .send(Control::Restart(send))
+            .map_err(|_| SidecarError::Stopped);
+        async move {
+            queued?;
+            receive.recv().await.map_err(|_| SidecarError::Stopped)?
+        }
+    }
     /// Explicit restart. Healthy restarts do not consume the rolling crash budget.
     pub async fn restart(&self) -> Result<Endpoint, SidecarError> {
-        let (send, receive) = async_channel::bounded(1);
-        self.send
-            .send(Control::Restart(send))
-            .map_err(|_| SidecarError::Stopped)?;
-        receive.recv().await.map_err(|_| SidecarError::Stopped)?
+        self.request_restart().await
     }
     /// Stop supervising, cancel backoff and terminate/reap the current process tree.
     pub async fn shutdown(mut self, grace: Duration) -> Result<(), SidecarError> {

@@ -364,6 +364,14 @@ impl WorkbenchApi {
     pub fn last_error(&self) -> Option<RpcError> {
         self.client.last_error()
     }
+    /// Wake reconnect backoff while preserving replay state.
+    pub fn retry_now(&self) {
+        self.client.retry_now();
+    }
+    /// Optional authoritative session, distinguishing deletion from transport errors.
+    pub async fn session_if_present(&self, id: &str) -> Result<Option<g::Session>, RpcError> {
+        self.client.sessions().get_messages(id).await
+    }
     /// Stop this connection and all its retries.
     pub fn close(&self) {
         self.client.close();

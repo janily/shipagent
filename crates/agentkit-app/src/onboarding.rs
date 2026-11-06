@@ -39,7 +39,7 @@ impl WorkbenchController {
             wizard.update(cx, |v, cx| v.methods(cx));
             return;
         }
-        let Some(api) = self.settings_api() else {
+        let Some(api) = self.settings_api(cx) else {
             self.onboarding_status(
                 false,
                 Some(agentkit_ui::t!("ak.connection_unavailable")),

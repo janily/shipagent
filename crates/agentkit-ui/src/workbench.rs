@@ -15,6 +15,14 @@ use gpui_kit::{prelude::*, *};
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Restart the owned backend, confirming interruption when needed.
+    RestartBackend,
+    /// Retry loading the same requested conversation.
+    RetrySession,
+    /// Open only the client-owned backend log directory.
+    OpenRecoveryLogs,
+    /// Export a redacted, whitelist-only recovery report.
+    ExportRecovery,
     /// Ask the app to confirm and perform an orderly window close.
     Quit,
     /// Native first-run setup gesture.
@@ -75,6 +83,11 @@ pub enum WorkbenchIntent {
 }
 /// Native application shell hosting the canonical conversation components.
 pub struct WorkbenchView {
+    pub(crate) connection: crate::recovery::Phase,
+    pub(crate) can_restart: bool,
+    pub(crate) loading_visible: bool,
+    load_revision: u64,
+    pub(crate) session_error: Option<String>,
     pub(crate) center_focus: FocusHandle,
     pub(crate) menu_bar: Option<Entity<gpui_kit::component::menu::AppMenuBar>>,
     pub(crate) font_size: u8,
@@ -95,7 +108,6 @@ pub struct WorkbenchView {
     pub(crate) model: Option<String>,
     pub(crate) status_key: &'static str,
     pub(crate) ready: bool,
-    reload_required: bool,
     pub(crate) loading: bool,
     pub(crate) error: Option<String>,
     pub(crate) state: Option<Entity<SessionStore>>,
@@ -137,7 +149,9 @@ impl WorkbenchView {
     }
     /// Whether conversation commands can target a visible conversation.
     pub fn conversation_visible(&self) -> bool {
-        self.onboarding_view.is_none() && !self.settings_open
+        self.onboarding_view.is_none()
+            && !self.settings_open
+            && !matches!(self.connection, crate::recovery::Phase::Fatal { .. })
     }
     /// Whether first-run setup owns the window.
     pub fn onboarding_visible(&self) -> bool {
@@ -173,6 +187,11 @@ impl WorkbenchView {
             cx.emit(WorkbenchIntent::Chat(intent.clone()))
         });
         Self {
+            connection: crate::recovery::Phase::Starting,
+            can_restart: false,
+            loading_visible: false,
+            load_revision: 0,
+            session_error: None,
             center_focus: cx.focus_handle(),
             menu_bar: None,
             onboarding_view: None,
@@ -193,7 +212,6 @@ impl WorkbenchView {
             model: None,
             status_key: "ak.starting",
             ready: false,
-            reload_required: false,
             loading: false,
             error: None,
             state: None,
@@ -277,7 +295,7 @@ impl WorkbenchView {
         self.workspace = workspace.into();
         self.model = model;
         self.ready = true;
-        self.reload_required = false;
+        self.connection = crate::recovery::Phase::Online;
         self.status_key = "ak.connected";
         self.setup = self.model.is_none();
         if self.setup {
@@ -291,18 +309,6 @@ impl WorkbenchView {
         self.workspace = name.into();
         self.loading = false;
         cx.notify();
-    }
-    /// Recover transport availability; stale state requires an explicit reload.
-    pub fn transport_recovered(&mut self, full_refresh: bool, cx: &mut Context<Self>) {
-        self.reload_required |= full_refresh;
-        if self.reload_required {
-            self.show_error(t!("ak.reload_required"), true, cx);
-        } else {
-            self.ready = true;
-            self.error = None;
-            self.status_key = "ak.connected";
-            cx.notify();
-        }
     }
     /// Observe global and workspace context without retaining network handles.
     pub fn bind_context(
@@ -347,6 +353,8 @@ impl WorkbenchView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        self.loading_visible = false;
+        self.session_error = None;
         if self
             .state
             .as_ref()
@@ -373,7 +381,10 @@ impl WorkbenchView {
             .push(cx.observe(&store, |_, _, cx| {
                 cx.notify();
             }));
-        if !self.setup && !self.sidebar_view.read(cx).focused(window, cx) {
+        if !self.setup
+            && !self.settings_visible()
+            && !self.sidebar_view.read(cx).focused(window, cx)
+        {
             self.composer
                 .read(cx)
                 .input()
@@ -471,6 +482,22 @@ impl WorkbenchView {
     pub fn set_loading(&mut self, cx: &mut Context<Self>) {
         self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
         self.loading = true;
+        self.loading_visible = false;
+        self.session_error = None;
+        self.load_revision = self.load_revision.wrapping_add(1);
+        let revision = self.load_revision;
+        cx.spawn(async move |weak, cx| {
+            cx.background_executor()
+                .timer(std::time::Duration::from_millis(150))
+                .await;
+            let _ = weak.update(cx, |v, cx| {
+                if v.loading && v.load_revision == revision {
+                    v.loading_visible = true;
+                    cx.notify();
+                }
+            });
+        })
+        .detach();
         cx.notify();
     }
     pub(crate) fn busy(&self, cx: &App) -> bool {
