@@ -25,7 +25,7 @@ export async function downloadBaseline(env,request=fetch){
      const response=await request(`https://api.github.com/repos/${repo}/actions/artifacts/${artifact.id}/zip`,{signal:AbortSignal.timeout(60000),headers:{Authorization:`Bearer ${env.GITHUB_TOKEN}`}});if(!response.ok)throw new Error('Baseline archive unavailable');
      const bytes=Buffer.from(await response.arrayBuffer());if(bytes.length>8*1024*1024)throw new Error('Baseline archive too large');
      const zip=join(out,'baseline.zip');await writeFile(zip,bytes,{flag:'wx',mode:0o600});
-     await exec('python3',['-c',"import sys,zipfile,json;z=zipfile.ZipFile(sys.argv[1]);i=z.getinfo('report.json');assert i.file_size<=8*1024*1024;data=z.read(i);json.loads(data);open(sys.argv[2],'xb').write(data)",zip,join(out,'report.json')],{timeout:10000,maxBuffer:1024});
+     await exec(process.platform==='win32'?'python':'python3',['-c',"import sys,zipfile,json;z=zipfile.ZipFile(sys.argv[1]);matches=[i for i in z.infolist() if i.filename in ('report.json','perf/report.json')];assert len(matches)==1;i=matches[0];assert i.file_size<=8*1024*1024;data=z.read(i);json.loads(data);open(sys.argv[2],'xb').write(data)",zip,join(out,'report.json')],{timeout:10000,maxBuffer:1024});
      status={status:'downloaded',runId:previous.id,artifactId:artifact.id};
     }
    }
