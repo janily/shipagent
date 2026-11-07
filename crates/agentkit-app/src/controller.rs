@@ -14,7 +14,7 @@ mod navigation;
 mod onboarding;
 #[cfg(feature = "perf")]
 #[path = "perf.rs"]
-mod perf;
+pub(crate) mod perf;
 #[path = "permission_actions.rs"]
 mod permission_actions;
 #[path = "recovery/mod.rs"]
@@ -92,7 +92,7 @@ impl Running {
             let _ = sidecar.shutdown(Duration::from_millis(60)).await;
         }
     }
-    pub(crate) async fn shutdown(mut self) {
+    pub(crate) async fn shutdown(mut self) -> bool {
         self.recording.take();
         self.lifecycle.take();
         if let Some(id) = &self.session_id {
@@ -104,7 +104,9 @@ impl Running {
         }
         self.api.close();
         if let Some(sidecar) = self.sidecar {
-            let _ = sidecar.shutdown(Duration::from_secs(5)).await;
+            sidecar.shutdown(Duration::from_secs(5)).await.is_ok()
+        } else {
+            true
         }
     }
 }
@@ -431,10 +433,16 @@ impl WorkbenchController {
             };
         let mut this = Self {
             #[cfg(feature = "perf")]
-            perf: perf::Config::from_env()
-                .ok()
-                .flatten()
-                .map(|config| perf::Capture::new(config, window.window_handle().window_id())),
+            perf: perf::Config::from_env().ok().flatten().map(|config| {
+                perf::Capture::new(
+                    config,
+                    window.window_handle().window_id(),
+                    (
+                        f32::from(window.viewport_size().width),
+                        f32::from(window.viewport_size().height),
+                    ),
+                )
+            }),
             history: RefCell::new(Default::default()),
             capabilities,
             view,

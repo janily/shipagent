@@ -1,0 +1,160 @@
+name: Native performance baselines
+on:
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/performance.yml'
+      - 'tools/perf/**'
+      - 'tools/fake-llm/**'
+      - 'crates/agentkit-app/src/perf.rs'
+      - 'crates/agentkit-ui/examples/performance.rs'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: performance-${{ github.ref }}
+  # Only PR runs are superseded; scheduled main baselines remain serialized.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  shared:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            backend: linux-x64
+            machine: linux-shared-lavapipe
+          - os: macos-15
+            backend: darwin-arm64
+            machine: macos-shared-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      PERF_ARTIFACT_NAME: perf-${{ matrix.machine }}
+      PERF_BASELINE_DIR: target/perf-baseline
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          key: ${{ runner.os == 'macOS' && 'macos-package-engineering-macos-arm64' || 'native-performance-linux' }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - name: Install Linux native and software-renderer dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang pkg-config libfontconfig1-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libasound2-dev libvulkan-dev libxcb-shape0-dev libxcb-xfixes0-dev xvfb xauth xdotool mesa-vulkan-drivers fonts-noto-cjk
+      - run: node --test tools/perf/*.test.mjs tools/fake-llm/server.test.mjs
+      - name: Reset generated outputs restored with build caches
+        run: node -e "for (const p of ['target/perf','target/perf-baseline']) require('node:fs').rmSync(p,{recursive:true,force:true})"
+      - name: Select immediately preceding main run; never substitute an older favorable run
+        run: node tools/perf/baseline.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: cargo xtask backend build
+        env:
+          AGENTKIT_USE_NPMJS: '1'
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: cargo build --release -p workbench --features perf --locked
+      - run: cargo build --release -p agentkit-ui --features samples --example performance --locked
+      - name: Measure Linux release suite
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          PERF_ICD=$(find /usr/share/vulkan/icd.d -name 'lvp*.json' -print -quit)
+          PERF_RUNTIME=$(mktemp -d)
+          trap 'rm -rf "$PERF_RUNTIME"' EXIT
+          chmod 700 "$PERF_RUNTIME"
+          set +e
+          VK_DRIVER_FILES="$PERF_ICD" XDG_RUNTIME_DIR="$PERF_RUNTIME" xvfb-run -a -s '-screen 0 1440x960x24' node tools/perf/suite.mjs --binary target/release/workbench --backend target/backend/${{ matrix.backend }} --scenes target/release/examples/performance --output target/perf/report.json --runs 3 --tokens 600 --focus xdotool --machine '${{ matrix.machine }}' --environment 'Shared Ubuntu Xvfb lavapipe'
+          PERF_EXIT=$?
+          if [[ "$PERF_EXIT" != 0 && "$PERF_EXIT" != 2 ]]; then exit "$PERF_EXIT"; fi
+      - name: Measure macOS release suite
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set +e
+          node tools/perf/suite.mjs --binary target/release/workbench --backend target/backend/${{ matrix.backend }} --scenes target/release/examples/performance --output target/perf/report.json --runs 3 --tokens 600 --machine '${{ matrix.machine }}' --environment 'Shared macOS arm64 virtual display'
+          PERF_EXIT=$?
+          if [[ "$PERF_EXIT" != 0 && "$PERF_EXIT" != 2 ]]; then exit "$PERF_EXIT"; fi
+      - name: Record missing/invalid/incompatible data or greater-than-ten-percent regression as warnings
+        shell: bash
+        run: |
+          PERF_BASELINE=-
+          if test -f target/perf-baseline/report.json; then PERF_BASELINE=target/perf-baseline/report.json; fi
+          node tools/perf/compare.mjs target/perf/report.json "$PERF_BASELINE" target/perf/comparison.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-${{ matrix.machine }}
+          path: |
+            target/perf/report.json
+            target/perf/comparison.json
+            target/perf-baseline/baseline-status.json
+          retention-days: 30
+          if-no-files-found: error
+  reference:
+    # Requires a fresh macOS machine/OS instance per job, destroyed even after cancellation.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.MACOS_PERF_RUNNER != '' && vars.MACOS_PERF_ISOLATION == 'disposable-machine-per-job'
+    environment: performance-reference
+    runs-on: ${{ fromJSON(vars.MACOS_PERF_RUNNER || '["self-hosted","macOS","ARM64"]') }}
+    timeout-minutes: 60
+    env:
+      PERF_ARTIFACT_NAME: perf-macos-reference
+      PERF_BASELINE_DIR: target/perf-baseline
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - name: Reset generated outputs restored with build caches
+        run: node -e "for (const p of ['target/perf','target/perf-baseline']) require('node:fs').rmSync(p,{recursive:true,force:true})"
+      - run: node tools/perf/baseline.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: cargo xtask backend build
+        env:
+          AGENTKIT_USE_NPMJS: '1'
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: cargo build --release -p workbench --features perf --locked
+      - run: cargo build --release -p agentkit-ui --features samples --example performance --locked
+      - name: Collect configured-machine measurements; manual reference acceptance remains separate
+        shell: bash
+        run: |
+          set +e
+          node tools/perf/suite.mjs --binary target/release/workbench --backend target/backend/darwin-arm64 --scenes target/release/examples/performance --output target/perf/report.json --runs 3 --tokens 600 --machine macos-reference --environment 'Configured isolated macOS arm64 runner'
+          PERF_EXIT=$?
+          if [[ "$PERF_EXIT" != 0 && "$PERF_EXIT" != 2 ]]; then exit "$PERF_EXIT"; fi
+          PERF_BASELINE=-
+          if test -f target/perf-baseline/report.json; then PERF_BASELINE=target/perf-baseline/report.json; fi
+          node tools/perf/compare.mjs target/perf/report.json "$PERF_BASELINE" target/perf/comparison.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-macos-reference
+          path: |
+            target/perf/report.json
+            target/perf/comparison.json
+            target/perf-baseline/baseline-status.json
+          retention-days: 30
+          if-no-files-found: error

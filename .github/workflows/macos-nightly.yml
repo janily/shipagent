@@ -77,6 +77,8 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: false
+      - name: Preserve package output restored with the Rust target cache
+        run: node tools/package/prepare-output.mjs ${{ matrix.target }}
       - name: Build full workbench engineering DMG (ad-hoc, not notarized)
         run: cargo xtask package --target ${{ matrix.target }} --sign ad-hoc --probe
         env:
@@ -130,6 +132,8 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: false
+      - name: Preserve package output restored with the Rust target cache
+        run: node tools/package/prepare-output.mjs ${{ matrix.target }}
       - name: Import temporary Developer ID and notary credentials (no fallback)
         run: node tools/package/keychain.mjs setup
         env:

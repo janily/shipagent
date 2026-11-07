@@ -14,3 +14,5 @@ test('zero/slow/bursty input and missing real tool evidence invalidate the measu
  }
 });
 test('a valid measurement above 16 ms is reported as a failed budget, never discarded',()=>{const s=sample();s.native.frameWork.p95_ms=17;assert.equal(evaluate(s,300).valid,true);assert.equal(evaluate(s,300).frameBudgetMet,false);});
+
+test('negative or nonnumeric counters cannot manufacture measurement coverage',()=>{for(const value of [-1,'0',null]){const s=sample();s.native.unmeasuredFrames=value;assert.equal(evaluate(s,300).valid,false);}});

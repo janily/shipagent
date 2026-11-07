@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "status": "invalid",
+  "environment": {
+    "label": "unspecified-machine",
+    "machineId": "linux-cloud-lavapipe",
+    "platform": "linux",
+    "arch": "x64",
+    "focus": "xdotool",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "cpuCount": 3,
+    "memoryBytes": 10452459520,
+    "kernel": "6.18.57",
+    "displayBackend": "x11",
+    "vulkanDriver": "lvp_icd.json",
+    "cpuQuota": "200000 100000",
+    "memoryLimit": "8589934592",
+    "gpu": "lvp_icd.json"
+  },
+  "workload": {
+    "rate": 50,
+    "tokens": 600,
+    "tokenizer": "simulated whitespace-delimited word plus trailing whitespace",
+    "scenario": "disconnect"
+  },
+  "runs": [
+    {
+      "native": {
+        "viewport": {
+          "width": 1280,
+          "height": 820
+        },
+        "startup": {
+          "boundary": "app-entry-excludes-dynamic-loader;fresh-fixture-profile",
+          "firstSubmissionMs": 795.489136,
+          "backendReadyMs": 1961.931847,
+          "fixtureReadyMs": 1993.608913
+        },
+        "schemaVersion": 1,
+        "profile": "release",
+        "optLevel": "3",
+        "outcome": "failed",
+        "events": {
+          "complete": 1,
+          "retry": 9,
+          "text_complete": 1,
+          "text_delta": 250,
+          "text_discard": 5,
+          "title_generated": 1,
+          "tool_result": 1,
+          "tool_start": 1,
+          "typed_error": 1,
+          "usage_update": 18,
+          "user_message": 1
+        },
+        "deltaBytes": 1630,
+        "firstDeltaToTerminalMs": 35152.761479,
+        "activeUpdateFraction": 1,
+        "finalAssistantBytes": 45,
+        "completionTailMs": 100,
+        "finalFramePresented": true,
+        "frameWork": {
+          "count": 890,
+          "p50_ms": 3.488293,
+          "p95_ms": 5.139768999999999,
+          "max_ms": 29.241005
+        },
+        "draw": {
+          "count": 890,
+          "p50_ms": 3.4773069999999997,
+          "p95_ms": 5.090454,
+          "max_ms": 29.194295
+        },
+        "controllerUpdate": {
+          "count": 73,
+          "p50_ms": 0.167713,
+          "p95_ms": 0.507437,
+          "max_ms": 0.782082
+        },
+        "batchReceiptToPresent": {
+          "count": 73,
+          "p50_ms": 92.690171,
+          "p95_ms": 116.556812,
+          "max_ms": 140.016634
+        },
+        "unpresentedUpdates": 0,
+        "dirtyToPresent": {
+          "count": 890,
+          "p50_ms": 30.383428000000002,
+          "p95_ms": 51.882394999999995,
+          "max_ms": 93.99754
+        },
+        "submission": {
+          "count": 890,
+          "p50_ms": 26.457043,
+          "p95_ms": 45.814042,
+          "max_ms": 62.732291
+        },
+        "animationInterval": {
+          "count": 890,
+          "p50_ms": 38.253373,
+          "p95_ms": 54.925906,
+          "max_ms": 94.518507
+        },
+        "unmeasuredFrames": 0,
+        "unpresentedFrames": 0,
+        "unpairedPresentFrames": 0
+      },
+      "model": {
+        "requests": 7,
+        "toolCalls": 1,
+        "toolResults": 5,
+        "errors": 5,
+        "perfStreams": []
+      },
+      "verdict": {
+        "valid": false,
+        "frameBudgetMet": false,
+        "reasons": [
+          "agent-round-incomplete",
+          "model-errors",
+          "one-complete-paced-stream-required",
+          "token-count-incomplete",
+          "input-rate-outside-50-plus-minus-5-percent",
+          "bursty-model-input",
+          "final-text-size-mismatch",
+          "stream-window-too-short"
+        ],
+        "referenceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "method": "linux-kernel-subreaper",
+        "forced": false,
+        "remainingOwnedProcesses": 0,
+        "reapedOrphans": 0,
+        "verified": true
+      }
+    }
+  ],
+  "fingerprint": "a6ee193da62a131bc3b0d9a1665bded2aa403d989a95d258d4803e88b0c58c33"
+}

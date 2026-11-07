@@ -4,6 +4,30 @@ use agentkit_protocol::prototype::SessionEvent;
 use gpui_kit::profiler::{FrameEvent, FrameTiming, FrameTimingCollector};
 use serde::Serialize;
 use std::{collections::BTreeMap, fs, io::Write, time::Instant};
+static APP_ENTRY: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+pub(crate) fn start_process() {
+    APP_ENTRY.get_or_init(Instant::now);
+}
+pub(crate) async fn record_shutdown(passed: bool) {
+    let Some(root) = std::env::var_os("AGENTKIT_PERF_ROOT").map(PathBuf::from) else {
+        return;
+    };
+    let _ = smol::unblock(move || -> std::io::Result<()> {
+        if fs::read_to_string(root.join(".shipagent-perf"))? != "shipagent-perf-v1" {
+            return Ok(());
+        }
+        let file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(root.join("shutdown.json"))?;
+        serde_json::to_writer(
+            file,
+            &serde_json::json!({"schemaVersion":1,"backendShutdownPassed":passed}),
+        )
+        .map_err(std::io::Error::other)
+    })
+    .await;
+}
 
 #[derive(Clone)]
 pub(super) struct Config {
@@ -138,6 +162,11 @@ pub(super) struct Capture {
     terminal: Option<Instant>,
     outcome: Option<&'static str>,
     failed: bool,
+    startup_collector: FrameTimingCollector,
+    app_entry: Instant,
+    viewport: (f32, f32),
+    backend_ready: Option<Instant>,
+    fixture_ready: Option<Instant>,
     counts: BTreeMap<String, u64>,
     delta_bytes: usize,
     frames: Frames,
@@ -147,8 +176,15 @@ pub(super) struct Capture {
     active_updates: usize,
 }
 impl Capture {
-    pub(super) fn new(config: Config, window_id: WindowId) -> Self {
+    pub(super) fn new(config: Config, window_id: WindowId, viewport: (f32, f32)) -> Self {
+        let previous_trace = gpui_kit::profiler::trace_enabled();
+        gpui_kit::profiler::set_trace_enabled(true);
         Self {
+            startup_collector: FrameTimingCollector::new(),
+            app_entry: *APP_ENTRY.get_or_init(Instant::now),
+            viewport,
+            backend_ready: None,
+            fixture_ready: None,
             config,
             window_id,
             session: None,
@@ -160,7 +196,7 @@ impl Capture {
             counts: BTreeMap::new(),
             delta_bytes: 0,
             frames: Frames::default(),
-            previous_trace: false,
+            previous_trace,
             updates: vec![],
             update_work: vec![],
             active_updates: 0,
@@ -173,7 +209,6 @@ impl Capture {
         *self.counts.entry(event.kind.clone()).or_default() += 1;
         if event.kind == "text_delta" {
             if self.started.is_none() {
-                self.previous_trace = gpui_kit::profiler::trace_enabled();
                 gpui_kit::profiler::set_trace_enabled(true);
                 self.collector = Some(FrameTimingCollector::new());
                 self.started = Some(Instant::now());
@@ -206,6 +241,14 @@ impl Capture {
         }
     }
     fn report(mut self, final_bytes: usize) -> serde_json::Value {
+        let first_submission = self
+            .startup_collector
+            .collect_unseen()
+            .into_iter()
+            .find_map(|event| match event {
+                FrameEvent::Present(p) if p.window_id == self.window_id => Some(p.present_end),
+                _ => None,
+            });
         let mut update_latencies = vec![];
         let mut next_update = 0;
         let mut pending_draw = None;
@@ -243,6 +286,8 @@ impl Capture {
             .zip(self.frames.last_present)
             .is_some_and(|(terminal, present)| present >= terminal);
         serde_json::json!({
+            "viewport":{"width":self.viewport.0,"height":self.viewport.1},
+            "startup":{"boundary":"app-entry-excludes-dynamic-loader;fresh-fixture-profile", "firstSubmissionMs":first_submission.map(|t|t.saturating_duration_since(self.app_entry).as_secs_f64()*1000.), "backendReadyMs":self.backend_ready.map(|t|t.saturating_duration_since(self.app_entry).as_secs_f64()*1000.),"fixtureReadyMs":self.fixture_ready.map(|t|t.saturating_duration_since(self.app_entry).as_secs_f64()*1000.)},
             "schemaVersion":1,"profile":env!("AGENTKIT_BUILD_PROFILE"),"optLevel":env!("AGENTKIT_BUILD_OPT_LEVEL"),
             "outcome":self.outcome.unwrap_or("incomplete"),"events":self.counts,"deltaBytes":self.delta_bytes,
             "firstDeltaToTerminalMs":self.started.zip(self.terminal).map(|(a,b)|b.saturating_duration_since(a).as_secs_f64()*1000.),
@@ -261,6 +306,9 @@ pub(super) fn launch(
     window: &mut Window,
     cx: &mut Context<WorkbenchController>,
 ) {
+    if let Some(p) = &mut this.perf {
+        p.backend_ready = Some(Instant::now());
+    }
     let Some(config) = this.perf.as_ref().map(|p| p.config.clone()) else {
         return;
     };
@@ -276,6 +324,7 @@ pub(super) fn launch(
                     return;
                 }
                 if let Some(capture) = &mut this.perf {
+                    capture.fixture_ready = Some(Instant::now());
                     capture.session = this
                         .state
                         .as_ref()
