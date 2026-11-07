@@ -38,6 +38,8 @@ pub struct Brand {
 }
 /// Run a native GPUI application. The window opens before any backend IO.
 pub fn run(brand_toml: &str) -> Result<()> {
+    #[cfg(feature = "perf")]
+    controller::perf::start_process();
     let brand: Brand = toml::from_str(brand_toml).context("Invalid brand.toml")?;
     let directory = client_data_dir(&brand)?;
     let instance = match instance::claim(&directory, &brand.bundle_id)? {
@@ -298,10 +300,14 @@ fn orderly_quit(
             starting.await;
         }
         let running = runtime.borrow_mut().take();
-        if let Some(running) = running {
-            running.shutdown().await;
-        }
+        let _backend_clean = if let Some(running) = running {
+            running.shutdown().await
+        } else {
+            true
+        };
         let _ = preferences.finish().await;
+        #[cfg(feature = "perf")]
+        controller::perf::record_shutdown(_backend_clean).await;
         cx.update(|cx| cx.quit());
     })
     .detach();

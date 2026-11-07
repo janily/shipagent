@@ -29,3 +29,7 @@ workspace = true
 
 [dev-dependencies]
 gpui-kit = { workspace = true, features = ["test-support"] }
+
+[[example]]
+name = "performance"
+required-features = ["samples"]

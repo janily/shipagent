@@ -11,10 +11,11 @@ export function evaluate({native,model},expectedTokens) {
   require(Number.isFinite(stream?.maxGapMs)&&stream.maxGapMs<=100,'bursty-model-input');
   require(stream?.bytes>0&&native?.finalAssistantBytes===stream?.bytes,'final-text-size-mismatch');
   require(native?.finalFramePresented===true,'final-frame-not-presented');
-  require(Number.isFinite(native?.activeUpdateFraction)&&native.activeUpdateFraction>=.95,'native-window-not-active');
+  require(Number.isFinite(native?.activeUpdateFraction)&&native.activeUpdateFraction>=.95&&native.activeUpdateFraction<=1,'native-window-not-active');
   require(Number.isFinite(native?.firstDeltaToTerminalMs)&&native.firstDeltaToTerminalMs>=stream?.elapsedMs-30,'stream-window-too-short');
   const frames=native?.frameWork?.count??0;
-  require(frames>=100,'insufficient-frame-samples');
+  require(Number.isSafeInteger(frames)&&frames>=100,'insufficient-frame-samples');
+  require(['unmeasuredFrames','unpresentedFrames','unpairedPresentFrames'].every(k=>Number.isSafeInteger(native?.[k])&&native[k]>=0),'invalid-frame-counts');
   const unavailable=(native?.unmeasuredFrames??Infinity)+(native?.unpresentedFrames??Infinity);
   require(frames/(frames+unavailable)>=.95&&(native?.unpairedPresentFrames??Infinity)<=1,'frame-measurement-coverage-below-95-percent');
   const p95=native?.frameWork?.p95_ms;

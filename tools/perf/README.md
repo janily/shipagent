@@ -1,14 +1,16 @@
-# Linux native stream experiment
+# Native performance suite (T-1-23)
 
 Build and run against the same fixed backend used by Workbench:
 
 ```sh
 cargo xtask backend build
 cargo build --release -p workbench --features perf --locked
-node tools/perf/run.mjs --binary target/release/workbench --backend target/backend/linux-x64 --output target/perf/stream.json --runs 3 --tokens 600 --environment 'describe CPU/GPU/display here'
+cargo build --release -p agentkit-ui --features samples --example performance --locked
+node tools/perf/suite.mjs --binary target/release/workbench --backend target/backend/linux-x64 --scenes target/release/examples/performance --output target/perf/report.json --runs 3 --tokens 600 --machine linux-reference --environment 'describe CPU/GPU/display here'
+node tools/perf/compare.mjs target/perf/report.json - target/perf/comparison.json
 ```
 
-Requires Python 3 and a working Linux X11/Wayland display and Vulkan renderer. The runner starts an in-process loopback model, creates a private temporary fixture/config directory, and launches the real native app. The app configures that local endpoint and sends through its existing controller, authenticated WebSocket, bundled backend and Pi. A real Read result is required before the paced final Markdown. No synthetic chat/tool events are injected into the view.
+Requires Node 22, Python 3 and either a working Linux X11/Wayland display with a Vulkan renderer, or native macOS. On macOS use `target/backend/darwin-arm64` (or `darwin-x64`). The runner starts an in-process loopback model, creates a private temporary fixture/config directory, and launches the real native app. The app configures that local endpoint and sends through its existing controller, authenticated WebSocket, bundled backend and Pi. A real Read result is required before the paced final Markdown. No synthetic chat/tool events are injected into the view.
 
 On Xvfb without a window manager, install xdotool and add `--focus xdotool`; desktop compositors normally honor application activation. Focus is checked inside the native window rather than inferred from a focus command exit code.
 
@@ -52,4 +54,30 @@ python3 -m unittest discover -s tools/perf -p 'test_*.py'
 cargo test -p agentkit-ui -p agentkit-app --features agentkit-app/perf --locked
 ```
 
-The manual `Linux software-renderer performance experiment` workflow builds release and uploads reports from shared Ubuntu + Xvfb/lavapipe. It is an experiment, not the reference-hardware perf gate. Formal nightly baselines/10% regression alerting belong to T-1-23.
+The manual `Linux software-renderer performance experiment` workflow builds release and uploads reports from shared Ubuntu + Xvfb/lavapipe. It is an experiment, not the reference-hardware perf gate. The `Native performance baselines` workflow now provides nightly, manual and related-PR suites on shared Linux and macOS; the older manual stream-only experiment remains available.
+
+## Native scenes and aggregation
+
+The suite runs the real Agent stream three times, then runs a separate native GPUI executable three times. Scene data is explicitly synthetic and never presented as a real Agent conversation. It renders the production WorkbenchView/SessionStore, ToolCard, ToolOutputView and FullToolEditor:
+
+- Frontend RSS after five empty frames, and after loading/retaining ten sessions of 100 messages each. Linux reads VmRSS; macOS reads its own RSS with ps. The separate backend is excluded; shared libraries/renderer allocations in the scene process are included. The scene does not contain the full app controller/RPC/preferences/settings entities, so these snapshots do not establish production-process idle/ten-session RSS acceptance or a long-term memory plateau.
+- Open 10,000 alternating Markdown messages, including fixture construction, indexing, binding and the first native submission. No disk/network history download is timed.
+- Scroll to 120 deterministic positions, collecting actual Draw/Present work and submission cadence. This is programmatic scroll throughput, not physical touchpad input latency. Every Present must be accounted for, with at least 95% measured work coverage.
+- A collapsed 100,000-line Read card, its bounded preview (at most 2,000 lines), and the complete read-only Editor (exactly 100,000 lines). Open timings include construction and first submission; full Editor virtualization remains production behavior.
+
+`startup.firstSubmissionMs`, `backendReadyMs` and `fixtureReadyMs` are app-entry-relative observations in a fresh fixture profile. They exclude the dynamic loader and do not establish cold-process-start-to-input-ready: fixture readiness includes endpoint configuration. `batchReceiptToPresent` is a controller-batch metric, not network event latency. Physical display latency, reference hardware budgets, forced-exit macOS orphan ownership and seven-day stability remain unmeasured. Default production builds have no probes.
+
+The schema v2 report records binary SHA256 values and the CI source commit for audit, retains every raw run and takes the median of each metric (including each run's p95); invalid/missing samples invalidate the aggregate. Scene and stream build optimization, exact workload, cleanup, pacing, text/tool completion and rendering coverage are checked again when comparing artifacts. Local budget misses (16ms work p95, 150/300MB frontend RSS, 800ms history open, 60fps scroll) are reported separately from hardware acceptance. Slow valid runs are not removed.
+
+Fingerprinting covers platform/CPU/GPU/memory/kernel/display backend, cgroup limits, machine label, workload, native viewport and measurement-source hash. It deliberately excludes commit ID so production changes can be compared. A hardware, method or workload change makes the previous report incompatible. Shared hardware load is not controlled by a fingerprint; shared CI is engineering evidence only.
+
+## Nightly comparison and reference runner
+
+The downloader selects the immediately preceding **scheduled** main run by creation time, including failed or unfinished runs; manual/PR runs never replace the previous night. It requests only the same machine's artifact. Missing, invalid or incompatible reports produce explicit warnings; it never searches backwards for a favorable result. It compares at least three complete runs, warning for strictly greater than 10% increases in costs/memory or decreases in FPS. First-run/missing-baseline warnings are expected. Reports, comparison and baseline-selection status are retained as artifacts for 30 days. Exit 2 means invalid data or a local budget miss and is preserved as a CI warning; infrastructure/build failures fail the job.
+
+Shared Linux uses Xvfb/lavapipe; shared macOS uses the runner's virtual display. The optional main-only `reference` job requires both repository variables:
+
+- `MACOS_PERF_RUNNER`: JSON runner labels for an isolated macOS arm64 machine.
+- `MACOS_PERF_ISOLATION=disposable-machine-per-job`: an operator assertion that a fresh OS instance is provisioned for each job and destroyed after success, failure **and cancellation**. A persistent self-hosted runner alone does not meet this contract. Configure a main-only protected `performance-reference` environment before enabling it.
+
+Linux retains CHILD_SUBREAPER ownership supervision and reaps descendants. macOS normal exit records the owned sidecar supervisor's shutdown result; this is not an orphan census. On failure the runner terminates, then kills a stuck native process, invalidates cleanup, stops further samples/scenes, and relies on disposal of that job's machine to contain any independent backend process group. Never run this macOS suite on a persistent personal/reference desktop. A configured label does not imply physical M1 acceptance; retain `referenceAcceptance: not_evaluated` until separate documented hardware acceptance.
