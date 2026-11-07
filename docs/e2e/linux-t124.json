@@ -34,10 +34,10 @@
         "u1.probe_cleanup": true,
         "u1.credentials_private": true
       },
-      "presentedFrames": 155,
+      "presentedFrames": 148,
       "timings": {
-        "cancelMs": 150.754324,
-        "recoveryMs": 2361.275562
+        "cancelMs": 77.146741,
+        "recoveryMs": 2291.623939
       },
       "phase": 22,
       "failure": null,
@@ -72,7 +72,7 @@
         "restore.session": true,
         "restore.browser_unchanged": true
       },
-      "presentedFrames": 23,
+      "presentedFrames": 25,
       "timings": {},
       "phase": 0,
       "failure": null,
@@ -132,7 +132,7 @@
         "defer.restored": true,
         "restore.browser_unchanged": true
       },
-      "presentedFrames": 29,
+      "presentedFrames": 20,
       "timings": {},
       "phase": 0,
       "failure": null,

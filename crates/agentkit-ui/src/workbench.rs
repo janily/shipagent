@@ -554,6 +554,10 @@ impl WorkbenchView {
 
 #[cfg(feature = "e2e")]
 impl WorkbenchView {
+    /// Report the same cached readiness used by the displayed Composer controls.
+    pub fn e2e_composer_ready(&self, cx: &App) -> bool {
+        self.composer.read(cx).e2e_ready()
+    }
     /// Drive the normal Composer submit path, including its IME/model/session gates.
     pub fn e2e_send(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {
         self.composer

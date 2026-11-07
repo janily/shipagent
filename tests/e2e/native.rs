@@ -183,7 +183,10 @@ impl Probe {
         text: &str,
         window: &mut Window,
         cx: &mut Context<WorkbenchController>,
-    ) {
+    ) -> bool {
+        if !this.view.read(cx).e2e_composer_ready(cx) {
+            return false;
+        }
         self.events.clear();
         self.optimistic = false;
         self.ack = false;
@@ -194,6 +197,7 @@ impl Probe {
             .map(|s| s.read(cx).model.state.session.id.clone())
             .unwrap_or_default();
         this.view.update(cx, |v, cx| v.e2e_send(text, window, cx));
+        true
     }
     fn emit(
         this: &mut WorkbenchController,
@@ -412,8 +416,9 @@ impl Probe {
                             .focus_handle(cx)
                             .is_focused(window),
                 );
-                self.send(this, "[e2e:read]", window, cx);
-                self.phase = 8;
+                if self.send(this, "[e2e:read]", window, cx) {
+                    self.phase = 8;
+                }
             }
             8 if idle => {
                 let Some(session) = session else {
@@ -499,8 +504,9 @@ impl Probe {
                 .as_ref()
                 .is_some_and(|s| s.permission_mode == Some(PermissionMode::Ask)) =>
             {
-                self.send(this, "[e2e:deny]", window, cx);
-                self.phase = 11;
+                if self.send(this, "[e2e:deny]", window, cx) {
+                    self.phase = 11;
+                }
             }
             11 if permissions > 0 => {
                 if self.decision(this, false, false, cx) {
@@ -516,8 +522,9 @@ impl Probe {
                             .any(|m| m.role == MessageRole::Tool && m.is_error == Some(true))
                     }),
                 );
-                self.send(this, "[e2e:allow]", window, cx);
-                self.phase = 13;
+                if self.send(this, "[e2e:allow]", window, cx) {
+                    self.phase = 13;
+                }
             }
             13 if permissions > 0 => {
                 if self.decision(this, true, false, cx) {
@@ -529,8 +536,9 @@ impl Probe {
                     "u3.allow",
                     self.count("permission_request") == 1 && self.count("tool_result") == 1,
                 );
-                self.send(this, "[e2e:always]", window, cx);
-                self.phase = 15;
+                if self.send(this, "[e2e:always]", window, cx) {
+                    self.phase = 15;
+                }
             }
             15 if permissions > 0 => {
                 if self.decision(this, true, true, cx) {
@@ -570,8 +578,9 @@ impl Probe {
                         )
                     })
                     .collect();
-                self.send(this, "[e2e:cancel]", window, cx);
-                self.phase = 17;
+                if self.send(this, "[e2e:cancel]", window, cx) {
+                    self.phase = 17;
+                }
             }
             17 if self.count("text_delta") >= 2 => {
                 Self::emit(this, WorkbenchIntent::Cancel, cx);
@@ -587,8 +596,9 @@ impl Probe {
                     .unwrap_or(f64::INFINITY);
                 self.timings.insert("cancelMs".into(), elapsed);
                 self.check("f17.cancel", elapsed <= 2000.);
-                self.send(this, "[e2e:crash]", window, cx);
-                self.phase = 19;
+                if self.send(this, "[e2e:crash]", window, cx) {
+                    self.phase = 19;
+                }
             }
             19 if self.count("text_delta") >= 2 => {
                 let input = this.view.read(cx).composer_input(cx);
@@ -679,8 +689,9 @@ impl Probe {
                             })
                         }),
                     );
-                    self.send(this, "[e2e:continue]", window, cx);
-                    self.phase = 22;
+                    if self.send(this, "[e2e:continue]", window, cx) {
+                        self.phase = 22;
+                    }
                 }
             }
             22 if idle => {

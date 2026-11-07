@@ -26,6 +26,6 @@ Linux Xvfb/lavapipe 的真实原生窗口执行四次启动：full、restore、d
 
 语义动作不替代真实鼠标/键盘、物理中文 IME、VoiceOver/NVDA。共享容器/CI 调试构建不代替参考机冷启动、生产进程 RSS、触控板/FPS 或7天稳定性验收。既有性能未达标项、阶段0、Developer ID签名/公证与干净机门槛继续开放；用户已确认暂无签名 Secrets，保留工程包。
 
-Windows CI 首轮在连接探测后发现临时目录仍被子进程占用；P-04 改为先等待现有异步 disposeForRestart，再 finally destroy 和目录清理。未延长门禁超时或放宽残留检查；新增等待顺序与释放失败回归。最终三平台结果以修复后的 PR head 为准。
+Windows CI 首轮在连接探测后发现临时目录仍被子进程占用；P-04 改为先等待现有异步 disposeForRestart，再 finally destroy 和目录清理。未延长门禁超时或放宽残留检查；新增等待顺序与释放失败回归。Windows连接测试修复后已通过U1；第二轮发现驱动在引导关闭同tick、Composer尚未render同步模型时提交，现按真实enabled/submitting/changing状态等待，各发送阶段只在就绪后推进；生产行为和超时/断言未放宽。最终三平台结果以最新 PR head 为准。
 
 下一项依06排期为 T-2-01，不豁免上述验收。
