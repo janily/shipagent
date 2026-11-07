@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "status": "invalid",
+  "environment": {
+    "label": "unspecified-machine",
+    "machineId": "linux-cloud-lavapipe",
+    "platform": "linux",
+    "arch": "x64",
+    "focus": "xdotool",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "cpuCount": 3,
+    "memoryBytes": 10452459520,
+    "kernel": "6.18.57",
+    "displayBackend": "x11",
+    "vulkanDriver": "lvp_icd.json",
+    "cpuQuota": "200000 100000",
+    "memoryLimit": "8589934592",
+    "gpu": "lvp_icd.json"
+  },
+  "workload": {
+    "rate": 50,
+    "tokens": 600,
+    "tokenizer": "simulated whitespace-delimited word plus trailing whitespace",
+    "scenario": "crash"
+  },
+  "runs": [
+    {
+      "model": {
+        "requests": 0,
+        "toolCalls": 0,
+        "toolResults": 0,
+        "errors": 0,
+        "perfStreams": []
+      },
+      "error": "native-run-failed",
+      "verdict": {
+        "valid": false,
+        "frameBudgetMet": false,
+        "reasons": [
+          "release-optimized-build-required",
+          "agent-round-incomplete",
+          "real-tool-evidence-missing",
+          "one-complete-paced-stream-required",
+          "token-count-incomplete",
+          "input-rate-outside-50-plus-minus-5-percent",
+          "bursty-model-input",
+          "final-text-size-mismatch",
+          "final-frame-not-presented",
+          "native-window-not-active",
+          "stream-window-too-short",
+          "insufficient-frame-samples",
+          "invalid-frame-counts",
+          "frame-measurement-coverage-below-95-percent",
+          "unmeasured-frame-work",
+          "runner-error",
+          "forced-or-incomplete-process-cleanup"
+        ],
+        "referenceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "method": "linux-kernel-subreaper",
+        "forced": true,
+        "remainingOwnedProcesses": 0,
+        "reapedOrphans": 1,
+        "verified": false
+      }
+    }
+  ],
+  "fingerprint": "fe0ba82487943cefaac85485ca32b55e3fd54d1ebccc011a6137bb47f7ca0604"
+}

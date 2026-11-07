@@ -1,0 +1,521 @@
+{
+  "schemaVersion": 2,
+  "methodVersion": "cefd7c78af8ab6804440b4df5903f6b1c010a550d75c5c3b7a96e6d631f9d350",
+  "fingerprint": "5042c7a977268e451645c7f881068928b4a0d4c789699af120fe3a2b00a3219c",
+  "binaries": {
+    "workbenchSha256": "fdc04b8fad485c6b0a37751ea80c0621352a1e7d9a018ef8d3c219a7466a41b1",
+    "scenesSha256": "724456afc9fb7e53ed704e666e40d3a47d822cc8e42f70ebb577689fc92ebb54"
+  },
+  "sourceCommit": null,
+  "machineId": "linux-cloud-lavapipe",
+  "stream": {
+    "schemaVersion": 1,
+    "status": "measured",
+    "environment": {
+      "label": "Cloud Linux Xvfb lavapipe",
+      "machineId": "linux-cloud-lavapipe",
+      "platform": "linux",
+      "arch": "x64",
+      "focus": "xdotool",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "cpuCount": 3,
+      "memoryBytes": 10452459520,
+      "kernel": "6.18.57",
+      "displayBackend": "x11",
+      "vulkanDriver": "lvp_icd.json",
+      "cpuQuota": "200000 100000",
+      "memoryLimit": "8589934592",
+      "gpu": "lvp_icd.json"
+    },
+    "workload": {
+      "rate": 50,
+      "tokens": 600,
+      "tokenizer": "simulated whitespace-delimited word plus trailing whitespace",
+      "scenario": "stream"
+    },
+    "runs": [
+      {
+        "native": {
+          "viewport": {
+            "width": 1280,
+            "height": 820
+          },
+          "startup": {
+            "boundary": "app-entry-excludes-dynamic-loader;fresh-fixture-profile",
+            "firstSubmissionMs": 911.652062,
+            "backendReadyMs": 2072.0113069999998,
+            "fixtureReadyMs": 2077.022267
+          },
+          "schemaVersion": 1,
+          "profile": "release",
+          "optLevel": "3",
+          "outcome": "complete",
+          "events": {
+            "complete": 1,
+            "text_complete": 2,
+            "text_delta": 605,
+            "title_generated": 1,
+            "tool_result": 1,
+            "tool_start": 1,
+            "usage_update": 7,
+            "user_message": 1
+          },
+          "deltaBytes": 6337,
+          "firstDeltaToTerminalMs": 12091.976362000001,
+          "activeUpdateFraction": 1,
+          "finalAssistantBytes": 6292,
+          "completionTailMs": 100,
+          "finalFramePresented": true,
+          "frameWork": {
+            "count": 242,
+            "p50_ms": 4.987691,
+            "p95_ms": 8.188607000000001,
+            "max_ms": 28.453229999999998
+          },
+          "draw": {
+            "count": 242,
+            "p50_ms": 4.954584,
+            "p95_ms": 7.80734,
+            "max_ms": 28.403686
+          },
+          "controllerUpdate": {
+            "count": 162,
+            "p50_ms": 0.15910100000000002,
+            "p95_ms": 0.301566,
+            "max_ms": 1.0163769999999999
+          },
+          "batchReceiptToPresent": {
+            "count": 162,
+            "p50_ms": 96.790532,
+            "p95_ms": 121.20861099999999,
+            "max_ms": 151.279114
+          },
+          "unpresentedUpdates": 0,
+          "dirtyToPresent": {
+            "count": 242,
+            "p50_ms": 47.591139,
+            "p95_ms": 66.640527,
+            "max_ms": 83.205327
+          },
+          "submission": {
+            "count": 242,
+            "p50_ms": 33.653987,
+            "p95_ms": 50.802207,
+            "max_ms": 69.948783
+          },
+          "animationInterval": {
+            "count": 242,
+            "p50_ms": 49.283068,
+            "p95_ms": 68.718907,
+            "max_ms": 83.725704
+          },
+          "unmeasuredFrames": 0,
+          "unpresentedFrames": 0,
+          "unpairedPresentFrames": 0
+        },
+        "model": {
+          "requests": 3,
+          "toolCalls": 1,
+          "toolResults": 1,
+          "errors": 0,
+          "perfStreams": [
+            {
+              "tokens": 600,
+              "bytes": 6292,
+              "elapsedMs": 11977.130471,
+              "maxGapMs": 37.20367100000112,
+              "observedRate": 50.0119792007232,
+              "completed": true
+            }
+          ]
+        },
+        "verdict": {
+          "valid": true,
+          "frameBudgetMet": true,
+          "reasons": [],
+          "referenceAcceptance": "not_evaluated"
+        },
+        "cleanup": {
+          "method": "linux-kernel-subreaper",
+          "forced": false,
+          "remainingOwnedProcesses": 0,
+          "reapedOrphans": 0,
+          "verified": true
+        }
+      },
+      {
+        "native": {
+          "viewport": {
+            "width": 1280,
+            "height": 820
+          },
+          "startup": {
+            "boundary": "app-entry-excludes-dynamic-loader;fresh-fixture-profile",
+            "firstSubmissionMs": 856.590322,
+            "backendReadyMs": 1970.879941,
+            "fixtureReadyMs": 2006.3819469999999
+          },
+          "schemaVersion": 1,
+          "profile": "release",
+          "optLevel": "3",
+          "outcome": "complete",
+          "events": {
+            "complete": 1,
+            "text_complete": 2,
+            "text_delta": 605,
+            "title_generated": 1,
+            "tool_result": 1,
+            "tool_start": 1,
+            "usage_update": 7,
+            "user_message": 1
+          },
+          "deltaBytes": 6337,
+          "firstDeltaToTerminalMs": 12043.112905,
+          "activeUpdateFraction": 1,
+          "finalAssistantBytes": 6292,
+          "completionTailMs": 100,
+          "finalFramePresented": true,
+          "frameWork": {
+            "count": 233,
+            "p50_ms": 5.4576720000000005,
+            "p95_ms": 13.653398000000001,
+            "max_ms": 28.312581
+          },
+          "draw": {
+            "count": 233,
+            "p50_ms": 5.40108,
+            "p95_ms": 11.791981999999999,
+            "max_ms": 24.942188
+          },
+          "controllerUpdate": {
+            "count": 151,
+            "p50_ms": 0.172852,
+            "p95_ms": 0.327345,
+            "max_ms": 0.89269
+          },
+          "batchReceiptToPresent": {
+            "count": 151,
+            "p50_ms": 103.135264,
+            "p95_ms": 134.72641499999997,
+            "max_ms": 141.836705
+          },
+          "unpresentedUpdates": 0,
+          "dirtyToPresent": {
+            "count": 233,
+            "p50_ms": 50.142697,
+            "p95_ms": 68.99017500000001,
+            "max_ms": 89.776157
+          },
+          "submission": {
+            "count": 233,
+            "p50_ms": 34.548669,
+            "p95_ms": 57.118342000000005,
+            "max_ms": 82.599021
+          },
+          "animationInterval": {
+            "count": 232,
+            "p50_ms": 52.069540999999994,
+            "p95_ms": 70.45488900000001,
+            "max_ms": 90.278738
+          },
+          "unmeasuredFrames": 0,
+          "unpresentedFrames": 0,
+          "unpairedPresentFrames": 0
+        },
+        "model": {
+          "requests": 3,
+          "toolCalls": 1,
+          "toolResults": 1,
+          "errors": 0,
+          "perfStreams": [
+            {
+              "tokens": 600,
+              "bytes": 6292,
+              "elapsedMs": 11979.466116999996,
+              "maxGapMs": 39.695614000000205,
+              "observedRate": 50.00222832551463,
+              "completed": true
+            }
+          ]
+        },
+        "verdict": {
+          "valid": true,
+          "frameBudgetMet": true,
+          "reasons": [],
+          "referenceAcceptance": "not_evaluated"
+        },
+        "cleanup": {
+          "method": "linux-kernel-subreaper",
+          "forced": false,
+          "remainingOwnedProcesses": 0,
+          "reapedOrphans": 0,
+          "verified": true
+        }
+      },
+      {
+        "native": {
+          "viewport": {
+            "width": 1280,
+            "height": 820
+          },
+          "startup": {
+            "boundary": "app-entry-excludes-dynamic-loader;fresh-fixture-profile",
+            "firstSubmissionMs": 803.504956,
+            "backendReadyMs": 1898.976942,
+            "fixtureReadyMs": 1902.550527
+          },
+          "schemaVersion": 1,
+          "profile": "release",
+          "optLevel": "3",
+          "outcome": "complete",
+          "events": {
+            "complete": 1,
+            "text_complete": 2,
+            "text_delta": 605,
+            "title_generated": 1,
+            "tool_result": 1,
+            "tool_start": 1,
+            "usage_update": 7,
+            "user_message": 1
+          },
+          "deltaBytes": 6337,
+          "firstDeltaToTerminalMs": 12101.584409000001,
+          "activeUpdateFraction": 1,
+          "finalAssistantBytes": 6292,
+          "completionTailMs": 100,
+          "finalFramePresented": true,
+          "frameWork": {
+            "count": 250,
+            "p50_ms": 5.161275,
+            "p95_ms": 7.2917499999999995,
+            "max_ms": 26.977381
+          },
+          "draw": {
+            "count": 250,
+            "p50_ms": 5.052994,
+            "p95_ms": 7.1865499999999995,
+            "max_ms": 26.915278
+          },
+          "controllerUpdate": {
+            "count": 170,
+            "p50_ms": 0.149746,
+            "p95_ms": 0.29767,
+            "max_ms": 1.468671
+          },
+          "batchReceiptToPresent": {
+            "count": 170,
+            "p50_ms": 95.729937,
+            "p95_ms": 112.60255,
+            "max_ms": 134.58104
+          },
+          "unpresentedUpdates": 0,
+          "dirtyToPresent": {
+            "count": 250,
+            "p50_ms": 46.386075999999996,
+            "p95_ms": 63.307899,
+            "max_ms": 72.65962400000001
+          },
+          "submission": {
+            "count": 250,
+            "p50_ms": 32.907643,
+            "p95_ms": 49.300846,
+            "max_ms": 58.620482
+          },
+          "animationInterval": {
+            "count": 249,
+            "p50_ms": 48.300509999999996,
+            "p95_ms": 65.46014699999999,
+            "max_ms": 73.34051699999999
+          },
+          "unmeasuredFrames": 0,
+          "unpresentedFrames": 0,
+          "unpairedPresentFrames": 0
+        },
+        "model": {
+          "requests": 3,
+          "toolCalls": 1,
+          "toolResults": 1,
+          "errors": 0,
+          "perfStreams": [
+            {
+              "tokens": 600,
+              "bytes": 6292,
+              "elapsedMs": 11979.521994000002,
+              "maxGapMs": 43.00973499999964,
+              "observedRate": 50.00199509629949,
+              "completed": true
+            }
+          ]
+        },
+        "verdict": {
+          "valid": true,
+          "frameBudgetMet": true,
+          "reasons": [],
+          "referenceAcceptance": "not_evaluated"
+        },
+        "cleanup": {
+          "method": "linux-kernel-subreaper",
+          "forced": false,
+          "remainingOwnedProcesses": 0,
+          "reapedOrphans": 0,
+          "verified": true
+        }
+      }
+    ],
+    "fingerprint": "f7ed1c348fd392aec61ea565a9693ae640f85c5c65c0b8a4e8eba5000367c044"
+  },
+  "scenes": [
+    {
+      "schemaVersion": 1,
+      "status": "measured",
+      "profile": "release",
+      "optLevel": "3",
+      "platform": "linux",
+      "arch": "x86_64",
+      "workload": {
+        "version": 1,
+        "memorySessions": 10,
+        "messagesPerMemorySession": 100,
+        "historyMessages": 10000,
+        "toolLines": 100000,
+        "scrollSteps": 120
+      },
+      "boundary": "synthetic-native-ui;rss-frontend-only;app-entry-excludes-loader",
+      "firstSubmissionMs": 806.452932,
+      "idleRssBytes": 167620608,
+      "tenSessionsRssBytes": 182185984,
+      "historyOpenMs": 87.09792900000001,
+      "scroll": {
+        "frames": 120,
+        "measuredFrames": 120,
+        "unmeasuredFrames": 0,
+        "workP95Ms": 6.4830060000000005,
+        "fps": 19.470063548553117
+      },
+      "toolCollapsedMs": 20.865204,
+      "previewLines": 2000,
+      "toolPreviewOpenMs": 45.068638,
+      "fullEditorLines": 100000,
+      "toolFullOpenMs": 746.4099739999999,
+      "cleanup": {
+        "method": "linux-kernel-subreaper",
+        "verified": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "status": "measured",
+      "profile": "release",
+      "optLevel": "3",
+      "platform": "linux",
+      "arch": "x86_64",
+      "workload": {
+        "version": 1,
+        "memorySessions": 10,
+        "messagesPerMemorySession": 100,
+        "historyMessages": 10000,
+        "toolLines": 100000,
+        "scrollSteps": 120
+      },
+      "boundary": "synthetic-native-ui;rss-frontend-only;app-entry-excludes-loader",
+      "firstSubmissionMs": 803.09867,
+      "idleRssBytes": 166948864,
+      "tenSessionsRssBytes": 181702656,
+      "historyOpenMs": 88.190911,
+      "scroll": {
+        "frames": 120,
+        "measuredFrames": 120,
+        "unmeasuredFrames": 0,
+        "workP95Ms": 6.5936639999999995,
+        "fps": 19.57080674792733
+      },
+      "toolCollapsedMs": 17.835068999999997,
+      "previewLines": 2000,
+      "toolPreviewOpenMs": 46.45368,
+      "fullEditorLines": 100000,
+      "toolFullOpenMs": 774.459238,
+      "cleanup": {
+        "method": "linux-kernel-subreaper",
+        "verified": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "status": "measured",
+      "profile": "release",
+      "optLevel": "3",
+      "platform": "linux",
+      "arch": "x86_64",
+      "workload": {
+        "version": 1,
+        "memorySessions": 10,
+        "messagesPerMemorySession": 100,
+        "historyMessages": 10000,
+        "toolLines": 100000,
+        "scrollSteps": 120
+      },
+      "boundary": "synthetic-native-ui;rss-frontend-only;app-entry-excludes-loader",
+      "firstSubmissionMs": 815.530356,
+      "idleRssBytes": 168198144,
+      "tenSessionsRssBytes": 182538240,
+      "historyOpenMs": 91.852643,
+      "scroll": {
+        "frames": 120,
+        "measuredFrames": 120,
+        "unmeasuredFrames": 0,
+        "workP95Ms": 8.376857,
+        "fps": 19.127540506609122
+      },
+      "toolCollapsedMs": 17.665462,
+      "previewLines": 2000,
+      "toolPreviewOpenMs": 42.316972,
+      "fullEditorLines": 100000,
+      "toolFullOpenMs": 853.896071,
+      "cleanup": {
+        "method": "linux-kernel-subreaper",
+        "verified": true
+      }
+    }
+  ],
+  "unmeasured": [
+    "full-workbench-process-idle-and-ten-session-rss",
+    "cold-process-start-to-input-ready",
+    "dynamic-loader-before-app-entry",
+    "physical-display-latency",
+    "seven-day-stability",
+    "reference-hardware-acceptance",
+    "macos-orphan-ownership-after-forced-exit"
+  ],
+  "summary": {
+    "valid": true,
+    "metrics": {
+      "frameWorkP95Ms": 8.188607000000001,
+      "firstSubmissionMs": 856.590322,
+      "backendReadyMs": 1970.879941,
+      "fixtureReadyMs": 2006.3819469999999,
+      "batchReceiptP95Ms": 121.20861099999999,
+      "idleRssBytes": 167620608,
+      "tenSessionsRssBytes": 182185984,
+      "historyOpenMs": 88.190911,
+      "toolCollapsedMs": 17.835068999999997,
+      "toolPreviewOpenMs": 45.068638,
+      "toolFullOpenMs": 774.459238,
+      "scrollFps": 19.470063548553117,
+      "scrollWorkP95Ms": 6.5936639999999995
+    },
+    "budgetMisses": [
+      {
+        "metric": "idleRssBytes",
+        "limit": 150000000,
+        "value": 167620608
+      },
+      {
+        "metric": "scrollFps",
+        "limit": 60,
+        "value": 19.470063548553117
+      }
+    ],
+    "runs": 3,
+    "referenceAcceptance": "not_evaluated"
+  }
+}
