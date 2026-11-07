@@ -5,7 +5,7 @@
  // Model resolution utilities
  import { getModelProvider, normalizeDeprecatedModelId } from '../../config/models.ts';
 -import { homedir } from 'node:os';
-+import { withConnectionProbeWorkspace } from './connection-probe-workspace.ts';
++import { withConnectionProbeWorkspace, disposeConnectionProbe } from './connection-probe-workspace.ts';
  import { getCredentialManager } from '../../credentials/index.ts';
  import type {
    BackendModelFetchCredentials,
@@ -18,17 +18,21 @@
      const agent = createBackendFromResolvedContext({
        context,
        coreConfig: {
-@@ -709,6 +709,7 @@
+@@ -707,8 +707,9 @@
+       const enriched = base.includes('subprocess stderr') ? base : withStderrContext(base);
+       return { success: false, error: enriched };
      } finally {
-       agent.destroy();
-     }
+-      agent.destroy();
+-    }
++      await disposeConnectionProbe(agent);
++    }
 +    });
    } catch (error) {
      return {
        success: false,
 --- /dev/null
 +++ b/packages/shared/src/agent/backend/connection-probe-workspace.ts
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,19 @@
 +// Connection validation must never create sessions in the user's home/workspace.
 +import { mkdtemp, realpath, rm } from 'node:fs/promises';
 +import { tmpdir } from 'node:os';
@@ -42,14 +46,20 @@
 +    await rm(cwd, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
 +  }
 +}
++
++// Windows holds a child's cwd open until its exit is observed.
++export async function disposeConnectionProbe(agent: { destroy(): void; disposeForRestart?(): Promise<void> }): Promise<void> {
++  try { await agent.disposeForRestart?.(); }
++  finally { agent.destroy(); }
++}
 --- /dev/null
 +++ b/packages/shared/src/agent/backend/connection-probe-workspace.test.ts
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,50 @@
 +import { test, expect } from 'bun:test';
 +import { mkdir, writeFile, stat, realpath } from 'node:fs/promises';
 +import { tmpdir, homedir } from 'node:os';
 +import { dirname, basename, join } from 'node:path';
-+import { withConnectionProbeWorkspace } from './connection-probe-workspace.ts';
++import { withConnectionProbeWorkspace, disposeConnectionProbe } from './connection-probe-workspace.ts';
 +
 +test('probe writes only to a unique temporary workspace and removes it on success', async () => {
 +  let observed = '';
@@ -73,4 +83,25 @@
 +test('concurrent tests do not share a directory', async () => {
 +  const roots = await Promise.all([0, 1].map(() => withConnectionProbeWorkspace(async cwd => cwd)));
 +  expect(roots[0]).not.toBe(roots[1]);
++});
++
++test('probe cleanup waits for owned child disposal before removing its cwd', async () => {
++ let release!: () => void, entered!: () => void, root = '', destroyed = false;
++ const exit = new Promise<void>(resolve => release=resolve);
++ const disposing = new Promise<void>(resolve => entered=resolve);
++ const probe = withConnectionProbeWorkspace(async cwd => {
++  root=cwd;
++  await disposeConnectionProbe({ disposeForRestart: async () => { entered(); await exit; }, destroy: () => {destroyed=true;} });
++ });
++ await disposing;
++ expect(await stat(root).then(() => true, () => false)).toBe(true);
++ expect(destroyed).toBe(false);
++ release(); await probe;
++ expect(destroyed).toBe(true);
++ expect(await stat(root).then(() => true, () => false)).toBe(false);
++});
++test('failed asynchronous disposal still destroys the owned agent', async () => {
++ let destroyed=false;
++ await expect(disposeConnectionProbe({disposeForRestart:async()=>{throw Error('exit-failed')},destroy:()=>{destroyed=true}})).rejects.toThrow('exit-failed');
++ expect(destroyed).toBe(true);
 +});

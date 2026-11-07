@@ -18,12 +18,14 @@ P-04 解决连接探测在用户主目录建 sessions 的错误，改用独立�
 
 Linux Xvfb/lavapipe 的真实原生窗口执行四次启动：full、restore、defer、defer_restore。每次必须实际 Present、原生场景无失败、正常退出及 sidecar 关闭有效；Linux 还必须无活着的残留、无强制清理。没有实际帧或任何证据缺失都不能通过。
 
-[Linux 原始报告](e2e/linux-t124.json)四次启动全通过，8项启动前隔离拒绝检查通过。核心 Rust 280项通过；UI/app/sidecar全特性147项通过（原有15项显式忽略）；Node63项通过；补丁12项Bun测试通过。fmt、全workspace全特性全目标clippy、330键国际化、35根协议生成防漂移与修改的CI workflow actionlint均通过。三平台CI最终结果见PR检查。两项独立审查分别检查规格与工程规范，已修复中断断言误用历史提示、缺少列表/磁盘恢复证据、journal 并发删除/截断、持久化吞错与发送预留未回滚问题。
+[Linux 原始报告](e2e/linux-t124.json)四次启动全通过，8项启动前隔离拒绝检查通过。核心 Rust 280项通过；UI/app/sidecar全特性147项通过（原有15项显式忽略）；Node63项通过；补丁14项Bun测试通过。fmt、全workspace全特性全目标clippy、330键国际化、35根协议生成防漂移与修改的CI workflow actionlint均通过。三平台CI最终结果见PR检查。两项独立审查分别检查规格与工程规范，已修复中断断言误用历史提示、缺少列表/磁盘恢复证据、journal 并发删除/截断、持久化吞错与发送预留未回滚问题。
 
 ## 仍未签署
 
 [20 项 P0 清单](../tests/e2e/p0.json)逐项记录既有自动化和剩余验收。自动化成功不关闭 P0 总体验收；F-39 自动更新仍在阶段3，F-42完整多语言仍归阶段2。
 
 语义动作不替代真实鼠标/键盘、物理中文 IME、VoiceOver/NVDA。共享容器/CI 调试构建不代替参考机冷启动、生产进程 RSS、触控板/FPS 或7天稳定性验收。既有性能未达标项、阶段0、Developer ID签名/公证与干净机门槛继续开放；用户已确认暂无签名 Secrets，保留工程包。
+
+Windows CI 首轮在连接探测后发现临时目录仍被子进程占用；P-04 改为先等待现有异步 disposeForRestart，再 finally destroy 和目录清理。未延长门禁超时或放宽残留检查；新增等待顺序与释放失败回归。最终三平台结果以修复后的 PR head 为准。
 
 下一项依06排期为 T-2-01，不豁免上述验收。
