@@ -15,7 +15,8 @@ permissions:
   actions: read
 concurrency:
   group: performance-${{ github.ref }}
-  cancel-in-progress: false
+  # Only PR runs are superseded; scheduled main baselines remain serialized.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   shared:
     strategy:
