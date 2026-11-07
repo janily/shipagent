@@ -184,6 +184,7 @@
   "ak.recovery.export": "Export recovery report",
   "ak.recovery.export_failed": "Unable to export the recovery report.",
   "ak.recovery.fatal": "Unable to connect to backend",
+  "ak.recovery.interrupted": "Interrupted. You can continue.",
   "ak.recovery.logs": "Open log folder",
   "ak.recovery.logs_failed": "Unable to open the log folder.",
   "ak.recovery.prompt1": "Explain the structure of this project",

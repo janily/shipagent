@@ -38,6 +38,8 @@ pub struct Brand {
 }
 /// Run a native GPUI application. The window opens before any backend IO.
 pub fn run(brand_toml: &str) -> Result<()> {
+    #[cfg(feature = "e2e")]
+    controller::e2e::configure()?;
     #[cfg(feature = "perf")]
     controller::perf::start_process();
     let brand: Brand = toml::from_str(brand_toml).context("Invalid brand.toml")?;
@@ -306,6 +308,8 @@ fn orderly_quit(
             true
         };
         let _ = preferences.finish().await;
+        #[cfg(feature = "e2e")]
+        controller::e2e::record_shutdown(_backend_clean).await;
         #[cfg(feature = "perf")]
         controller::perf::record_shutdown(_backend_clean).await;
         cx.update(|cx| cx.quit());

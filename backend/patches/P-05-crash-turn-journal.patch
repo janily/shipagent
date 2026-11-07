@@ -1,0 +1,175 @@
+--- a/packages/server-core/src/sessions/SessionManager.ts
++++ b/packages/server-core/src/sessions/SessionManager.ts
+@@ -88,6 +88,7 @@
+ import { validateArchiveTarget } from './archive-guards'
+ import { mkdir, readFile, writeFile } from 'node:fs/promises'
+ import { join } from 'node:path'
++import { flushTurnJournal, recoverInterruptedTurn } from './turn-journal'
+ import { generateConversationSummary } from '@mkagent/shared/agent/conversation-summary'
+ 
+ let platform: PlatformServices | null = null
+@@ -354,11 +355,18 @@
+ 
+   initialize(): Promise<void> {
+     if (this.initPromise) return this.initPromise
+-    this.initPromise = Promise.resolve().then(() => {
++    this.initPromise = Promise.resolve().then(async () => {
+       for (const workspace of getWorkspaces()) {
+         this.setupConfigWatcher(workspace.rootPath, workspace.id)
+         for (const metadata of listStoredSessions(workspace.rootPath)) {
+-          this.sessions.set(metadata.id, createManagedSession(metadata, workspace))
++          const managed = createManagedSession(metadata, workspace)
++          this.sessions.set(metadata.id, managed)
++          if (await recoverInterruptedTurn(getSessionStoragePath(workspace.rootPath, metadata.id))) {
++            this.ensureMessagesLoaded(managed)
++            const id = `interrupted:${managed.messages.findLast(message => message.role === 'user')?.id ?? managed.id}`
++            if (!managed.messages.some(message => message.id === id)) managed.messages.push({ id, role: 'info', errorCode: 'BACKEND_INTERRUPTED', content: 'Interrupted. You can continue.', timestamp: this.nextTimestamp() })
++            await this.flushSession(managed.id)
++          }
+         }
+       }
+       this.refreshBadge()
+@@ -458,8 +466,10 @@
+     const managed = this.sessions.get(sessionId)
+     if (!managed) return
+     this.ensureMessagesLoaded(managed)
+-    sessionPersistenceQueue.enqueue(this.toStored(managed))
+-    await sessionPersistenceQueue.flush(sessionId)
++    await flushTurnJournal(getSessionStoragePath(managed.workspace.rootPath, managed.id), () => managed.isProcessing, async () => {
++      sessionPersistenceQueue.enqueue(this.toStored(managed))
++      await sessionPersistenceQueue.flush(sessionId)
++    })
+   }
+ 
+   async flushAllSessions(): Promise<void> {
+@@ -746,7 +756,8 @@
+     // Reserve before the first await so messages arriving during persistence/summary generation queue.
+     managed.isProcessing = true
+     const acceptedEpoch = managed.stopEpoch ?? 0
+-    await this.flushSession(sessionId)
++    try { await this.flushSession(sessionId) }
++    catch (error) { managed.isProcessing = false; throw error }
+     if (!existingMessageId) {
+       onAck?.(userMessage.id)
+       this.emit(managed.workspace.id, {
+--- a/packages/shared/src/sessions/persistence-queue.ts
++++ b/packages/shared/src/sessions/persistence-queue.ts
+@@ -81,7 +81,7 @@
+    * Write a session to disk immediately in JSONL format.
+    * Uses atomic write (write-to-temp-then-rename) to prevent corruption on crash.
+    */
+-  private async write(sessionId: string): Promise<void> {
++  private async write(sessionId: string, strict = false): Promise<void> {
+     const entry = this.pending.get(sessionId)
+     if (!entry) return
+ 
+@@ -155,6 +155,7 @@
+       await rename(tmpFile, filePath)
+       debug(`[PersistenceQueue] Wrote session ${sessionId}`)
+     } catch (error) {
++      if (strict) throw error
+       console.error(`[PersistenceQueue] Failed to write session ${sessionId}:`, error)
+     }
+   }
+@@ -176,7 +177,7 @@
+       }
+ 
+       // Start new write and track it
+-      const writePromise = this.write(sessionId)
++      const writePromise = this.write(sessionId, true)
+       this.writeInProgress.set(sessionId, writePromise)
+ 
+       try {
+--- /dev/null
++++ b/packages/server-core/src/sessions/turn-journal.ts
+@@ -0,0 +1,23 @@
++// Private on-disk turn lease, serialized with explicit persistence boundaries.
++import { access, writeFile, rm } from 'node:fs/promises';
++import { join } from 'node:path';
++const pending = new Map<string, Promise<void>>();
++const marker = (directory: string) => join(directory, '.active-turn');
++export async function flushTurnJournal(directory: string, active: () => boolean, persist: () => Promise<void>): Promise<void> {
++ const prior = pending.get(directory) ?? Promise.resolve();
++ const next = prior.catch(() => {}).then(async () => {
++  if (active()) {
++   // Exclusive creation never truncates an acknowledged turn's existing lease.
++   try { await writeFile(marker(directory), '', { flag: 'wx', mode: 0o600 }); }
++   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
++  }
++  await persist(); // Errors retain the lease; never equate a failed save with completion.
++  if (!active()) await rm(marker(directory), { force: true });
++ });
++ pending.set(directory, next);
++ try { await next; } finally { if (pending.get(directory) === next) pending.delete(directory); }
++}
++export async function recoverInterruptedTurn(directory: string): Promise<boolean> {
++ try { await access(marker(directory)); return true; }
++ catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; }
++}
+--- /dev/null
++++ b/packages/server-core/src/sessions/turn-journal.test.ts
+@@ -0,0 +1,43 @@
++import { test, expect } from 'bun:test';
++import { mkdtemp, rm, writeFile } from 'node:fs/promises';
++import { join } from 'node:path';
++import { tmpdir } from 'node:os';
++import { flushTurnJournal, recoverInterruptedTurn } from './turn-journal';
++async function fixture(run: (root: string) => Promise<void>) { const root = await mkdtemp(join(tmpdir(), 'shipagent-turn-journal-')); try { await run(root); } finally { await rm(root, {recursive:true,force:true}); } }
++test('acknowledged active turn survives restart, successful idle flush clears it', () => fixture(async root => {
++ expect(await recoverInterruptedTurn(root)).toBe(false);
++ await flushTurnJournal(root, () => true, async () => {});
++ expect(await recoverInterruptedTurn(root)).toBe(true);
++ await flushTurnJournal(root, () => true, async () => {});
++ expect(await recoverInterruptedTurn(root)).toBe(true);
++ await flushTurnJournal(root, () => false, async () => {});
++ expect(await recoverInterruptedTurn(root)).toBe(false);
++}));
++test('failed persistence retains recovery evidence, and empty marker is conservatively active', () => fixture(async root => {
++ await writeFile(join(root, '.active-turn'), '');
++ await expect(flushTurnJournal(root, () => false, async () => { throw Error('save-failed'); })).rejects.toThrow('save-failed');
++ expect(await recoverInterruptedTurn(root)).toBe(true);
++}));
++test('old idle flush cannot remove a newer active turn during an overlapping save', () => fixture(async root => {
++ let active=false, release!: () => void, entered!: () => void;
++ const gate = new Promise<void>(resolve => release=resolve);
++ const started = new Promise<void>(resolve => entered=resolve);
++ const old = flushTurnJournal(root, () => active, async () => { entered(); await gate; });
++ await started; active=true;
++ const next = flushTurnJournal(root, () => active, async () => {});
++ release(); await Promise.all([old,next]);
++ expect(await recoverInterruptedTurn(root)).toBe(true);
++}));
++
++test('send reservation returns to idle when journal creation fails before ACK', async () => {
++ const { SessionManager, createManagedSession } = await import('./SessionManager');
++ type Managed = ReturnType<typeof createManagedSession>;
++ type Harness = { sessions: Map<string,Managed>; ensureMessagesLoaded(s:Managed):void; nextTimestamp():number; flushSession(id:string):Promise<void>; sendMessage: SessionManager['sendMessage'] };
++ const managed = createManagedSession({id:'journal-failure'}, {id:'workspace',slug:'workspace',name:'Test',rootPath:'/unused',createdAt:1});
++ const manager = Object.create(SessionManager.prototype) as Harness;
++ manager.sessions=new Map([[managed.id,managed]]); manager.ensureMessagesLoaded=()=>{};manager.nextTimestamp=()=>1;
++ manager.flushSession=async()=>{throw Error('journal-unwritable')};
++ let acknowledged=false;
++ await expect(manager.sendMessage(managed.id,'fixture',undefined,undefined,undefined,undefined,undefined,()=>{acknowledged=true})).rejects.toThrow('journal-unwritable');
++ expect(managed.isProcessing).toBe(false); expect(acknowledged).toBe(false);
++});
+--- a/packages/shared/src/sessions/__tests__/persistence-queue.test.ts
++++ b/packages/shared/src/sessions/__tests__/persistence-queue.test.ts
+@@ -90,3 +90,18 @@
+     expect(merged.isFlagged).toBe(true)
+   })
+ })
++
++// Explicit flushes are an ACK/recovery boundary; an unwritable destination must reject.
++it('explicit flush propagates filesystem failures', async () => {
++ const { SessionPersistenceQueue } = await import('../persistence-queue');
++ const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
++ const { join } = await import('node:path');
++ const { tmpdir } = await import('node:os');
++ const root = await mkdtemp(join(tmpdir(), 'shipagent-persistence-'));
++ const queue = new SessionPersistenceQueue(60000);
++ try {
++  const blocked=join(root,'file'); await writeFile(blocked,'fixture');
++  queue.enqueue({...makeHeader({workspaceRootPath:blocked}),messages:[]});
++  await expect(queue.flush('s1')).rejects.toThrow();
++ } finally { queue.cancel('s1'); await rm(root,{recursive:true,force:true}); }
++});

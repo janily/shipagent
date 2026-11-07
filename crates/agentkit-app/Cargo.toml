@@ -36,6 +36,7 @@ workspace = true
 [features]
 default = []
 perf = ["gpui-kit/profiler"]
+e2e = ["gpui-kit/profiler", "agentkit-ui/e2e", "agentkit-sidecar/e2e"]
 
 [dev-dependencies]
 gpui-kit = {workspace=true,features=["test-support"]}

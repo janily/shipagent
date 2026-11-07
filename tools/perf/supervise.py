@@ -73,7 +73,15 @@ def main(command):
         error='launch-or-supervision-failed'
     finally:
         deadline=time.monotonic()+4;terminated=set()
-        while children() and time.monotonic()<deadline:
+        while time.monotonic()<deadline:
+            # Already-dead adopted descendants need reaping, not forced termination.
+            # Popen has collected the application before this ownership sweep.
+            while True:
+                try:pid,_status=os.waitpid(-1,os.WNOHANG)
+                except ChildProcessError:break
+                if pid==0:break
+                reaped+=1
+            if not children():break
             forced=True
             for pid in children():
                 # A kernel-owned unreaped child cannot have its PID reused.

@@ -1,0 +1,76 @@
+--- a/packages/shared/src/agent/backend/factory.ts
++++ b/packages/shared/src/agent/backend/factory.ts
+@@ -36,7 +36,7 @@
+ import type { ModelFetchResult } from '../../config/model-fetcher.ts';
+ // Model resolution utilities
+ import { getModelProvider, normalizeDeprecatedModelId } from '../../config/models.ts';
+-import { homedir } from 'node:os';
++import { withConnectionProbeWorkspace } from './connection-probe-workspace.ts';
+ import { getCredentialManager } from '../../credentials/index.ts';
+ import type {
+   BackendModelFetchCredentials,
+@@ -662,7 +662,7 @@
+       if (driverResult !== null) return driverResult;
+     }
+ 
+-    const cwd = homedir();
++    return await withConnectionProbeWorkspace(async (cwd) => {
+     const agent = createBackendFromResolvedContext({
+       context,
+       coreConfig: {
+@@ -709,6 +709,7 @@
+     } finally {
+       agent.destroy();
+     }
++    });
+   } catch (error) {
+     return {
+       success: false,
+--- /dev/null
++++ b/packages/shared/src/agent/backend/connection-probe-workspace.ts
+@@ -0,0 +1,13 @@
++// Connection validation must never create sessions in the user's home/workspace.
++import { mkdtemp, realpath, rm } from 'node:fs/promises';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++
++export async function withConnectionProbeWorkspace<T>(run: (cwd: string) => Promise<T>): Promise<T> {
++  const cwd = await realpath(await mkdtemp(join(tmpdir(), 'shipagent-connection-test-')));
++  try {
++    return await run(cwd);
++  } finally {
++    await rm(cwd, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
++  }
++}
+--- /dev/null
++++ b/packages/shared/src/agent/backend/connection-probe-workspace.test.ts
+@@ -0,0 +1,29 @@
++import { test, expect } from 'bun:test';
++import { mkdir, writeFile, stat, realpath } from 'node:fs/promises';
++import { tmpdir, homedir } from 'node:os';
++import { dirname, basename, join } from 'node:path';
++import { withConnectionProbeWorkspace } from './connection-probe-workspace.ts';
++
++test('probe writes only to a unique temporary workspace and removes it on success', async () => {
++  let observed = '';
++  const answer = await withConnectionProbeWorkspace(async cwd => {
++    observed = cwd;
++    expect(dirname(cwd)).toBe(await realpath(tmpdir()));
++    expect(cwd).not.toBe(await realpath(homedir()));
++    expect(basename(cwd).startsWith('shipagent-connection-test-')).toBe(true);
++    await mkdir(join(cwd, 'sessions'));
++    await writeFile(join(cwd, 'sessions', 'fixture.json'), '{}');
++    return 42;
++  });
++  expect(answer).toBe(42);
++  expect(await stat(observed).then(() => false, () => true)).toBe(true);
++});
++test('failed construction or completion still removes the workspace', async () => {
++  let observed = '';
++  await expect(withConnectionProbeWorkspace(async cwd => { observed = cwd; throw new Error('fixture-failure'); })).rejects.toThrow('fixture-failure');
++  expect(await stat(observed).then(() => false, () => true)).toBe(true);
++});
++test('concurrent tests do not share a directory', async () => {
++  const roots = await Promise.all([0, 1].map(() => withConnectionProbeWorkspace(async cwd => cwd)));
++  expect(roots[0]).not.toBe(roots[1]);
++});

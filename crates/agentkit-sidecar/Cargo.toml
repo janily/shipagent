@@ -6,6 +6,10 @@ license.workspace = true
 repository.workspace = true
 publish = false
 
+[features]
+default = []
+e2e = []
+
 [dependencies]
 agentkit-protocol.workspace = true
 smol.workspace = true
