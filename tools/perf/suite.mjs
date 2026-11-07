@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {createReadStream} from 'node:fs';
 async function binaryHash(path){const hash=createHash('sha256');for await(const chunk of createReadStream(path))hash.update(chunk);return hash.digest('hex');}
-import {isolatedEnvironment} from './runner-support.mjs';
+import {isolatedEnvironment,suiteExitCode} from './runner-support.mjs';
 import {summarize} from './compare.mjs';
 const exec=promisify(execFile);const here=fileURLToPath(new URL('.',import.meta.url));
 const args=process.argv.slice(2),options={runs:3,tokens:600,machine:'unclassified',focus:'system',environment:'unspecified'};
@@ -37,5 +37,5 @@ try{
  const report={schemaVersion:2,methodVersion,fingerprint,binaries,sourceCommit:process.env.GITHUB_SHA??null,machineId:options.machine,stream,scenes:sceneReports,unmeasured:['full-workbench-process-idle-and-ten-session-rss','cold-process-start-to-input-ready','dynamic-loader-before-app-entry','physical-display-latency','seven-day-stability','reference-hardware-acceptance','macos-orphan-ownership-after-forced-exit']};
  report.summary=summarize(report);await file.writeFile(JSON.stringify(report,null,2)+'\n');
  console.log(JSON.stringify({output,valid:report.summary.valid,metrics:report.summary.metrics,streamExit,referenceAcceptance:'not_evaluated'}));
- process.exitCode=report.summary.valid&&!report.summary.budgetMisses.length?streamExit:2;
+ process.exitCode=suiteExitCode(report,streamExit);
 }finally{await file.close();await rm(root,{recursive:true,force:true});}

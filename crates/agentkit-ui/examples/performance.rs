@@ -328,7 +328,9 @@ impl Scene {
             _ => return,
         }
         cx.notify();
-        window.request_animation_frame();
+        // This callback runs outside rendering; animation requests require a
+        // current rendered entity in this GPUI version. Refresh the window.
+        window.refresh();
         let weak = cx.weak_entity();
         window.on_next_frame(move |window, cx| {
             let _ = weak.update(cx, |this, cx| this.tick(window, cx));

@@ -17,3 +17,9 @@ test('machine or workload changes make baseline fingerprints incompatible',()=>{
  assert.notEqual(fingerprint(e,{tokens:600}),fingerprint({...e,cpu:'other'},{tokens:600}));
  assert.notEqual(fingerprint(e,{tokens:600}),fingerprint(e,{tokens:300}));
 });
+import {suiteExitCode} from './runner-support.mjs';
+test('native crashes and unsafe cleanup fail CI; measured slow/invalid data remains a warning',()=>{
+ const report={stream:{runs:[{cleanup:{verified:true}}]},scenes:[{status:'measured',cleanup:{verified:true}}],summary:{valid:true,budgetMisses:[]}};
+ assert.equal(suiteExitCode(report,0),0);report.summary.budgetMisses=[{metric:'scrollFps'}];assert.equal(suiteExitCode(report,0),2);report.summary.valid=false;assert.equal(suiteExitCode(report,2),2);
+ report.scenes[0].status='invalid';assert.equal(suiteExitCode(report,2),1);report.scenes[0].status='measured';report.stream.runs[0].error='native-run-failed';assert.equal(suiteExitCode(report,2),1);delete report.stream.runs[0].error;report.stream.runs[0].cleanup.verified=false;assert.equal(suiteExitCode(report,2),1);
+});
