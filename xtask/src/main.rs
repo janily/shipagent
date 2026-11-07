@@ -3,6 +3,7 @@ mod backend;
 mod codegen;
 mod fixtures;
 mod i18n;
+mod package;
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args
@@ -13,9 +14,12 @@ fn main() -> anyhow::Result<()> {
     {
         [] | ["--help"] | ["-h"] => {
             println!(
-                "Usage: cargo xtask i18n [--check]\n       cargo xtask fixtures record <scenario|all>\n       cargo xtask fixtures replay <directory>\n       cargo xtask backend build [--contract]\n       cargo xtask codegen\n       cargo xtask codegen --check\nBuild the pinned headless backend without WebUI. Requires Bun >=1.3.14 and uv."
+                "Usage: cargo xtask i18n [--check]\n       cargo xtask fixtures record <scenario|all>\n       cargo xtask fixtures replay <directory>\n       cargo xtask backend build [--contract]\n       cargo xtask package --target macos-arm64 --sign ad-hoc [--probe]\n       cargo xtask codegen\n       cargo xtask codegen --check\nBuild the pinned headless backend without WebUI. Requires Bun >=1.3.14 and uv."
             );
             Ok(())
+        }
+        ["package", rest @ ..] => {
+            package::run(&rest.iter().map(|s| s.to_string()).collect::<Vec<_>>())
         }
         ["backend", "build"] => backend::build(false),
         ["backend", "build", "--contract"] => backend::build(true),

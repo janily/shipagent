@@ -6,7 +6,7 @@ use std::{
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
-const PIN: &str = "6e8ebc456b6b82441be09118ca11afca79b84836";
+pub(crate) const PIN: &str = "6e8ebc456b6b82441be09118ca11afca79b84836";
 
 fn checked(command: &mut Command) -> Result<()> {
     let program = command.get_program().to_string_lossy().into_owned();

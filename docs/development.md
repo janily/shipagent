@@ -108,7 +108,7 @@ cargo build -p agentkit-ui --features samples --example components --locked
 node tools/native-smoke/run.mjs
 ```
 
-CI 中 macos-14 指 Apple Silicon arm64，windows-2022 指 x64；macOS Intel、Windows arm64 暂无本轮验证证据。Linux 本轮图形证据来自 X11/Xvfb，Wayland 实机仍待验证。
+CI 中 macos-15 指 Apple Silicon arm64，windows-2022 指 x64；macOS Intel、Windows arm64 暂无本轮验证证据。Linux 本轮图形证据来自 X11/Xvfb，Wayland 实机仍待验证。
 
 T-1-04 真实客户端契约：先运行 `cargo xtask backend build --contract`，设置 `AGENTKIT_BACKEND_DIR` 及 `AGENTKIT_CONTRACT_SERVER` 后运行 `cargo test -p agentkit-client --test contract --locked -- --ignored`；完整命令和平台目录见 [契约说明](../tools/contract/README.md)。普通 cargo test 显式跳过这些进程测试；CI contract 三平台运行。
 
@@ -178,3 +178,7 @@ node tools/menus/smoke.mjs target/debug/workbench target/backend/linux-x64 targe
 ```
 
 最后一项需要 Linux 桌面/Vulkan/xdotool/Pillow，输出必须尚不存在。验证范围见 [菜单与快捷键验证](verification-menus-2026-11-04.md)。
+
+## macOS nightly 工程包与签名入口
+
+`cargo xtask package --target macos-arm64 --sign ad-hoc --probe` 在原生 macOS 构建工程 DMG；Intel 宿主用 macos-x64。定时/手动/相关 PR 的工程流水线覆盖两架构，详细命令、可信 ref、临时 keychain、Secrets 名称与未验证范围见 [打包说明](../tools/package/README.md)。当前无 Developer ID 凭据，只保留工程包；T-0-09 的正式公证、干净机和发布门槛仍开放。
