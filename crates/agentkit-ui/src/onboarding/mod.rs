@@ -83,3 +83,11 @@ pub fn resolve_slug(existing: impl IntoIterator<Item = String>) -> String {
     }
     format!("{base}-{n}")
 }
+
+#[cfg(feature = "e2e")]
+impl OnboardingView {
+    /// Read the rendered wizard step in an opt-in native E2E build.
+    pub fn e2e_step(&self) -> usize {
+        self.step
+    }
+}

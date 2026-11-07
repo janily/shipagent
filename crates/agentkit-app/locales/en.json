@@ -323,5 +323,6 @@
   "ak.recovery.retry_now": "Retry now",
   "ak.recovery.session_failed": "Unable to load this session. Please retry.",
   "ak.recovery.transport_failed": "Connection authentication or protocol validation failed. Retry to continue.",
-  "ak.recovery.workspace_removed": "The current workspace was removed. Reconnect to continue."
+  "ak.recovery.workspace_removed": "The current workspace was removed. Reconnect to continue.",
+  "ak.recovery.interrupted": "Interrupted. You can continue."
 }

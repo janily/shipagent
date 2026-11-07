@@ -323,5 +323,6 @@
   "ak.recovery.retry_now": "立即重试",
   "ak.recovery.session_failed": "会话加载失败，请重试。",
   "ak.recovery.transport_failed": "连接认证或协议校验失败，请重试。",
-  "ak.recovery.workspace_removed": "当前工作区已被移除，请重新连接。"
+  "ak.recovery.workspace_removed": "当前工作区已被移除，请重新连接。",
+  "ak.recovery.interrupted": "已中断，可继续"
 }

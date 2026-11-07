@@ -398,17 +398,17 @@ impl WorkbenchView {
         cx.notify();
     }
     /// Inspect native text-input protocol in isolated component tests.
-    #[cfg(feature = "samples")]
+    #[cfg(any(feature = "samples", feature = "e2e"))]
     pub fn composer_input(&self, cx: &App) -> Entity<gpui_kit::component::input::TextareaState> {
         self.composer.read(cx).input().clone()
     }
     /// Inspect virtual-list state in component and performance sample builds.
-    #[cfg(feature = "samples")]
+    #[cfg(any(feature = "samples", feature = "e2e"))]
     pub fn scroll_state(&self) -> &Entity<MessageScrollerState> {
         &self.scroll
     }
     /// Inspect rendered Markdown content in component/performance sample builds.
-    #[cfg(feature = "samples")]
+    #[cfg(any(feature = "samples", feature = "e2e"))]
     pub fn cached_markdown(&self, id: &str, cx: &App) -> Option<String> {
         self.chat.read(cx).cached_markdown(id, cx)
     }
@@ -549,5 +549,22 @@ impl WorkbenchView {
             .clone()
             .update(cx, |s, cx| s.focus(window, cx));
         cx.notify();
+    }
+}
+
+#[cfg(feature = "e2e")]
+impl WorkbenchView {
+    /// Report the same cached readiness used by the displayed Composer controls.
+    pub fn e2e_composer_ready(&self, cx: &App) -> bool {
+        self.composer.read(cx).e2e_ready()
+    }
+    /// Drive the normal Composer submit path, including its IME/model/session gates.
+    pub fn e2e_send(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {
+        self.composer
+            .read(cx)
+            .input()
+            .clone()
+            .update(cx, |input, cx| input.set_value(text, window, cx));
+        self.composer.update(cx, |c, cx| c.submit(window, cx));
     }
 }

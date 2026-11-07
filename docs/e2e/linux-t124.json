@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "status": "passed",
+  "platform": "linux",
+  "cases": [
+    {
+      "schemaVersion": 1,
+      "case": "full",
+      "checks": {
+        "f17.cancel": true,
+        "u1.browser_initialized": true,
+        "u1.focused_empty_session": true,
+        "u1.onboarding": true,
+        "u1.rejected_test": true,
+        "u1.saved_default": true,
+        "u1.test_gate": true,
+        "u1.tested": true,
+        "u2.ack": true,
+        "u2.optimistic": true,
+        "u2.persisted": true,
+        "u2.stream": true,
+        "u2.tools": true,
+        "u3.allow": true,
+        "u3.always": true,
+        "u3.deny": true,
+        "u3.receipts": true,
+        "u6.continued": true,
+        "u6.disconnected": true,
+        "u6.interrupted": true,
+        "u6.restart": true,
+        "u6.session_refreshed": true,
+        "u6.token_rotated": true,
+        "u1.home_unchanged": true,
+        "u1.probe_cleanup": true,
+        "u1.credentials_private": true
+      },
+      "presentedFrames": 148,
+      "timings": {
+        "cancelMs": 77.146741,
+        "recoveryMs": 2291.623939
+      },
+      "phase": 22,
+      "failure": null,
+      "eventCounts": {
+        "complete": 1,
+        "text_delta": 4,
+        "user_message": 1
+      },
+      "shutdownPassed": true,
+      "verdict": {
+        "passed": true,
+        "reasons": [],
+        "p0Acceptance": "incomplete",
+        "physicalAcceptance": "not_evaluated",
+        "performanceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "schemaVersion": 1,
+        "nativeExitCode": 0,
+        "forcedCleanup": false,
+        "remainingOwnedChildren": 0,
+        "reapedOrphans": 1,
+        "error": null,
+        "focusSucceeded": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "case": "restore",
+      "checks": {
+        "restore.authenticated": true,
+        "restore.session": true,
+        "restore.browser_unchanged": true
+      },
+      "presentedFrames": 25,
+      "timings": {},
+      "phase": 0,
+      "failure": null,
+      "eventCounts": {},
+      "shutdownPassed": true,
+      "verdict": {
+        "passed": true,
+        "reasons": [],
+        "p0Acceptance": "incomplete",
+        "physicalAcceptance": "not_evaluated",
+        "performanceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "schemaVersion": 1,
+        "nativeExitCode": 0,
+        "forcedCleanup": false,
+        "remainingOwnedChildren": 0,
+        "reapedOrphans": 0,
+        "error": null,
+        "focusSucceeded": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "case": "defer",
+      "checks": {
+        "defer.acknowledged": true,
+        "defer.wizard": true
+      },
+      "presentedFrames": 20,
+      "timings": {},
+      "phase": 1,
+      "failure": null,
+      "eventCounts": {},
+      "shutdownPassed": true,
+      "verdict": {
+        "passed": true,
+        "reasons": [],
+        "p0Acceptance": "incomplete",
+        "physicalAcceptance": "not_evaluated",
+        "performanceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "schemaVersion": 1,
+        "nativeExitCode": 0,
+        "forcedCleanup": false,
+        "remainingOwnedChildren": 0,
+        "reapedOrphans": 0,
+        "error": null,
+        "focusSucceeded": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "case": "defer_restore",
+      "checks": {
+        "defer.restored": true,
+        "restore.browser_unchanged": true
+      },
+      "presentedFrames": 20,
+      "timings": {},
+      "phase": 0,
+      "failure": null,
+      "eventCounts": {},
+      "shutdownPassed": true,
+      "verdict": {
+        "passed": true,
+        "reasons": [],
+        "p0Acceptance": "incomplete",
+        "physicalAcceptance": "not_evaluated",
+        "performanceAcceptance": "not_evaluated"
+      },
+      "cleanup": {
+        "schemaVersion": 1,
+        "nativeExitCode": 0,
+        "forcedCleanup": false,
+        "remainingOwnedChildren": 0,
+        "reapedOrphans": 0,
+        "error": null,
+        "focusSucceeded": true
+      }
+    }
+  ],
+  "p0Acceptance": "incomplete",
+  "physicalAcceptance": "not_evaluated",
+  "performanceAcceptance": "not_evaluated",
+  "modelStats": [
+    {
+      "requests": 15,
+      "rejected": 1,
+      "readVerified": true,
+      "denied": 1,
+      "toolRequests": 5,
+      "toolResults": 4,
+      "streamAborts": 2,
+      "errors": 0
+    },
+    {
+      "requests": 0,
+      "rejected": 0,
+      "readVerified": false,
+      "denied": 0,
+      "toolRequests": 0,
+      "toolResults": 0,
+      "streamAborts": 0,
+      "errors": 0
+    }
+  ]
+}

@@ -184,6 +184,7 @@
   "ak.recovery.export": "导出恢复诊断",
   "ak.recovery.export_failed": "无法导出恢复诊断。",
   "ak.recovery.fatal": "无法连接后端",
+  "ak.recovery.interrupted": "已中断，可继续",
   "ak.recovery.logs": "打开日志目录",
   "ak.recovery.logs_failed": "无法打开日志目录。",
   "ak.recovery.prompt1": "介绍一下这个项目的结构",

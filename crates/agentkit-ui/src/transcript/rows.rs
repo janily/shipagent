@@ -21,7 +21,7 @@ pub(super) fn render(
         Turn::System(turn) => {
             let message = turn.message.clone();
             (
-                message.content.clone(),
+                super::system::content(&message),
                 super::system::render(message, parent.clone(), cache, cx),
             )
         }

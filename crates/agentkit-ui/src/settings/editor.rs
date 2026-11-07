@@ -149,3 +149,27 @@ impl ConnectionEditor {
         cx.notify();
     }
 }
+
+#[cfg(feature = "e2e")]
+impl ConnectionEditor {
+    /// Fill the isolated fixture form through real InputState changes. No saved key is read.
+    pub fn e2e_endpoint(&mut self, url: &str, window: &mut Window, cx: &mut Context<Self>) {
+        for (input, value) in [
+            (&self.name, "e2e-connection"),
+            (&self.url, url),
+            (&self.model, "fixture-model"),
+            (&self.model_list, "fixture-model"),
+            (&self.key, "fixture-e2e-only"),
+        ] {
+            input.update(cx, |s, cx| s.set_value(value, window, cx));
+        }
+    }
+    /// The same guarded submission used by the native Test/Save buttons.
+    pub fn e2e_submit(&mut self, test: bool, cx: &mut Context<Self>) {
+        self.submit(test, cx);
+    }
+    /// Non-secret form state: tested, busy, error visible.
+    pub fn e2e_state(&self) -> (bool, bool, bool) {
+        (self.tested, self.busy, self.error.is_some())
+    }
+}

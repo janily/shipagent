@@ -4,6 +4,15 @@ use gpui_kit::component::{
     alert::Alert,
     marker::{Marker, MarkerAlignment, MarkerContent, MarkerVariant},
 };
+pub(super) fn content(message: &g::Message) -> String {
+    if message.role == g::MessageRole::Info
+        && message.error_code.as_deref() == Some("BACKEND_INTERRUPTED")
+    {
+        t!("ak.recovery.interrupted")
+    } else {
+        message.content.clone()
+    }
+}
 pub(super) fn render(
     message: g::Message,
     parent: WeakEntity<ChatView>,
@@ -22,7 +31,7 @@ pub(super) fn render(
             .alignment(MarkerAlignment::Center)
             .text_sm()
             .with_variant(variant)
-            .content(MarkerContent::new().text(message.content))
+            .content(MarkerContent::new().text(content(&message)))
             .into_any_element();
     }
     let title = message

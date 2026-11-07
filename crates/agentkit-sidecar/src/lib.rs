@@ -177,6 +177,8 @@ impl Shared {
 }
 pub(crate) type Reply<T> = async_channel::Sender<Result<T, SidecarError>>;
 pub(crate) enum Control {
+    #[cfg(feature = "e2e")]
+    Crash,
     Restart(Reply<Endpoint>),
     Shutdown(Duration, Option<Reply<()>>),
 }
@@ -248,6 +250,14 @@ impl SidecarHandle {
             queued?;
             receive.recv().await.map_err(|_| SidecarError::Stopped)?
         }
+    }
+    /// Kill the owned backend leader; normal crash supervision must reap its tree.
+    /// Available only to opt-in end-to-end test builds; no reusable PID lookup.
+    #[cfg(feature = "e2e")]
+    pub fn inject_crash_for_e2e(&self) -> Result<(), SidecarError> {
+        self.send
+            .send(Control::Crash)
+            .map_err(|_| SidecarError::Stopped)
     }
     /// Explicit restart. Healthy restarts do not consume the rolling crash budget.
     pub async fn restart(&self) -> Result<Endpoint, SidecarError> {
