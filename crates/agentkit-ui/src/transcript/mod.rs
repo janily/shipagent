@@ -157,7 +157,7 @@ impl ChatView {
         cx.notify();
     }
     /// Inspect a retained Markdown document in sample/test builds.
-    #[cfg(feature = "samples")]
+    #[cfg(any(feature = "samples", feature = "e2e"))]
     pub fn cached_markdown(&self, id: &str, cx: &App) -> Option<String> {
         self.cache
             .borrow()
@@ -166,7 +166,7 @@ impl ChatView {
             .map(|(_, v, _)| v.read(cx).text().to_owned())
     }
     /// Number of retained documents and turn entities, for cache-bound regressions.
-    #[cfg(feature = "samples")]
+    #[cfg(any(feature = "samples", feature = "e2e"))]
     pub fn cache_sizes(&self) -> (usize, usize) {
         let c = self.cache.borrow();
         (c.markdown.len(), c.cards.len())

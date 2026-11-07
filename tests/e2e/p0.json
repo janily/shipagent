@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "overallAcceptance": "incomplete",
+  "features": [
+    {
+      "id": "F-01",
+      "feature": "sidecar 启动、崩溃重启、随应用退出",
+      "plannedStage": 1,
+      "automationScope": "U1/U6、sidecar契约、退出清理",
+      "remaining": "参考机冷启动/5秒恢复；签名与干净机",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-02",
+      "feature": "连接状态指示与自动重连",
+      "plannedStage": 1,
+      "automationScope": "U6、恢复事务/重放/stale契约",
+      "remaining": "物理桌面故障走查与完整时延",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-03",
+      "feature": "单实例运行",
+      "plannedStage": 1,
+      "automationScope": "跨进程单实例/独立profile测试",
+      "remaining": "三平台实体桌面聚焦行为",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-04",
+      "feature": "首次启动引导：添加 API Key 预设 / 自定义端点 / Ollama",
+      "plannedStage": 1,
+      "automationScope": "U1测试/保存/默认/延期/重启；onboarding契约",
+      "remaining": "所有连接方式实体桌面走查",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-07",
+      "feature": "工作区：默认工作区、新建（选目录）、切换、移除",
+      "plannedStage": 1,
+      "automationScope": "工作区/目录能力契约与Linux原生侧栏冒烟",
+      "remaining": "实体目录对话框/移除确认走查",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-08",
+      "feature": "会话列表：按最近活动排序，未读、运行中、待审批标记",
+      "plannedStage": 1,
+      "automationScope": "千条会话/筛选/索引与Linux原生侧栏",
+      "remaining": "200ms更新预算与实体滚动",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-09",
+      "feature": "新建 / 重命名 / 删除会话",
+      "plannedStage": 1,
+      "automationScope": "会话API/命名/删除确认与原生侧栏",
+      "remaining": "三平台人工确认误操作防护",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-15",
+      "feature": "发送消息与流式 Markdown 渲染（含代码高亮、表格）",
+      "plannedStage": 1,
+      "automationScope": "U2真实流式/Markdown缓存/持久化；T-1-23",
+      "remaining": "参考机16ms、物理选择/复制；共享Linux预算告警",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-16",
+      "feature": "工具调用卡片：入参、结果、错误、耗时、嵌套子 Agent",
+      "plannedStage": 1,
+      "automationScope": "U2真实Read、U3真实Write；turns oracle/原生工具卡",
+      "remaining": "与Electron同一复杂嵌套会话逐项对照",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-17",
+      "feature": "取消当前回合（Esc / 停止按钮）",
+      "plannedStage": 1,
+      "automationScope": "原生取消路径与interrupted事件、取消耗时",
+      "remaining": "实体桌面停止/IME组合键走查",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-19",
+      "feature": "错误、重试、上下文压缩等状态消息",
+      "plannedStage": 1,
+      "automationScope": "typed_error/重试/reducer夹具与原生错误操作",
+      "remaining": "全部错误操作实体桌面走查",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-22",
+      "feature": "权限模式切换：探索 / 询问 / 执行（Shift+Tab 循环）",
+      "plannedStage": 1,
+      "automationScope": "U3模式与权限契约、原生菜单循环",
+      "remaining": "三平台常驻执行警示/快捷键走查",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-23",
+      "feature": "权限审批：允许 / 拒绝 / 本会话始终允许",
+      "plannedStage": 1,
+      "automationScope": "U3拒绝/允许/始终允许/回执、实际文件副作用",
+      "remaining": "后台通知展示与点击激活",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-25",
+      "feature": "多行输入与发送键配置（Enter 或 Cmd/Ctrl+Enter）",
+      "plannedStage": 1,
+      "automationScope": "Composer发送键/marked-text测试",
+      "remaining": "真实中文输入法：macOS/Windows/Linux",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-29",
+      "feature": "模型与思考等级选择（会话级）",
+      "plannedStage": 1,
+      "automationScope": "会话配置串行化/真实模型与思考等级契约",
+      "remaining": "实体桌面认证目录及下一回合走查",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-32",
+      "feature": "设置：模型连接管理（增删改、测试、设默认、刷新模型）",
+      "plannedStage": 1,
+      "automationScope": "连接测试/保存/默认/失败/凭据隔离契约",
+      "remaining": "真实服务凭据/认证失效及UI隐私走查",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-33",
+      "feature": "设置：外观（主题、跟随系统）与语言",
+      "plannedStage": 1,
+      "automationScope": "亮暗/语言即时偏好与Linux原生设置",
+      "remaining": "跟随系统与实体桌面布局",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-38",
+      "feature": "原生菜单与快捷键",
+      "plannedStage": 1,
+      "automationScope": "菜单/键绑定/热重载与原生菜单冒烟",
+      "remaining": "三平台物理快捷键/OS冲突走查",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-39",
+      "feature": "自动更新",
+      "plannedStage": 3,
+      "automationScope": "计划归阶段3，当前未实现自动更新",
+      "remaining": "更新/回退与主程序-sidecar一致升级均待实现",
+      "acceptance": "not_signed_off"
+    },
+    {
+      "id": "F-42",
+      "feature": "中文 / 英文界面",
+      "plannedStage": 2,
+      "automationScope": "en/zh-CN键集/插值/硬编码CI、实时语言设置",
+      "remaining": "完整P0页面英文布局与实体走查",
+      "acceptance": "not_signed_off"
+    }
+  ],
+  "sharedGates": [
+    "参考机性能与完整生产进程RSS",
+    "真实IME与VoiceOver/NVDA等无障碍",
+    "七天稳定性",
+    "Developer ID/公证/签名与干净机",
+    "F-39自动更新尚未实现"
+  ]
+}

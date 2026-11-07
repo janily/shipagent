@@ -88,6 +88,12 @@ pub(crate) fn run(
                 }
                 break;
             }
+            #[cfg(feature = "e2e")]
+            Ok(Control::Crash) => {
+                if let Some(child) = process.as_mut() {
+                    let _ = child.tree.inner().kill();
+                }
+            }
             Ok(Control::Restart(reply)) => {
                 pending.push(reply);
                 *lock(&shared.state) = SupervisorState::Restarting { attempt: 1 };

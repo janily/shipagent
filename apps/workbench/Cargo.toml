@@ -15,3 +15,4 @@ workspace = true
 [features]
 default = []
 perf = ["agentkit-app/perf"]
+e2e = ["agentkit-app/e2e"]

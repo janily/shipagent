@@ -185,6 +185,18 @@ pub fn build(with_contract: bool) -> Result<()> {
         .env("BUN_INSTALL_CACHE_DIR", target.join("bun-cache"))
         .env("npm_config_cache", target.join("npm-cache"));
     checked(&mut install)?;
+    checked(
+        Command::new(&bun)
+            .args([
+                "test",
+                "./packages/shared/src/agent/backend/connection-probe-workspace.test.ts",
+                "./packages/server-core/src/sessions/turn-journal.test.ts",
+                "./packages/shared/src/sessions/__tests__/persistence-queue.test.ts",
+                "./packages/shared/src/sessions/__tests__/persistence-queue.test.ts",
+            ])
+            .env("CONFIG_DIR", scratch.0.join("probe-config"))
+            .current_dir(&source),
+    )?;
     let built = scratch.0.join("built");
     checked(
         Command::new(&bun)

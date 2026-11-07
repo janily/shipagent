@@ -60,7 +60,7 @@ jobs:
           cache-on-failure: true
       - name: Install Linux native dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y clang pkg-config libfontconfig1-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libasound2-dev libvulkan-dev libxcb-shape0-dev libxcb-xfixes0-dev
+        run: sudo apt-get update && sudo apt-get install -y clang pkg-config libfontconfig1-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev libasound2-dev libvulkan-dev libxcb-shape0-dev libxcb-xfixes0-dev xvfb xauth xdotool mesa-vulkan-drivers fonts-noto-cjk
       - run: cargo check --workspace --all-targets --all-features --locked
       - run: cargo test -p agentkit-ui -p agentkit-app -p agentkit-capabilities --features agentkit-app/perf,agentkit-ui/samples --locked
       - run: cargo build -p workbench --locked
@@ -88,6 +88,30 @@ jobs:
         run: cargo test -p agentkit-app --lib recovery_contract_parent --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
+      - name: Build full native end-to-end application
+        run: cargo build -p workbench --features e2e --locked
+      - name: Reject unsafe end-to-end profiles before application startup
+        run: node tests/e2e/guard.mjs ${{ runner.os == 'Windows' && 'target/debug/workbench.exe' || 'target/debug/workbench' }}
+      - name: Clear only stale end-to-end reports restored by build cache
+        run: node -e "require('node:fs').rmSync('target/e2e', {recursive:true,force:true})"
+      - name: Native U1 U2 U3 U6 and persisted-profile flows (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          E2E_RUNTIME=$(mktemp -d)
+          trap 'rm -rf "$E2E_RUNTIME"' EXIT
+          chmod 700 "$E2E_RUNTIME"
+          E2E_ICD=$(find /usr/share/vulkan/icd.d -name 'lvp*.json' -print -quit)
+          VK_DRIVER_FILES="$E2E_ICD" XDG_RUNTIME_DIR="$E2E_RUNTIME" xvfb-run -a -s '-screen 0 1440x960x24' node tests/e2e/run.mjs target/debug/workbench target/backend/linux-x64 target/e2e/report.json
+      - name: Native U1 U2 U3 U6 and persisted-profile flows (macOS Windows)
+        if: runner.os != 'Linux'
+        run: node tests/e2e/run.mjs ${{ runner.os == 'Windows' && 'target/debug/workbench.exe' || 'target/debug/workbench' }} target/backend/${{ runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }} target/e2e/report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-e2e-${{ matrix.os }}
+          path: target/e2e/report.json
+          if-no-files-found: warn
       - name: Open a real native window and render a frame
         if: runner.os != 'Linux'
         run: node tools/native-smoke/run.mjs
@@ -126,7 +150,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: false
-      - run: node --test tools/fake-llm/server.test.mjs tools/perf/*.test.mjs tools/native-smoke/*.test.mjs tools/fixtures/*.test.mjs tools/package/*.test.mjs
+      - run: node --test tools/fake-llm/server.test.mjs tools/perf/*.test.mjs tools/native-smoke/*.test.mjs tools/fixtures/*.test.mjs tools/package/*.test.mjs tests/e2e/*.test.mjs
       - if: runner.os == 'Linux'
         run: python3 -m unittest discover -s tools/perf -p 'test_*.py'
       - run: cargo xtask backend build --contract

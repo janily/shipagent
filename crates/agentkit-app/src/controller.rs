@@ -4,6 +4,9 @@ mod approval_notifications;
 mod chat_actions;
 #[path = "composer_actions.rs"]
 mod composer_actions;
+#[cfg(feature = "e2e")]
+#[path = "../../../tests/e2e/native.rs"]
+pub(crate) mod e2e;
 #[path = "list_refresh.rs"]
 mod list_refresh;
 #[path = "menu_actions.rs"]
@@ -327,6 +330,8 @@ async fn initialize(
 }
 
 pub(crate) struct WorkbenchController {
+    #[cfg(feature = "e2e")]
+    e2e: Option<e2e::Probe>,
     history: RefCell<crate::history::History>,
     #[cfg(feature = "perf")]
     perf: Option<perf::Capture>,
@@ -432,6 +437,8 @@ impl WorkbenchController {
                 (None, None)
             };
         let mut this = Self {
+            #[cfg(feature = "e2e")]
+            e2e: None,
             #[cfg(feature = "perf")]
             perf: perf::Config::from_env().ok().flatten().map(|config| {
                 perf::Capture::new(
@@ -541,6 +548,8 @@ impl WorkbenchController {
             }
         }));
         this.start(window, cx);
+        #[cfg(feature = "e2e")]
+        e2e::install(&mut this, window, cx);
         #[cfg(feature = "perf")]
         perf::watchdog(&mut this, window, cx);
         this
@@ -725,6 +734,10 @@ impl WorkbenchController {
                         let mut decoded = Vec::new();
                         for args in batch {
                             if let Some(value) = args.into_iter().next() {
+                                #[cfg(feature = "e2e")]
+                                if let Some(p) = &mut this.e2e {
+                                    p.observe(&value);
+                                }
                                 #[cfg(feature = "perf")]
                                 if let Ok(event) = serde_json::from_value::<
                                     agentkit_protocol::prototype::SessionEvent,
@@ -1278,11 +1291,17 @@ impl WorkbenchController {
                 let Some(pending) = pending else {
                     return;
                 };
+                #[cfg(feature = "e2e")]
+                if let Some(p) = &mut self.e2e {
+                    p.optimistic(&id, &pending.id, &store.read(cx).model.state.session);
+                }
                 let generation = self.epoch;
                 self.operations.push(cx.spawn_in(window,async move |weak,cx| {
                     let result=api.send_with_attachments(&id,&text,&pending.id,&[],&pending.attachments).await;
                     let _=weak.update_in(cx,|this,window,cx| {
                         if this.epoch!=generation || this.stores.get(&id).is_none_or(|s|s.entity_id()!=store.entity_id()) {return;}
+                        #[cfg(feature = "e2e")]
+                        if let Some(p)=&mut this.e2e {p.ack(&id,result.as_ref().is_ok_and(|a|a.accepted));}
                         let accepted=result.as_ref().is_ok_and(|ack|ack.accepted) || store.read(cx).model.send_confirmed(&pending.id);
                         let clear_draft=accepted && store.read(cx).model.draft_is_current(&pending.id);
                         let failure=(!accepted).then(||result.as_ref().err().map(|e|e.to_string()).unwrap_or_else(||agentkit_ui::t!("ak.send_rejected")));

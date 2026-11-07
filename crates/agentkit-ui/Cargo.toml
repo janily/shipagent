@@ -8,6 +8,7 @@ publish = false
 
 [features]
 default = []
+e2e = []
 samples = ["gpui-kit/profiler"]
 
 [[example]]

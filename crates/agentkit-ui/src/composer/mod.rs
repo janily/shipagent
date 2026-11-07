@@ -183,3 +183,10 @@ impl Composer {
         }
     }
 }
+
+#[cfg(feature = "e2e")]
+impl Composer {
+    pub(crate) fn e2e_ready(&self) -> bool {
+        self.enabled() && !self.submitting && !self.changing
+    }
+}
