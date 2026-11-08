@@ -192,11 +192,25 @@ pub fn build(with_contract: bool) -> Result<()> {
                 "./packages/shared/src/agent/backend/connection-probe-workspace.test.ts",
                 "./packages/server-core/src/sessions/turn-journal.test.ts",
                 "./packages/shared/src/sessions/__tests__/persistence-queue.test.ts",
-                "./packages/shared/src/sessions/__tests__/persistence-queue.test.ts",
+                "./packages/server-core/src/handlers/rpc/headless-desktop.test.ts",
+                "./packages/server-core/src/services/headless-proxy.test.ts",
+                "./packages/server-core/src/services/headless-proxy-utils.test.ts",
             ])
             .env("CONFIG_DIR", scratch.0.join("probe-config"))
             .current_dir(&source),
     )?;
+    // Full upstream validation is opt-in locally and mandatory in the Linux contract job.
+    if std::env::var("AGENTKIT_VALIDATE_UPSTREAM").as_deref() == Ok("1") {
+        checked(
+            Command::new(&bun)
+                .args(["run", "validate:ci"])
+                .env("PATH", &build_path)
+                .env("CONFIG_DIR", scratch.0.join("validation-config"))
+                .env("UV_CACHE_DIR", target.join("upstream-uv-cache"))
+                .env("UV_PYTHON_INSTALL_DIR", target.join("upstream-python"))
+                .current_dir(&source),
+        )?;
+    }
     let built = scratch.0.join("built");
     checked(
         Command::new(&bun)

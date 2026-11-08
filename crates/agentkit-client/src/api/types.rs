@@ -242,3 +242,11 @@ fn required_option<'de, D: serde::Deserializer<'de>, T: Deserialize<'de>>(
 pub struct ServerNotice {
     pub arguments: Vec<agentkit_protocol::RpcValue>,
 }
+
+/// Persisted headless proxy configuration; the current process keeps its old routing.
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkProxyUpdate {
+    /// Restart the owned backend before treating the new routing as active.
+    pub restart_required: bool,
+}

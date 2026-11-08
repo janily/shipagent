@@ -156,6 +156,7 @@ jobs:
       - run: cargo xtask backend build --contract
         env:
           AGENTKIT_USE_NPMJS: '1'
+          AGENTKIT_VALIDATE_UPSTREAM: ${{ runner.os == 'Linux' && '1' || '0' }}
           GITHUB_TOKEN: ${{ github.token }}
       - run: cargo test -p agentkit-client --test contract --locked -- --ignored
         env:
@@ -171,6 +172,9 @@ jobs:
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
       - run: cargo test -p agentkit-sidecar --test navigation --locked -- --ignored
+        env:
+          AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
+      - run: cargo test -p agentkit-sidecar --test headless_settings --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
       - run: cargo test -p agentkit-sidecar --test settings --locked -- --ignored

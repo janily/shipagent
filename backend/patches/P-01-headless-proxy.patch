@@ -1,0 +1,434 @@
+--- a/packages/server-core/package.json
++++ b/packages/server-core/package.json
+@@ -26,6 +26,7 @@
+   "dependencies": {
+     "@mkagent/core": "workspace:*",
+     "@mkagent/shared": "workspace:*",
++    "undici": "^7.22.0",
+     "jose": "^6.0.0",
+     "ws": "^8.19.0",
+     "sharp": "0.34.5",
+--- a/bun.lock
++++ b/bun.lock
+@@ -233,6 +233,7 @@
+         "@earendil-works/pi-ai": "1.1.0",
+         "@mkagent/core": "workspace:*",
+         "@mkagent/shared": "workspace:*",
++        "undici": "^7.22.0",
+         "heic-convert": "^2.1.0",
+         "jose": "^6.0.0",
+         "sharp": "0.34.5",
+--- a/packages/server-core/src/services/index.ts
++++ b/packages/server-core/src/services/index.ts
+@@ -4,3 +4,5 @@
+ export * from './privileged-execution-broker'
+ export * from './git-bash'
+ export * from './vcredist'
++
++export { applySavedProxyToProcess } from './headless-proxy'
+--- a/packages/server/src/index.ts
++++ b/packages/server/src/index.ts
+@@ -55,7 +55,8 @@
+ import { registerCoreRpcHandlers, cleanupRpcClientResources } from '@mkagent/server-core/handlers/rpc'
+ import { SessionManager, setSessionPlatform, setSessionRuntimeHooks } from '@mkagent/server-core/sessions'
+ import { initModelRefreshService, setFetcherPlatform } from '@mkagent/server-core/model-fetchers'
+-import { setSearchPlatform, setImageProcessor } from '@mkagent/server-core/services'
++import { setSearchPlatform, setImageProcessor, applySavedProxyToProcess } from '@mkagent/server-core/services'
++import { registerHeadlessDesktopHandlers } from '@mkagent/server-core/handlers/rpc/headless-desktop'
+ import type { HandlerDeps } from '@mkagent/server-core/handlers'
+ 
+ process.env.MKAGENT_IS_PACKAGED ??= 'false'
+@@ -103,6 +104,8 @@
+ // In packaged mode, use MKAGENT_BUNDLED_ASSETS_ROOT env or cwd.
+ const bundledAssetsRoot = process.env.MKAGENT_BUNDLED_ASSETS_ROOT
+   ?? join(import.meta.dir, '..', '..', '..', '..')
++
++applySavedProxyToProcess()
+ 
+ registerPiModelResolver(provider => provider ? getPiModelsForAuthProvider(provider) : getAllPiModels())
+ initializeBackendHostRuntime({
+@@ -221,6 +224,7 @@
+       createHandlerDeps: ({ sessionManager, platform }) => ({ sessionManager, platform }),
+       registerAllRpcHandlers: (server, deps, serverCtx) => {
+         registerCoreRpcHandlers(server, deps, serverCtx)
++        registerHeadlessDesktopHandlers(server)
+         server.handle(RPC_CHANNELS.notification.GET_ENABLED, async () => {
+           const { getNotificationsEnabled } = await import('@mkagent/shared/config/storage')
+           return getNotificationsEnabled()
+--- a/packages/shared/src/unified-network-interceptor.ts
++++ b/packages/shared/src/unified-network-interceptor.ts
+@@ -2213,7 +2213,7 @@
+           parsed = result.body;
+         }
+ 
+-        const proxy = getProxyForUrl(url);
++        const proxy = (init as (RequestInit & { proxy?: string }) | undefined)?.proxy ?? getProxyForUrl(url);
+         const finalBody = JSON.stringify(parsed);
+         const finalInit = {
+           ...modifiedInit,
+@@ -2261,7 +2261,7 @@
+     }
+   }
+ 
+-  const proxy = getProxyForUrl(url);
++  const proxy = (init as (RequestInit & { proxy?: string }) | undefined)?.proxy ?? getProxyForUrl(url);
+   const proxyInit = proxy ? { ...init, proxy } : init;
+   const response = await originalFetch(input, proxyInit);
+   return logResponse(response, url, startTime);
+--- /dev/null
++++ b/packages/server-core/src/services/headless-proxy.ts
+@@ -0,0 +1,98 @@
++// Headless network setup. No Electron imports or session.setProxy side effects.
++import { Agent, Dispatcher, ProxyAgent, setGlobalDispatcher } from 'undici/index.js'
++import { getNetworkProxySettings } from '@mkagent/shared/config/storage'
++import type { NetworkProxySettings } from '@mkagent/shared/config/types'
++import { parseNoProxyRules, shouldBypassProxy, type NoProxyRule } from './headless-proxy-utils'
++
++class ProtocolProxyDispatcher extends Dispatcher {
++  private httpProxy: ProxyAgent | null;
++  private httpsProxy: ProxyAgent | null;
++  private direct: Agent;
++  private rules: NoProxyRule[];
++
++  constructor(opts: {
++    httpProxy?: string;
++    httpsProxy?: string;
++    noProxy?: string;
++  }) {
++    super();
++    this.httpProxy = opts.httpProxy ? new ProxyAgent(opts.httpProxy) : null;
++    this.httpsProxy = opts.httpsProxy ? new ProxyAgent(opts.httpsProxy) : null;
++    this.direct = new Agent();
++    this.rules = parseNoProxyRules(opts.noProxy);
++  }
++
++  dispatch(opts: Dispatcher.DispatchOptions, handler: Dispatcher.DispatchHandler): boolean {
++    const url = typeof opts.origin === 'string' ? opts.origin : opts.origin?.toString();
++
++    // If URL matches bypass rules, go direct
++    if (url && shouldBypassProxy(url, this.rules)) {
++      return this.direct.dispatch(opts, handler);
++    }
++
++    // Route based on protocol
++    const isHttps = url?.startsWith('https:');
++    const proxy = isHttps ? (this.httpsProxy ?? this.httpProxy) : this.httpProxy;
++
++    if (proxy) {
++      return proxy.dispatch(opts, handler);
++    }
++
++    return this.direct.dispatch(opts, handler);
++  }
++
++  async close(): Promise<void> {
++    await Promise.all([
++      this.httpProxy?.close(),
++      this.httpsProxy?.close(),
++      this.direct.close(),
++    ]);
++  }
++
++  async destroy(): Promise<void> {
++    await Promise.all([
++      this.httpProxy?.destroy(),
++      this.httpsProxy?.destroy(),
++      this.direct.destroy(),
++    ]);
++  }
++}
++
++const originalFetch = globalThis.fetch
++let current: Dispatcher | undefined
++/** Startup-only: apply protocol and NO_PROXY routing before the first fetch. */
++export function configureHeadlessProxy(settings: NetworkProxySettings | undefined): void {
++  try {
++    if (current) throw new Error('Proxy configuration requires process restart')
++    const enabled = settings?.enabled === true
++    const http = enabled ? settings.httpProxy?.trim() : undefined
++    const https = enabled ? settings.httpsProxy?.trim() : undefined
++    const rules = parseNoProxyRules(enabled ? settings?.noProxy : undefined)
++    const next = enabled && (http || https)
++      ? new ProtocolProxyDispatcher({ httpProxy: http, httpsProxy: https, noProxy: settings.noProxy })
++      : new Agent()
++    {
++      for (const [upper,lower,value] of [['HTTP_PROXY','http_proxy',http],['HTTPS_PROXY','https_proxy',https],['NO_PROXY','no_proxy',enabled ? settings?.noProxy : undefined]] as const) {
++        process.env[upper]=value ?? ''; process.env[lower]=value ?? ''
++      }
++    }
++    process.env.ALL_PROXY=''; process.env.all_proxy=''
++    setGlobalDispatcher(next)
++    current=next
++    if (typeof Bun !== 'undefined') {
++      globalThis.fetch = new Proxy(originalFetch, { apply(target, receiver, args: Parameters<typeof fetch>) {
++        const [input, init] = args
++        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
++        const selected = shouldBypassProxy(url, rules) ? undefined : new URL(url).protocol === 'https:' ? (https || http) : http
++        // Empty proxy explicitly disables ambient env proxying for direct/bypassed requests.
++        const explicit = (init as (RequestInit & {proxy?:string}) | undefined)?.proxy
++        return Reflect.apply(target, receiver, [input, {...init, proxy: explicit ?? selected ?? ''}])
++      } }) as typeof fetch
++    }
++  } catch {
++    // Proxy URLs can contain credentials; never propagate constructor errors or payloads.
++    throw new Error('Unable to apply saved network proxy settings')
++  }
++}
++/** Called by the standalone entry point before bootstrap starts network services. */
++export function applySavedProxyToProcess(): void { configureHeadlessProxy(getNetworkProxySettings()) }
+--- /dev/null
++++ b/packages/server-core/src/services/headless-proxy-utils.ts
+@@ -0,0 +1,107 @@
++// Ported from Electron network-proxy-utils.ts, mkagent v0.2.6.
++/**
++ * Network proxy utility functions (pure — no Electron deps).
++ *
++ * Parses NO_PROXY rules and determines whether a given URL should bypass the proxy.
++ */
++
++/** Split a comma-separated string into trimmed, non-empty entries. */
++export function splitCommaSeparated(str: string | undefined): string[] {
++  if (!str) return [];
++  return str.split(',').map(s => s.trim()).filter(Boolean);
++}
++
++export interface NoProxyRule {
++  /** Exact hostname or domain suffix (without leading dot). */
++  host: string;
++  /** Optional port restriction. */
++  port?: number;
++  /** If true, matches any hostname (wildcard `*`). */
++  wildcard: boolean;
++}
++
++/**
++ * Parse a comma-separated NO_PROXY string into structured rules.
++ *
++ * Supported formats per entry:
++ *   - `*`                 → wildcard, bypass everything
++ *   - `example.com`       → exact host match
++ *   - `.example.com`      → suffix match (subdomain)
++ *   - `example.com:8080`  → host + port
++ *   - `192.168.1.1`       → exact IP literal
++ */
++export function parseNoProxyRules(noProxy: string | undefined): NoProxyRule[] {
++  if (!noProxy) return [];
++
++  return splitCommaSeparated(noProxy)
++    .map(entry => entry.toLowerCase())
++    .map(entry => {
++      if (entry === '*') {
++        return { host: '*', wildcard: true };
++      }
++
++      // Strip leading dot (treated as suffix match — same result as without dot)
++      let cleaned = entry.startsWith('.') ? entry.slice(1) : entry;
++
++      // Handle IPv6: strip brackets, optionally extract trailing port ([::1]:8080)
++      if (cleaned.startsWith('[')) {
++        const closeBracket = cleaned.indexOf(']');
++        if (closeBracket > 0) {
++          const ipv6Host = cleaned.slice(1, closeBracket);
++          const afterBracket = cleaned.slice(closeBracket + 1);
++          if (afterBracket.startsWith(':')) {
++            const port = parseInt(afterBracket.slice(1), 10);
++            if (!isNaN(port)) {
++              return { host: ipv6Host, port, wildcard: false };
++            }
++          }
++          return { host: ipv6Host, wildcard: false };
++        }
++      }
++
++      // Check for port (non-IPv6)
++      const lastColon = cleaned.lastIndexOf(':');
++      if (lastColon > 0) {
++        const host = cleaned.slice(0, lastColon);
++        const port = parseInt(cleaned.slice(lastColon + 1), 10);
++        if (!isNaN(port)) {
++          return { host, port, wildcard: false };
++        }
++      }
++
++      return { host: cleaned, wildcard: false };
++    });
++}
++
++/**
++ * Determine whether a URL should bypass the proxy based on NO_PROXY rules.
++ */
++/** Default ports by protocol, used when URL omits an explicit port. */
++const DEFAULT_PORTS: Record<string, number> = { 'http:': 80, 'https:': 443 };
++
++export function shouldBypassProxy(url: string | URL, rules: NoProxyRule[]): boolean {
++  if (rules.length === 0) return false;
++
++  const parsed = typeof url === 'string' ? new URL(url) : url;
++  const hostname = parsed.hostname.toLowerCase();
++  // Strip brackets from IPv6
++  const host = hostname.startsWith('[') ? hostname.slice(1, -1) : hostname;
++  const port = parsed.port ? parseInt(parsed.port, 10) : DEFAULT_PORTS[parsed.protocol];
++
++  for (const rule of rules) {
++    if (rule.wildcard) return true;
++
++    // Port-scoped rule: only match when port matches
++    if (rule.port !== undefined && rule.port !== port) {
++      continue;
++    }
++
++    // Exact match
++    if (host === rule.host) return true;
++
++    // Suffix match (subdomain): host ends with .rule.host
++    if (host.endsWith(`.${rule.host}`)) return true;
++  }
++
++  return false;
++}
+--- /dev/null
++++ b/packages/server-core/src/services/headless-proxy.test.ts
+@@ -0,0 +1,67 @@
++import { afterAll, test, expect } from 'bun:test'
++import { createServer } from 'node:http'
++import { connect, type Socket, type AddressInfo } from 'node:net'
++import { join } from 'node:path'
++const origin=createServer((_req,res)=>{res.setHeader('content-length','12');res.end('origin-proof')})
++await new Promise<void>(resolve=>origin.listen(0,'127.0.0.1',resolve))
++const port=(origin.address() as AddressInfo).port
++const target=`http://127.0.0.1:${port}/proof`
++function proxy(){
++ const hits:string[]=[],sockets=new Set<Socket>()
++ const server=createServer((_req,res)=>{
++  hits.push('http');const upstream=connect(port,'127.0.0.1',()=>upstream.write('GET /proof HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n'))
++  let wire='';upstream.on('data',c=>{wire+=c});upstream.on('end',()=>res.end(wire.slice(wire.indexOf('\r\n\r\n')+4)))
++  upstream.on('error',()=>{res.statusCode=502;res.end()})
++ })
++ server.on('connection',s=>{sockets.add(s);s.on('close',()=>sockets.delete(s))})
++ server.on('connect',(req,socket,head)=>{
++  hits.push(req.url?.endsWith(':65432')?'https':'http')
++  if(req.url?.endsWith(':65432')){socket.end('HTTP/1.1 502 Fixture\r\n\r\n');return}
++  const upstream=connect(port,'127.0.0.1',()=>{socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');if(head.length)upstream.write(head);socket.pipe(upstream);upstream.pipe(socket)})
++  socket.on('error',()=>upstream.destroy());upstream.on('error',()=>socket.destroy());socket.on('close',()=>upstream.destroy())
++ })
++ return {server,hits,sockets}
++}
++const ipv6=createServer((_req,res)=>res.end('origin-proof'))
++let hasIpv6=false
++await new Promise<void>(resolve=>{ipv6.once('error',()=>resolve());ipv6.listen(0,'::1',()=>{hasIpv6=true;resolve()})})
++const http=proxy(),https=proxy()
++for(const p of [http,https])await new Promise<void>(resolve=>p.server.listen(0,'127.0.0.1',resolve))
++const url=(p:ReturnType<typeof proxy>)=>`http://127.0.0.1:${(p.server.address() as AddressInfo).port}`
++afterAll(()=>{for(const p of [http,https]){for(const s of p.sockets)s.destroy();p.server.closeAllConnections();p.server.close()}origin.closeAllConnections();origin.close();if(hasIpv6){ipv6.closeAllConnections();ipv6.close()}})
++async function start(settings:object|null,mode='http',destination=target){
++ const child=Bun.spawn([process.execPath,join(import.meta.dir,'headless-proxy.fixture.ts'),JSON.stringify(settings),destination,mode],{stdout:'pipe',stderr:'pipe',env:{...process.env,HTTP_PROXY:'http://127.0.0.1:1',http_proxy:'http://127.0.0.1:1',HTTPS_PROXY:'http://127.0.0.1:1',https_proxy:'http://127.0.0.1:1',NO_PROXY:'',no_proxy:''}})
++ try {
++  const [out,err,code]=await Promise.all([new Response(child.stdout).text(),new Response(child.stderr).text(),child.exited])
++  if(code!==0)throw Error('proxy fixture failed: '+err)
++  const data=JSON.parse(out);expect(data.bun).toBe('origin-proof');expect(data.undici).toBe('origin-proof')
++  if(mode==='both'){expect(data.bunHttpsRejected).toBe(true);expect(data.undiciHttpsRejected).toBe(true)}
++ } finally {child.kill()}
++}
++test('Bun and undici use distinct saved HTTP/HTTPS proxies in a real process',async()=>{
++ const h=http.hits.length,s=https.hits.length
++ await start({enabled:true,httpProxy:url(http),httpsProxy:url(https)},'both')
++ expect(http.hits.length).toBe(h+2);expect(https.hits.length).toBe(s+2)
++},15000)
++test('HTTPS falls back to HTTP proxy when no HTTPS proxy is configured',async()=>{
++ const h=http.hits.length,s=https.hits.length
++ await start({enabled:true,httpProxy:url(http)},'both')
++ expect(http.hits.length).toBe(h+4);expect(https.hits.length).toBe(s)
++},15000)
++test('NO_PROXY bypass and nonmatching port, disabled custom proxy all drive real requests',async()=>{
++ const h=http.hits.length
++ await start(null)
++ expect(http.hits.length).toBe(h)
++ await start({enabled:true,httpProxy:url(http),noProxy:`127.0.0.1:${port}`})
++ expect(http.hits.length).toBe(h)
++ await start({enabled:true,httpProxy:url(http),noProxy:'127.0.0.1:1'})
++ expect(http.hits.length).toBe(h+2)
++ await start({enabled:false,httpProxy:url(http)})
++ expect(http.hits.length).toBe(h+2)
++},15000)
++
++test.skipIf(!hasIpv6)('IPv6 NO_PROXY with a port bypasses both native and undici proxy paths',async()=>{
++ const port=(ipv6.address() as AddressInfo).port,h=http.hits.length
++ await start({enabled:true,httpProxy:url(http),noProxy:`[::1]:${port}`},'http',`http://[::1]:${port}/proof`)
++ expect(http.hits.length).toBe(h)
++},15000)
+--- /dev/null
++++ b/packages/server-core/src/services/headless-proxy-utils.test.ts
+@@ -0,0 +1,13 @@
++import { test, expect } from 'bun:test'
++import { parseNoProxyRules, shouldBypassProxy } from './headless-proxy-utils'
++test('NO_PROXY preserves Electron v0.2.6 host, suffix, port, IPv6 and wildcard semantics',()=>{
++ for(const [rule,url,expected] of [
++ ['example.test','https://example.test',true],['.example.test','http://sub.example.test',true],
++ ['example.test','https://notexample.test',false],['example.test:443','https://example.test',true],
++ ['example.test:80','https://example.test',false],['example.test:8080','http://example.test:8080',true],
++ ['[::1]:443','https://[::1]',true],['[::1]:80','https://[::1]',false],
++ ['127.0.0.1','http://127.0.0.1:5050',true],['*','https://any.test',true],
++ ['EXAMPLE.TEST','https://example.test',true],[' , example.test , ','https://example.test',true],
++ ['', 'http://127.0.0.1', false],
++ ] as const) expect(shouldBypassProxy(url,parseNoProxyRules(rule))).toBe(expected)
++})
+--- /dev/null
++++ b/packages/server-core/src/services/headless-proxy.fixture.ts
+@@ -0,0 +1,13 @@
++// One backend start per settings value: proxy changes intentionally require restart.
++import { configureHeadlessProxy } from './headless-proxy'
++import { fetch as undiciFetch, getGlobalDispatcher } from 'undici/index.js'
++configureHeadlessProxy(JSON.parse(process.argv[2]) ?? undefined)
++const output: Record<string,unknown> = {}
++for (const [name,call] of [['bun',globalThis.fetch],['undici',undiciFetch]] as const) {
++ output[name]=await (await call(process.argv[3])).text()
++ if(process.argv[4]==='both') {
++  try {const response=await call('https://127.0.0.1:65432/');output[name+'HttpsRejected']=response.status===502} catch {output[name+'HttpsRejected']=true}
++ }
++}
++await getGlobalDispatcher().destroy()
++console.log(JSON.stringify(output))
+--- /dev/null
++++ b/packages/server-core/src/handlers/rpc/headless-desktop.ts
+@@ -0,0 +1,41 @@
++import type { RpcServer } from '@mkagent/server-core/transport'
++import { RPC_CHANNELS } from '@mkagent/shared/protocol'
++import { setNetworkProxySettings, CONFIG_DIR } from '@mkagent/shared/config/storage'
++import type { NetworkProxySettings } from '@mkagent/shared/config/types'
++import { readFileSync } from 'node:fs'
++import { join } from 'node:path'
++function readConfig(): Record<string,unknown> {
++  const config=JSON.parse(readFileSync(join(CONFIG_DIR,'config.json'),'utf8'))
++  if(!config || !Array.isArray(config.workspaces) || !config.workspaces.every((w:unknown)=>!!w && typeof w==='object' && ['id','name','rootPath'].every(key=>typeof (w as Record<string,unknown>)[key]==='string'))) throw new Error()
++  return config
++}
++function persist(write:()=>void, matches:(saved:Record<string,unknown>)=>boolean):void {
++  try { readConfig(); write(); if(!matches(readConfig()))throw new Error() }
++  catch { throw new Error('Unable to save headless settings') }
++}
++function validateProxy(value: unknown): asserts value is NetworkProxySettings {
++  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid network proxy settings')
++  const input = value as Record<string, unknown>
++  if (typeof input.enabled !== 'boolean') throw new Error('Invalid network proxy settings')
++  for (const key of ['httpProxy','httpsProxy','noProxy']) {
++    if (input[key] !== undefined && typeof input[key] !== 'string') throw new Error('Invalid network proxy settings')
++  }
++  for (const key of ['httpProxy','httpsProxy']) {
++    const proxy = (input[key] as string | undefined)?.trim()
++    if (!proxy) continue
++    try {
++      const url = new URL(proxy)
++      if (!['http:','https:'].includes(url.protocol) || !url.hostname) throw new Error()
++      decodeURIComponent(url.username); decodeURIComponent(url.password)
++    } catch { throw new Error('Invalid network proxy settings') }
++  }
++}
++/** Standalone-only handlers; Electron continues registering its GUI implementation. */
++export function registerHeadlessDesktopHandlers(server: Pick<RpcServer,'handle'>): void {
++  server.handle(RPC_CHANNELS.settings.SET_NETWORK_PROXY, (_ctx, value: unknown) => {
++    validateProxy(value)
++    const normalized={enabled:value.enabled,httpProxy:value.httpProxy?.trim()||undefined,httpsProxy:value.httpsProxy?.trim()||undefined,noProxy:value.noProxy?.trim()||undefined}
++    persist(()=>setNetworkProxySettings(value), config=>JSON.stringify(config.networkProxy ?? {enabled:false})===JSON.stringify(normalized))
++    return {restartRequired:true}
++  })
++}

@@ -41,7 +41,10 @@ impl Settings<'_> {
     pub async fn network_proxy(&self) -> Result<NetworkProxy, RpcError> {
         execute(self.0, p::SETTINGS_NETWORK_PROXY, vec![]).await
     }
-    pub async fn set_network_proxy(&self, value: &NetworkProxy) -> Result<(), RpcError> {
+    pub async fn set_network_proxy(
+        &self,
+        value: &NetworkProxy,
+    ) -> Result<NetworkProxyUpdate, RpcError> {
         execute(
             self.0,
             p::SETTINGS_SET_NETWORK_PROXY,

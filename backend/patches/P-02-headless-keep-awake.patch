@@ -1,0 +1,76 @@
+--- a/packages/server-core/src/handlers/rpc/headless-desktop.ts
++++ b/packages/server-core/src/handlers/rpc/headless-desktop.ts
+@@ -1,6 +1,6 @@
+ import type { RpcServer } from '@mkagent/server-core/transport'
+ import { RPC_CHANNELS } from '@mkagent/shared/protocol'
+-import { setNetworkProxySettings, CONFIG_DIR } from '@mkagent/shared/config/storage'
++import { setNetworkProxySettings, setKeepAwakeWhileRunning, CONFIG_DIR } from '@mkagent/shared/config/storage'
+ import type { NetworkProxySettings } from '@mkagent/shared/config/types'
+ import { readFileSync } from 'node:fs'
+ import { join } from 'node:path'
+@@ -38,4 +38,9 @@
+     persist(()=>setNetworkProxySettings(value), config=>JSON.stringify(config.networkProxy ?? {enabled:false})===JSON.stringify(normalized))
+     return {restartRequired:true}
+   })
++  server.handle(RPC_CHANNELS.power.SET_KEEP_AWAKE, (_ctx, enabled: unknown) => {
++    if (typeof enabled !== 'boolean') throw new Error('Invalid keep-awake setting')
++    // Preference only. The desktop client owns the actual OS power assertion.
++    persist(()=>setKeepAwakeWhileRunning(enabled), config=>config.keepAwakeWhileRunning===enabled)
++  })
+ }
+--- /dev/null
++++ b/packages/server-core/src/handlers/rpc/headless-desktop.test.ts
+@@ -0,0 +1,53 @@
++import { test, expect, beforeAll } from 'bun:test'
++import type { HandlerFn } from '@mkagent/server-core/transport'
++import { RPC_CHANNELS } from '@mkagent/shared/protocol'
++import { saveConfig, getNetworkProxySettings, getKeepAwakeWhileRunning, CONFIG_DIR } from '@mkagent/shared/config/storage'
++import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'node:fs'
++import { join } from 'node:path'
++import { getGlobalDispatcher } from 'undici'
++import { registerHeadlessDesktopHandlers } from './headless-desktop'
++const handlers = new Map<string,HandlerFn>()
++const ctx={clientId:'fixture',workspaceId:null,webContentsId:null}
++beforeAll(()=>{saveConfig({workspaces:[],activeWorkspaceId:null,activeSessionId:null});registerHeadlessDesktopHandlers({handle:(channel,handler)=>{if(handlers.has(channel))throw Error('duplicate');handlers.set(channel,handler)}})})
++test('headless settings persist and acknowledge restart without applying live networking',async()=>{
++ expect(handlers.size).toBe(2)
++ const dispatcher=getGlobalDispatcher(),fetch=globalThis.fetch
++ const input={enabled:true,httpProxy:' http://127.0.0.1:1234 ',httpsProxy:'http://127.0.0.1:2345',noProxy:' localhost '}
++ expect(await handlers.get(RPC_CHANNELS.settings.SET_NETWORK_PROXY)!(ctx,input)).toEqual({restartRequired:true})
++ expect(getNetworkProxySettings()).toEqual({...input,httpProxy:input.httpProxy.trim(),noProxy:'localhost'})
++ expect(getGlobalDispatcher()).toBe(dispatcher);expect(globalThis.fetch).toBe(fetch)
++ await handlers.get(RPC_CHANNELS.power.SET_KEEP_AWAKE)!(ctx,true)
++ expect(getKeepAwakeWhileRunning()).toBe(true)
++ await handlers.get(RPC_CHANNELS.power.SET_KEEP_AWAKE)!(ctx,false)
++ expect(getKeepAwakeWhileRunning()).toBe(false)
++})
++test('invalid wire parameters fail without persisting or disclosing credentials',async()=>{
++ const before=getNetworkProxySettings()
++ for(const value of [null,[],{}, {enabled:'true'},{enabled:true,httpProxy:42},{enabled:true,httpProxy:'socks5://FIXTURE_SECRET@localhost:1'}, {enabled:true,httpProxy:'http://%ZZ:FIXTURE_SECRET@127.0.0.1:1234'}]){
++  let failure:unknown
++  try{await handlers.get(RPC_CHANNELS.settings.SET_NETWORK_PROXY)!(ctx,value)}catch(error){failure=error}
++  expect(failure).toBeInstanceOf(Error);expect(String(failure)).not.toContain('FIXTURE_SECRET')
++  expect(getNetworkProxySettings()).toEqual(before)
++ }
++ for(const value of ['true',null,1,{}])await expect(Promise.resolve().then(()=>handlers.get(RPC_CHANNELS.power.SET_KEEP_AWAKE)!(ctx,value))).rejects.toThrow('Invalid keep-awake setting')
++ expect(getKeepAwakeWhileRunning()).toBe(false)
++})
++
++test('valid escaped proxy credentials persist without being decoded into the config',async()=>{
++ const input={enabled:true,httpProxy:'http://percent%25:fixture@127.0.0.1:1234'}
++ expect(await handlers.get(RPC_CHANNELS.settings.SET_NETWORK_PROXY)!(ctx,input)).toEqual({restartRequired:true})
++ expect(getNetworkProxySettings()).toEqual(input)
++})
++test('missing or corrupt config cannot acknowledge saved preferences or leak parse details',async()=>{
++ const path=join(CONFIG_DIR,'config.json'),saved=readFileSync(path,'utf8')
++ try {
++  for(const corrupt of [undefined,'{"workspaces":[],"secret":"FIXTURE_SECRET"', '{"workspaces":[null]}']){
++   if(corrupt===undefined)unlinkSync(path);else writeFileSync(path,corrupt)
++   for(const [channel,value] of [[RPC_CHANNELS.settings.SET_NETWORK_PROXY,{enabled:false}],[RPC_CHANNELS.power.SET_KEEP_AWAKE,true]] as const){
++    let error:unknown;try{await handlers.get(channel)!(ctx,value)}catch(e){error=e}
++    expect(String(error)).toBe('Error: Unable to save headless settings')
++   }
++   if(corrupt===undefined)expect(existsSync(path)).toBe(false);else expect(readFileSync(path,'utf8')).toBe(corrupt)
++  }
++ }finally{writeFileSync(path,saved)}
++})

@@ -169,3 +169,25 @@ impl WorkbenchApi {
         self.client.settings().set_send_message_key(key).await
     }
 }
+
+impl WorkbenchApi {
+    /// Read saved custom proxy settings; URLs have redacted diagnostics.
+    pub async fn network_proxy(&self) -> Result<super::super::secrets::NetworkProxy, RpcError> {
+        self.client.settings().network_proxy().await
+    }
+    /// Persist custom routing and return the explicit backend restart acknowledgement.
+    pub async fn save_network_proxy(
+        &self,
+        settings: &super::super::secrets::NetworkProxy,
+    ) -> Result<super::super::types::NetworkProxyUpdate, RpcError> {
+        self.client.settings().set_network_proxy(settings).await
+    }
+    /// Read the persisted keep-awake preference, without acquiring a power assertion.
+    pub async fn keep_awake(&self) -> Result<bool, RpcError> {
+        self.client.settings().keep_awake().await
+    }
+    /// Save the preference; the native client owns actual OS power management.
+    pub async fn set_keep_awake(&self, enabled: bool) -> Result<(), RpcError> {
+        self.client.settings().set_keep_awake(enabled).await
+    }
+}
