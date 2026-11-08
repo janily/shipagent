@@ -632,13 +632,14 @@ fn every_v1_request_uses_typed_returns_and_exact_positional_wire_arguments() {
             json!({"enabled":false})
         );
         let proxy = NetworkProxy::default();
-        rpc!(
-            (),
+        let updated = rpc!(
+            NetworkProxyUpdate,
             client.settings().set_network_proxy(&proxy),
             "settings:setNetworkProxy",
             json!([{"enabled":false}]),
-            Value::Null
+            json!({"restartRequired":true})
         );
+        assert!(updated.restart_required);
         rpc!(
             (),
             client.settings().disable_browser(),

@@ -2,3 +2,6 @@
 /crates/agentkit-store/tests/fixtures/recorded/* text eol=lf
 /tools/fixtures/*.mjs text eol=lf
 /tools/fake-llm/scenarios/*.yaml text eol=lf
+
+# Unified diff context prefixes intentionally contain a space on blank lines.
+/backend/patches/*.patch text eol=lf whitespace=-blank-at-eol

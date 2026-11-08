@@ -143,7 +143,7 @@
 +test('send reservation returns to idle when journal creation fails before ACK', async () => {
 + const { SessionManager, createManagedSession } = await import('./SessionManager');
 + type Managed = ReturnType<typeof createManagedSession>;
-+ type Harness = { sessions: Map<string,Managed>; ensureMessagesLoaded(s:Managed):void; nextTimestamp():number; flushSession(id:string):Promise<void>; sendMessage: SessionManager['sendMessage'] };
++ type Harness = { sessions: Map<string,Managed>; ensureMessagesLoaded(s:Managed):void; nextTimestamp():number; flushSession(id:string):Promise<void>; sendMessage: InstanceType<typeof SessionManager>['sendMessage'] };
 + const managed = createManagedSession({id:'journal-failure'}, {id:'workspace',slug:'workspace',name:'Test',rootPath:'/unused',createdAt:1});
 + const manager = Object.create(SessionManager.prototype) as Harness;
 + manager.sessions=new Map([[managed.id,managed]]); manager.ensureMessagesLoaded=()=>{};manager.nextTimestamp=()=>1;
