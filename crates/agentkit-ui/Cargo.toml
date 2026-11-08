@@ -34,3 +34,7 @@ gpui-kit = { workspace = true, features = ["test-support"] }
 [[example]]
 name = "performance"
 required-features = ["samples"]
+
+[[example]]
+name = "settings"
+required-features = ["samples"]

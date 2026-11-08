@@ -13,9 +13,18 @@ impl WorkbenchController {
                 .await;
             if result.is_err() {
                 let _ = weak.update(cx, |this, cx| {
-                    this.view.update(cx, |v, cx| {
-                        v.show_error(agentkit_ui::t!("ak.recovery.logs_failed"), false, cx)
-                    })
+                    if this.view.read(cx).settings_visible() {
+                        this.settings_status(
+                            this.settings_pending,
+                            Some(agentkit_ui::t!("ak.recovery.logs_failed")),
+                            None,
+                            cx,
+                        );
+                    } else {
+                        this.view.update(cx, |v, cx| {
+                            v.show_error(agentkit_ui::t!("ak.recovery.logs_failed"), false, cx)
+                        });
+                    }
                 });
             }
         }));
@@ -61,9 +70,22 @@ impl WorkbenchController {
                 .await;
                 if result.is_err() {
                     let _ = weak.update(cx, |this, cx| {
-                        this.view.update(cx, |v, cx| {
-                            v.show_error(agentkit_ui::t!("ak.recovery.export_failed"), false, cx)
-                        })
+                        if this.view.read(cx).settings_visible() {
+                            this.settings_status(
+                                this.settings_pending,
+                                Some(agentkit_ui::t!("ak.recovery.export_failed")),
+                                None,
+                                cx,
+                            );
+                        } else {
+                            this.view.update(cx, |v, cx| {
+                                v.show_error(
+                                    agentkit_ui::t!("ak.recovery.export_failed"),
+                                    false,
+                                    cx,
+                                )
+                            });
+                        }
                     });
                 }
             }));

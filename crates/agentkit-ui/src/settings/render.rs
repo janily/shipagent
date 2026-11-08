@@ -6,10 +6,18 @@ use gpui_kit::component::{
 };
 impl Render for SettingsView {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if let Some(form) = &self.proxy_form {
+            let blocked = self.busy || !self.app.as_ref().is_some_and(|a| a.read(cx).connected);
+            form.update(cx, |f, cx| f.blocked(blocked, cx));
+        }
         let general = cx.weak_entity();
         let appearance = general.clone();
         let models = general.clone();
         let shortcuts = general.clone();
+        let permissions = general.clone();
+        let network = general.clone();
+        let notifications = general.clone();
+        let advanced = general.clone();
         v_flex()
             .id("settings-view")
             .test_support()
@@ -17,12 +25,21 @@ impl Render for SettingsView {
             .size_full()
             .gap_2()
             .child(
-                h_flex().h_10().px_4().child(
-                    Button::new("settings-back")
-                        .ghost()
-                        .label(t!("ak.settings.back"))
-                        .on_click(cx.listener(|_, _, _, cx| cx.emit(SettingsIntent::Back))),
-                ),
+                h_flex()
+                    .h_10()
+                    .px_4()
+                    .child(
+                        Button::new("settings-back")
+                            .ghost()
+                            .label(t!("ak.settings.back"))
+                            .on_click(cx.listener(|_, _, _, cx| cx.emit(SettingsIntent::Back))),
+                    )
+                    .child(
+                        Button::new("settings-retry")
+                            .label(t!("ak.settings.reload"))
+                            .disabled(self.busy)
+                            .on_click(cx.listener(|_, _, _, cx| cx.emit(SettingsIntent::Reload))),
+                    ),
             )
             .when_some(self.error.clone(), |v, error| {
                 v.child(
@@ -87,11 +104,47 @@ impl Render for SettingsView {
                                             .unwrap_or_else(|_| div().into_any_element())
                                     }),
                                 ])]),
+                            SettingPage::new(t!("ak.settings.permissions")).groups(vec![
+                                SettingGroup::new().items(vec![SettingItem::render(
+                                    move |_, _, cx| {
+                                        permissions
+                                            .update(cx, |s, cx| s.permissions(cx))
+                                            .unwrap_or_else(|_| div().into_any_element())
+                                    },
+                                )]),
+                            ]),
+                            SettingPage::new(t!("ak.settings.network")).groups(vec![
+                                SettingGroup::new().items(vec![SettingItem::render(
+                                    move |_, _, cx| {
+                                        network
+                                            .update(cx, |s, _cx| s.network())
+                                            .unwrap_or_else(|_| div().into_any_element())
+                                    },
+                                )]),
+                            ]),
+                            SettingPage::new(t!("ak.settings.notifications")).groups(vec![
+                                SettingGroup::new().items(vec![SettingItem::render(
+                                    move |_, _, cx| {
+                                        notifications
+                                            .update(cx, |s, cx| s.notifications(cx))
+                                            .unwrap_or_else(|_| div().into_any_element())
+                                    },
+                                )]),
+                            ]),
                             SettingPage::new(t!("ak.menu.shortcuts")).groups(vec![
                                 SettingGroup::new().items(vec![SettingItem::render(
                                     move |_, _, cx| {
                                         shortcuts
                                             .update(cx, |s, cx| s.render_shortcuts(cx))
+                                            .unwrap_or_else(|_| div().into_any_element())
+                                    },
+                                )]),
+                            ]),
+                            SettingPage::new(t!("ak.settings.advanced")).groups(vec![
+                                SettingGroup::new().items(vec![SettingItem::render(
+                                    move |_, _, cx| {
+                                        advanced
+                                            .update(cx, |s, cx| s.advanced(cx))
                                             .unwrap_or_else(|_| div().into_any_element())
                                     },
                                 )]),

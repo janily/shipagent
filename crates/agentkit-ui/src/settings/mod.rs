@@ -6,14 +6,18 @@ mod editor_render;
 mod editor_types;
 mod models;
 mod preferences;
+mod proxy;
 mod render;
+mod system;
 use crate::{composer::SendKey, t};
 use agentkit_protocol::generated as g;
 use agentkit_store::entities::AppState;
 pub use editor::ConnectionEditor;
 pub use editor_types::{ConnectionKind, ConnectionValues, EditorIntent};
 use gpui_kit::{prelude::*, *};
+pub use proxy::ProxyValues;
 use serde::{Deserialize, Serialize};
+pub use system::BackendPreferences;
 /// Client appearance preference; system follows the desktop dynamically.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -41,6 +45,10 @@ pub struct DisplayPreferences {
     pub restore: bool,
     /// Send gesture.
     pub send_key: SendKey,
+    /// Notify when a background turn completes.
+    pub completion_notifications: bool,
+    /// Notify for background approval requests.
+    pub approval_notifications: bool,
 }
 impl Default for DisplayPreferences {
     fn default() -> Self {
@@ -51,6 +59,8 @@ impl Default for DisplayPreferences {
             stream_fade: true,
             restore: true,
             send_key: SendKey::Enter,
+            completion_notifications: true,
+            approval_notifications: true,
         }
     }
 }
@@ -69,6 +79,10 @@ pub enum LocalChange {
     Restore(bool),
     /// Change send key.
     SendKey(SendKey),
+    /// Toggle background completion alerts.
+    CompletionNotifications(bool),
+    /// Toggle background approval alerts.
+    ApprovalNotifications(bool),
 }
 /// Settings gestures; no RPC channel or saved credential belongs in the view.
 #[derive(Clone)]
@@ -97,6 +111,18 @@ pub enum SettingsIntent {
     Thinking(g::ThinkingLevel),
     /// Set optional compaction token threshold.
     Compact(Option<u32>),
+    /// Propose validated proxy changes; the controller confirms before saving/restarting.
+    Proxy(ProxyValues),
+    /// Persist the backend power preference.
+    KeepAwake(bool),
+    /// Explicitly change defaults for this workspace only.
+    PermissionMode(String, g::PermissionMode),
+    /// Open the local backend log directory.
+    OpenLogs,
+    /// Export the existing credential-free diagnostic report.
+    ExportDiagnostics,
+    /// Restart the owned local backend, with interruption confirmation when busy.
+    RestartBackend,
 }
 /// Native Settings component with client values and a safe canonical connection catalog.
 pub struct SettingsView {
@@ -113,10 +139,20 @@ pub struct SettingsView {
     compact: Option<u32>,
     error: Option<String>,
     notice: Option<String>,
+    backend: Option<BackendPreferences>,
+    proxy_form: Option<Entity<proxy::ProxyForm>>,
+    proxy_subscription: Option<Subscription>,
     _subscription: Option<Subscription>,
 }
 impl EventEmitter<SettingsIntent> for SettingsView {}
 impl SettingsView {
+    /// Select a page for the standalone native verification sample.
+    #[cfg(feature = "samples")]
+    pub fn preview_page(&mut self, index: usize, cx: &mut Context<Self>) {
+        self.selected_page = Some(index.min(7));
+        self.locale_generation = self.locale_generation.wrapping_add(1);
+        cx.notify();
+    }
     /// Construct without fetching any data.
     pub fn new(cx: &mut Context<Self>) -> Self {
         Self {
@@ -133,6 +169,9 @@ impl SettingsView {
             compact: None,
             error: None,
             notice: None,
+            backend: None,
+            proxy_form: None,
+            proxy_subscription: None,
             _subscription: None,
         }
     }
@@ -147,7 +186,7 @@ impl SettingsView {
         self.shortcuts = rows;
         self.keymap_invalid = invalid;
         if select {
-            self.selected_page = Some(3);
+            self.selected_page = Some(6);
             self.locale_generation = self.locale_generation.wrapping_add(1);
         }
         cx.notify();
@@ -173,6 +212,9 @@ impl SettingsView {
     /// Invalidate server controls when a transport generation is replaced.
     pub fn reset(&mut self, cx: &mut Context<Self>) {
         self.loaded = false;
+        self.backend = None;
+        self.proxy_form = None;
+        self.proxy_subscription = None;
         self.busy = false;
         self.error = None;
         self.notice = None;
@@ -199,6 +241,9 @@ impl SettingsView {
         cx: &mut Context<Self>,
     ) {
         self.busy = busy;
+        if let Some(form) = &self.proxy_form {
+            form.update(cx, |f, cx| f.blocked(busy, cx));
+        }
         self.error = error;
         self.notice = notice;
         cx.notify();

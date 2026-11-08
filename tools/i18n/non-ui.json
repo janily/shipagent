@@ -33,5 +33,10 @@
     "file": "crates/agentkit-app/src/keymap/catalog.rs",
     "literal": "Composer > Input",
     "reason": "GPUI focus-context predicate; not displayed product copy"
+  },
+  {
+    "file": "crates/agentkit-ui/examples/settings.rs",
+    "literal": "{\n  \"version\": \"1\",\n  \"allowedBashPatterns\": [\"git status\"],\n  \"blockedTools\": []\n}",
+    "reason": "Read-only backend policy fixture data for native visual verification; field names and command patterns are protocol data, not translated labels"
   }
 ]

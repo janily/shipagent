@@ -54,6 +54,8 @@ pub struct Preferences {
     pub send_key: agentkit_ui::composer::SendKey,
     /// Alert for approval requests arriving while the window is in the background.
     pub approval_notifications: bool,
+    /// Alert when a background turn completes. Delivery is provided by the notification capability.
+    pub completion_notifications: bool,
     /// Last window dimensions and position.
     pub geometry: Option<Geometry>,
     /// Fixed-column shell preferences.
@@ -77,6 +79,7 @@ impl Default for Preferences {
             language: "zh-CN".into(),
             send_key: Default::default(),
             approval_notifications: true,
+            completion_notifications: true,
             geometry: None,
             shell: ShellPreferences::default(),
             restore_session: true,
@@ -325,6 +328,7 @@ mod onboarding_tests {
     fn legacy_preferences_start_uninitialized_and_acknowledgements_round_trip() {
         let old: Preferences = serde_json::from_str(r#"{"version":1,"language":"en"}"#).unwrap();
         assert!(!old.browser_initialized && !old.onboarding_deferred);
+        assert!(old.completion_notifications && old.approval_notifications);
         let updated = Preferences {
             browser_initialized: true,
             onboarding_deferred: true,

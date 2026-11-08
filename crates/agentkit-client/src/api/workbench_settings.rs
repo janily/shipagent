@@ -4,6 +4,26 @@ use super::super::{
 };
 use super::*;
 impl WorkbenchApi {
+    /// Read the backend's built-in permissions as a typed, read-only projection.
+    pub async fn builtin_permissions(
+        &self,
+    ) -> Result<super::super::types::DefaultPermissions, RpcError> {
+        self.client.settings().default_permissions().await
+    }
+    /// Explicitly change defaults for future sessions in one workspace.
+    pub async fn workspace_permission_mode(
+        &self,
+        workspace: &str,
+        mode: g::PermissionMode,
+    ) -> Result<(), RpcError> {
+        self.client
+            .workspaces()
+            .update(
+                workspace,
+                &super::super::types::WorkspaceSetting::PermissionMode(mode),
+            )
+            .await
+    }
     /// Persist a first-run deferral without saving credentials.
     pub async fn defer_setup(&self) -> Result<(), RpcError> {
         self.client.oauth().defer_setup().await.map(|_| ())

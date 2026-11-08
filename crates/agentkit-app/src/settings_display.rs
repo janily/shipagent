@@ -26,6 +26,8 @@ impl WorkbenchController {
             stream_fade: p.stream_fade,
             restore: p.restore_session,
             send_key: p.send_key,
+            completion_notifications: p.completion_notifications,
+            approval_notifications: p.approval_notifications,
         };
         self.app_state.update(cx, |a, cx| {
             a.language = p.language;
@@ -61,6 +63,8 @@ impl WorkbenchController {
             LocalChange::Fade(v) => p.stream_fade = *v,
             LocalChange::Restore(v) => p.restore_session = *v,
             LocalChange::SendKey(v) => p.send_key = *v,
+            LocalChange::CompletionNotifications(v) => p.completion_notifications = *v,
+            LocalChange::ApprovalNotifications(v) => p.approval_notifications = *v,
         });
         self.apply_display_preferences(window, cx);
         if let LocalChange::SendKey(key) = change
