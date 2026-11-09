@@ -3,7 +3,7 @@ use super::*;
 mod login;
 impl WorkbenchController {
     pub(super) fn start_chatgpt(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.settings_pending || self.oauth_cancel.is_some() {
+        if self.settings_pending || self.oauth_cancel.is_some() || self.claude_cancel.is_some() {
             return;
         }
         let Some(api) = self.settings_api(cx) else {

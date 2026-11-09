@@ -42,6 +42,14 @@ impl SettingsView {
                             ),
                     )
                     .child(
+                        Button::new("settings-claude-login")
+                            .label(t!("ak.claude.title"))
+                            .disabled(!ready)
+                            .on_click(
+                                cx.listener(|_, _, _, cx| cx.emit(SettingsIntent::StartClaude)),
+                            ),
+                    )
+                    .child(
                         Button::new("settings-reload")
                             .label(t!("ak.settings.reload"))
                             .disabled(self.busy)

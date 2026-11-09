@@ -29,3 +29,19 @@ pub fn open_browser_url(url: &str) -> Result<(), oauth_chatgpt::LoginError> {
     }
     opener::open_browser(url).map_err(|_| oauth_chatgpt::LoginError::Browser)
 }
+
+/// Open only the fixed Claude HTTPS authorization origin on a worker.
+pub fn open_claude_url(raw: &str) -> Result<(), oauth_chatgpt::LoginError> {
+    let u = url::Url::parse(raw).map_err(|_| oauth_chatgpt::LoginError::Browser)?;
+    if u.scheme() != "https"
+        || u.host_str() != Some("claude.ai")
+        || u.path() != "/oauth/authorize"
+        || !u.username().is_empty()
+        || u.password().is_some()
+        || u.port().is_some()
+        || u.fragment().is_some()
+    {
+        return Err(oauth_chatgpt::LoginError::Browser);
+    }
+    opener::open_browser(raw).map_err(|_| oauth_chatgpt::LoginError::Browser)
+}

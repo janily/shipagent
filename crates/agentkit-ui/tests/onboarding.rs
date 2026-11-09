@@ -46,7 +46,6 @@ fn welcome_methods_deferral_and_oauth_are_explicit(cx: &mut TestAppContext) {
         );
         w.click("onboarding-start", cx);
         w.render_frame(cx);
-        w.click(("onboarding-method", 4usize), cx);
 
         w.click("onboarding-defer", cx);
         w.click("onboarding-defer", cx);
@@ -174,5 +173,34 @@ fn chatgpt_choice_and_cancel_remain_reachable_while_waiting(cx: &mut TestAppCont
     assert!(matches!(
         events.borrow().last(),
         Some(OnboardingIntent::CancelChatGpt)
+    ));
+}
+
+#[gpui_kit::test]
+fn claude_card_emits_once_and_waits_for_controller(cx: &mut TestAppContext) {
+    let events = Rc::new(RefCell::new(Vec::new()));
+    let (w, _) = cx.update(|cx| {
+        gpui_kit::init(cx);
+        let (w, v) =
+            gpui_kit::open_window(options(), cx, |_, cx| cx.new(OnboardingView::new)).unwrap();
+        let sink = events.clone();
+        cx.subscribe(&v, move |_, e: &OnboardingIntent, _| {
+            sink.borrow_mut().push(e.clone())
+        })
+        .detach();
+        (w, v)
+    });
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("onboarding-start", cx);
+        w.render_frame(cx);
+        w.click(("onboarding-method", 4usize), cx);
+        w.render_frame(cx);
+        w.click(("onboarding-method", 4usize), cx);
+    })
+    .unwrap();
+    assert!(matches!(
+        events.borrow().as_slice(),
+        [OnboardingIntent::Claude]
     ));
 }

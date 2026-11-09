@@ -1,4 +1,6 @@
 //! Native settings and connection editor; all IO is delegated through semantic intents.
+mod claude;
+pub use claude::{ClaudeIntent, ClaudeLoginForm};
 mod connection_rows;
 mod editor;
 mod editor_fields;
@@ -91,6 +93,8 @@ pub enum SettingsIntent {
     Back,
     /// Start a new ChatGPT browser login.
     StartChatGpt,
+    /// Open the Claude code-paste login form.
+    StartClaude,
     /// Cancel this window-owned login.
     CancelChatGpt,
     /// Open the client-owned keymap in the operating system editor.

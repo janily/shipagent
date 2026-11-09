@@ -23,7 +23,7 @@ impl OnboardingView {
                 t!("ak.settings.ollama"),
                 t!("ak.onboard.ollama_hint"),
             ),
-            (None, t!("ak.onboard.claude"), t!("ak.onboard.oauth_later")),
+            (None, t!("ak.onboard.claude"), t!("ak.claude.instructions")),
             (None, t!("ak.onboard.chatgpt"), t!("ak.oauth.waiting")),
         ];
         v_flex()
@@ -48,9 +48,13 @@ impl OnboardingView {
                                     .child(
                                         Button::new(("onboarding-method", i))
                                             .label(label)
-                                            .disabled(self.busy || (kind.is_none() && i != 5))
+                                            .disabled(self.busy)
                                             .on_click(cx.listener(move |this, _, _, cx| {
-                                                if i == 5 {
+                                                if i == 4 {
+                                                    this.busy = true;
+                                                    cx.emit(OnboardingIntent::Claude);
+                                                    cx.notify();
+                                                } else if i == 5 {
                                                     this.busy = true;
                                                     cx.emit(OnboardingIntent::ChatGpt);
                                                     cx.notify();

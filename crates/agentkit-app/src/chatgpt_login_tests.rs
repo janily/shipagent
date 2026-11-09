@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used)]
 use super::login;
-#[path = "../../agentkit-client/tests/support/mod.rs"]
-mod support;
+use crate::controller::oauth_test_support as support;
 use agentkit_client::{Endpoint, api::WorkbenchApi};
 use serde_json::json;
 use smol::io::{AsyncReadExt, AsyncWriteExt};

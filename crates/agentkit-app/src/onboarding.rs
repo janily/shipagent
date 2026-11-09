@@ -30,6 +30,10 @@ impl WorkbenchController {
         let Some(wizard) = self.view.read(cx).onboarding() else {
             return;
         };
+        if matches!(intent, OnboardingIntent::Claude) {
+            self.start_claude(window, cx);
+            return;
+        }
         if matches!(intent, OnboardingIntent::CancelChatGpt) {
             self.oauth_cancel.take();
             return;

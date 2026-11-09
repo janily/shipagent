@@ -154,6 +154,19 @@ impl WorkbenchController {
         }));
     }
     fn close_recovery_editor(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.claude_cancel.is_some() {
+            self.close_claude(window, cx);
+            self.claude_cancel.take();
+            if let Some(w) = self.view.read(cx).onboarding() {
+                w.update(cx, |v, cx| {
+                    v.status(
+                        false,
+                        Some(agentkit_ui::t!("ak.connection_unavailable")),
+                        cx,
+                    )
+                });
+            }
+        }
         if self.oauth_cancel.take().is_some() {
             self.view
                 .read(cx)
