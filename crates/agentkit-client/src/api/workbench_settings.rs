@@ -211,3 +211,54 @@ impl WorkbenchApi {
         self.client.settings().set_keep_awake(enabled).await
     }
 }
+
+impl WorkbenchApi {
+    /// Prepare server-owned PKCE material for a new ChatGPT connection.
+    pub async fn start_chatgpt(
+        &self,
+        slug: &str,
+    ) -> Result<super::super::secrets::ChatGptFlow, RpcError> {
+        self.client.oauth().start_chatgpt(slug).await
+    }
+    /// Exchange the callback code without exposing tokens to the native process.
+    pub async fn complete_chatgpt(
+        &self,
+        args: &super::super::secrets::ChatGptComplete,
+    ) -> Result<(), RpcError> {
+        self.client.oauth().complete_chatgpt(args).await.map(|_| ())
+    }
+    /// Release exactly one owned OAuth flow.
+    pub async fn cancel_chatgpt(
+        &self,
+        args: Option<&super::super::secrets::ChatGptCancel>,
+    ) -> Result<(), RpcError> {
+        self.client.oauth().cancel_chatgpt(args).await.map(|_| ())
+    }
+    /// Remove credentials for a cancelled, newly allocated connection.
+    pub async fn logout_chatgpt(&self, slug: &str) -> Result<(), RpcError> {
+        self.client.oauth().logout_chatgpt(slug).await.map(|_| ())
+    }
+    /// Create the reviewed ChatGPT preset only after token exchange, then verify status.
+    pub async fn finish_chatgpt(&self, slug: &str) -> Result<(), RpcError> {
+        self.client
+            .connections()
+            .setup(&ConnectionSetup {
+                slug: slug.into(),
+                pi_auth_provider: Some("openai-codex".into()),
+                ..Default::default()
+            })
+            .await?;
+        if !self
+            .client
+            .oauth()
+            .chatgpt_status(slug)
+            .await?
+            .authenticated
+        {
+            return Err(super::super::business_error(
+                "ChatGPT authentication not confirmed".into(),
+            ));
+        }
+        Ok(())
+    }
+}

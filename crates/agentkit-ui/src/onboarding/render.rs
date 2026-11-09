@@ -103,6 +103,15 @@ impl Render for OnboardingView {
                     .h_full()
                     .gap_5()
                     .child(header)
+                    .when(self.oauth_pending, |v| {
+                        v.child(
+                            Button::new("onboarding-oauth-cancel")
+                                .label(t!("ak.oauth.cancel"))
+                                .on_click(cx.listener(|_, _, _, cx| {
+                                    cx.emit(OnboardingIntent::CancelChatGpt)
+                                })),
+                        )
+                    })
                     .when_some(self.error.clone(), |v, e| {
                         v.child(
                             div()

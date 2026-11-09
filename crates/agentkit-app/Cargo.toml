@@ -39,4 +39,7 @@ perf = ["gpui-kit/profiler"]
 e2e = ["gpui-kit/profiler", "agentkit-ui/e2e", "agentkit-sidecar/e2e"]
 
 [dev-dependencies]
+async-tungstenite.workspace = true
+futures.workspace = true
+async-net.workspace = true
 gpui-kit = {workspace=true,features=["test-support"]}

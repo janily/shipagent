@@ -34,6 +34,14 @@ impl SettingsView {
                             ),
                     )
                     .child(
+                        Button::new("settings-chatgpt-login")
+                            .label(t!("ak.oauth.chatgpt"))
+                            .disabled(!ready)
+                            .on_click(
+                                cx.listener(|_, _, _, cx| cx.emit(SettingsIntent::StartChatGpt)),
+                            ),
+                    )
+                    .child(
                         Button::new("settings-reload")
                             .label(t!("ak.settings.reload"))
                             .disabled(self.busy)

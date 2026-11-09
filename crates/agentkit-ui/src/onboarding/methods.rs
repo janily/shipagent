@@ -24,7 +24,7 @@ impl OnboardingView {
                 t!("ak.onboard.ollama_hint"),
             ),
             (None, t!("ak.onboard.claude"), t!("ak.onboard.oauth_later")),
-            (None, t!("ak.onboard.chatgpt"), t!("ak.onboard.oauth_later")),
+            (None, t!("ak.onboard.chatgpt"), t!("ak.oauth.waiting")),
         ];
         v_flex()
             .gap_5()
@@ -48,9 +48,13 @@ impl OnboardingView {
                                     .child(
                                         Button::new(("onboarding-method", i))
                                             .label(label)
-                                            .disabled(self.busy || kind.is_none())
+                                            .disabled(self.busy || (kind.is_none() && i != 5))
                                             .on_click(cx.listener(move |this, _, _, cx| {
-                                                if let Some(kind) = kind {
+                                                if i == 5 {
+                                                    this.busy = true;
+                                                    cx.emit(OnboardingIntent::ChatGpt);
+                                                    cx.notify();
+                                                } else if let Some(kind) = kind {
                                                     this.busy = true;
                                                     cx.emit(OnboardingIntent::Choose(kind));
                                                     cx.notify();

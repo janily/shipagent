@@ -46,7 +46,12 @@ impl WorkbenchController {
             .as_ref()
             .is_some_and(|r| r.sidecar.is_some())
     }
-    pub(super) fn settings_operation_current(&self, epoch: u64, transport: u64, cx: &App) -> bool {
+    pub(in crate::controller) fn settings_operation_current(
+        &self,
+        epoch: u64,
+        transport: u64,
+        cx: &App,
+    ) -> bool {
         self.epoch == epoch && self.transport_epoch == transport && self.settings_api(cx).is_some()
     }
     fn proxy_finished(&self, saved: bool, cx: &mut Context<Self>) {

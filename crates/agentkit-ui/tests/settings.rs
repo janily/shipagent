@@ -366,3 +366,31 @@ fn shortcuts_page_shows_effective_keys_and_reports_invalid_files(cx: &mut TestAp
             .any(|e| matches!(e, SettingsIntent::OpenKeymap))
     );
 }
+
+#[gpui_kit::test]
+fn chatgpt_login_disables_duplicate_start_but_keeps_cancel_available(cx: &mut TestAppContext) {
+    let (w, v, events) = open(cx);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("settings-chatgpt-login", cx);
+    })
+    .unwrap();
+    assert!(matches!(
+        events.borrow().as_slice(),
+        [SettingsIntent::StartChatGpt]
+    ));
+    cx.update(|cx| {
+        v.update(cx, |v, cx| {
+            v.oauth_pending(true, cx);
+            v.status(true, None, None, cx);
+        })
+    });
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("settings-chatgpt-login", cx);
+        w.click("settings-oauth-cancel", cx);
+    })
+    .unwrap();
+    assert_eq!(events.borrow().len(), 2);
+    assert!(matches!(events.borrow()[1], SettingsIntent::CancelChatGpt));
+}

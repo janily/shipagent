@@ -154,6 +154,22 @@ impl WorkbenchController {
         }));
     }
     fn close_recovery_editor(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.oauth_cancel.take().is_some() {
+            self.view
+                .read(cx)
+                .settings()
+                .update(cx, |s, cx| s.oauth_pending(false, cx));
+            if let Some(wizard) = self.view.read(cx).onboarding() {
+                wizard.update(cx, |w, cx| {
+                    w.oauth_pending(false, cx);
+                    w.status(
+                        false,
+                        Some(agentkit_ui::t!("ak.connection_unavailable")),
+                        cx,
+                    );
+                });
+            }
+        }
         if let Some(editor) = self.settings_editor.take() {
             editor.update(cx, |e, cx| e.clear_key(window, cx));
             window.close_sheet(cx);

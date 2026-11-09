@@ -11,3 +11,21 @@ pub mod client_caps;
 pub fn open_local_path(path: &std::path::Path) -> Result<(), String> {
     opener::open(path).map_err(|e| e.to_string())
 }
+
+/// Native loopback callback and cancellable ChatGPT browser login.
+pub mod oauth_chatgpt;
+
+/// Launch a previously validated browser authorization URL from a worker.
+pub fn open_browser_url(url: &str) -> Result<(), oauth_chatgpt::LoginError> {
+    let parsed = url::Url::parse(url).map_err(|_| oauth_chatgpt::LoginError::Browser)?;
+    if parsed.scheme() != "https"
+        || parsed.host_str() != Some("auth.openai.com")
+        || parsed.path() != "/oauth/authorize"
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || parsed.port().is_some()
+    {
+        return Err(oauth_chatgpt::LoginError::Browser);
+    }
+    opener::open_browser(url).map_err(|_| oauth_chatgpt::LoginError::Browser)
+}
