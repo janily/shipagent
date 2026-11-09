@@ -353,7 +353,12 @@ impl<'ast> Visit<'ast> for Audit {
                     || p.path.segments.iter().any(|s| {
                         matches!(
                             s.ident.to_string().as_str(),
-                            "Button" | "Sidebar" | "Settings" | "MessageScroller" | "Stepper"
+                            "Button"
+                                | "Switch"
+                                | "Sidebar"
+                                | "Settings"
+                                | "MessageScroller"
+                                | "Stepper"
                         )
                     });
                 let labels = p.path.segments.iter().any(|s| {
@@ -492,6 +497,22 @@ mod tests {
             audit.file(Path::new("ui.rs"), &format!("fn view() {{ {body}; }}"))?;
             assert!(audit.finish().is_err(), "{body}");
         }
+        Ok(())
+    }
+    #[test]
+    fn switch_identity_is_not_copy_but_its_label_is_still_audited() -> Result<()> {
+        let mut audit = Audit::default();
+        audit.file(
+            Path::new("ui.rs"),
+            r#"fn view() { div().child(Switch::new("settings-power").label(t!("ak.power"))); }"#,
+        )?;
+        audit.finish()?;
+        let mut invalid = Audit::default();
+        invalid.file(
+            Path::new("ui.rs"),
+            r#"fn view() { div().child(Switch::new("settings-power").label("Keep awake")); }"#,
+        )?;
+        assert!(invalid.finish().is_err());
         Ok(())
     }
     #[test]

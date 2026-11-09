@@ -13,8 +13,10 @@ mod display;
 mod editor;
 #[path = "settings_submission.rs"]
 mod submission;
+#[path = "settings_system.rs"]
+mod system;
 impl WorkbenchController {
-    fn settings_status(
+    pub(in crate::controller) fn settings_status(
         &self,
         busy: bool,
         error: Option<String>,
@@ -55,10 +57,37 @@ impl WorkbenchController {
             self.keymap_file(matches!(action, SettingsIntent::ReloadKeymap), cx);
             return;
         }
+        match action {
+            SettingsIntent::OpenLogs => {
+                self.recovery_logs(cx);
+                return;
+            }
+            SettingsIntent::ExportDiagnostics => {
+                self.export_recovery(window, cx);
+                return;
+            }
+            SettingsIntent::RestartBackend => {
+                if !self.settings_pending {
+                    self.restart_backend(true, window, cx);
+                }
+                return;
+            }
+            _ => {}
+        }
         if self.settings_pending {
+            if matches!(action, SettingsIntent::Proxy(_)) {
+                self.view
+                    .read(cx)
+                    .settings()
+                    .update(cx, |s, cx| s.proxy_finished(false, cx));
+            }
             return;
         }
         let Some(api) = self.settings_api(cx) else {
+            self.view
+                .read(cx)
+                .settings()
+                .update(cx, |s, cx| s.proxy_finished(false, cx));
             self.settings_status(
                 false,
                 Some(agentkit_ui::t!("ak.connection_unavailable")),
@@ -68,6 +97,10 @@ impl WorkbenchController {
             return;
         };
         match action {
+            SettingsIntent::Proxy(values) => self.confirm_proxy(values, window, cx),
+            SettingsIntent::KeepAwake(_) | SettingsIntent::PermissionMode(_, _) => {
+                self.system_setting(api, action, false, window, cx)
+            }
             SettingsIntent::Edit(id) => self.open_connection_editor(id, window, cx),
             SettingsIntent::Delete(id) => self.confirm_connection_delete(id, window, cx),
             SettingsIntent::Reload
@@ -84,6 +117,13 @@ impl WorkbenchController {
                 self.settings_pending = true;
                 self.settings_status(true, None, None, cx);
                 let epoch = self.epoch;
+                let transport_epoch = self.transport_epoch;
+                let workspace = self
+                    .workspace
+                    .as_ref()
+                    .map(|w| w.id.clone())
+                    .unwrap_or_default();
+                let owned = self.owned_sidecar();
                 self.operations
                     .push(cx.spawn_in(window, async move |weak, cx| {
                         let result: Result<_> = async {
@@ -105,16 +145,26 @@ impl WorkbenchController {
                                 api.connections_generated().await?,
                                 api.model_defaults().await?,
                                 api.connection_providers().await?,
+                                if matches!(action, SettingsIntent::Reload) {
+                                    Some(system::load_backend(&api, &workspace, owned).await?)
+                                } else {
+                                    None
+                                },
                             ))
                         }
                         .await;
-                        let _ = weak.update_in(cx, |this, _, cx| {
-                            if this.epoch != epoch {
+                        let _ = weak.update_in(cx, |this, window, cx| {
+                            if !this.settings_operation_current(epoch, transport_epoch, cx) {
                                 return;
                             }
                             this.settings_pending = false;
                             match result {
-                                Ok((catalog, (thinking, compact), providers)) => {
+                                Ok((catalog, (thinking, compact), providers, backend)) => {
+                                    if let Some(backend) = backend {
+                                        this.view.read(cx).settings().update(cx, |s, cx| {
+                                            s.backend_preferences(backend, window, cx)
+                                        });
+                                    }
                                     this.settings_providers =
                                         providers.into_iter().map(|p| (p.key, p.label)).collect();
                                     this.app_state.update(cx, |a, cx| {
@@ -148,6 +198,9 @@ impl WorkbenchController {
             | SettingsIntent::Local(_)
             | SettingsIntent::OpenKeymap
             | SettingsIntent::ReloadKeymap => {}
+            SettingsIntent::OpenLogs
+            | SettingsIntent::ExportDiagnostics
+            | SettingsIntent::RestartBackend => {}
         }
     }
 }
