@@ -202,6 +202,11 @@ pub(super) const DRAFTS_DELETE: Operation = Operation {
     seconds: 30,
     read_only: false,
 };
+pub(super) const FILES_READ_TEXT: Operation = Operation {
+    channel: c::file::READ,
+    seconds: 30,
+    read_only: true,
+};
 pub(super) const FILES_STORE_ATTACHMENT: Operation = Operation {
     channel: c::file::STORE_ATTACHMENT,
     seconds: 120,
@@ -455,6 +460,7 @@ pub const V1_OPERATIONS: &[Operation] = &[
     DRAFTS_GET,
     DRAFTS_SET,
     DRAFTS_DELETE,
+    FILES_READ_TEXT,
     FILES_STORE_ATTACHMENT,
     FILES_READ_ATTACHMENT,
     FILES_READ_DATA_URL,

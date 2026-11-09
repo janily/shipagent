@@ -1,3 +1,5 @@
+#[path = "workbench_plan.rs"]
+mod plan;
 #[path = "workbench_settings.rs"]
 mod settings;
 #[path = "workbench_sidebar.rs"]

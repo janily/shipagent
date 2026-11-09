@@ -370,5 +370,18 @@
   "ak.claude.exchanging": "正在验证连接…",
   "ak.claude.code_failed": "授权码验证失败。请重新登录并粘贴新的授权码。",
   "ak.claude.busy": "另一个窗口正在登录 Claude，请先完成或取消该登录。",
-  "ak.claude.waiting": "请在浏览器完成登录并粘贴授权码。"
+  "ak.claude.waiting": "请在浏览器完成登录并粘贴授权码。",
+  "ak.plan.title": "计划",
+  "ak.plan.accept": "接受并执行",
+  "ak.plan.compact": "接受并压缩上下文后执行",
+  "ak.plan.accepted": "已接受",
+  "ak.plan.draft_hint": "输入框中的内容将作为补充说明一起发送。",
+  "ak.plan.loading": "正在读取计划…",
+  "ak.plan.read_failed": "计划读取失败，请重试后再接受。",
+  "ak.plan.retry": "重试",
+  "ak.plan.failed": "未能确认计划操作，请检查会话后再操作。",
+  "ak.plan.approved": "计划已批准，请执行。",
+  "ak.plan.additional": "额外的用户上下文",
+  "ak.plan.waiting": "等待上下文压缩完成后执行。压缩失败时可发送 /compact 重试。",
+  "ak.plan.dispatch_wait": "计划已接受，等待执行确认；请勿重复批准。"
 }

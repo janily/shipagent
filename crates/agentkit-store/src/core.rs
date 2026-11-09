@@ -260,3 +260,6 @@ pub mod turns;
 
 /// Formal mutable session caches and summary routing.
 pub mod session;
+
+/// Native pending-plan scheduler and canonical approval policy.
+pub mod plan_dispatch;

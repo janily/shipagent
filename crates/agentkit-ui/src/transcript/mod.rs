@@ -15,6 +15,8 @@ use std::{
     collections::{HashMap, HashSet},
     rc::Rc,
 };
+mod plan;
+pub use plan::PlanCard;
 mod cache;
 use cache::*;
 mod markdown;
@@ -31,6 +33,15 @@ pub use turn::{TurnCard, turn_markdown};
 /// Conversation actions handled by the application, never by RPC in the views.
 #[derive(Clone, Debug)]
 pub enum ChatIntent {
+    /// Load or retry canonical plan file content.
+    LoadPlan(String),
+    /// Accept the named latest plan, optionally after durable compaction.
+    AcceptPlan {
+        /// Canonical plan message identity.
+        message_id: String,
+        /// Persist a pending execution and compact first.
+        compact: bool,
+    },
     /// Open original canonical tool content in a read-only native editor.
     OpenToolContent {
         /// Stable activity/message ID.

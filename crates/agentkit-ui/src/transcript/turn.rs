@@ -12,6 +12,7 @@ pub struct TurnCard {
     scroll: Entity<MessageScrollerState>,
     expanded: Option<bool>,
     tools: HashSet<String>,
+    plans: HashMap<String, (Entity<PlanCard>, Subscription)>,
     outputs: HashMap<String, (Entity<crate::tools::ToolOutputView>, Vec<Subscription>)>,
     collapsed_groups: HashSet<String>,
     refresh_outputs: bool,
@@ -31,6 +32,7 @@ impl TurnCard {
             scroll,
             expanded: None,
             tools: HashSet::new(),
+            plans: HashMap::new(),
             outputs: HashMap::new(),
             collapsed_groups: HashSet::new(),
             refresh_outputs: false,
@@ -83,6 +85,32 @@ impl Render for TurnCard {
         } else if !tool_active {
             self.timer = None;
         }
+        let plan_ids: Vec<_> = self
+            .store
+            .read(cx)
+            .model
+            .turns
+            .get(self.row)
+            .into_iter()
+            .filter_map(|t| {
+                if let Turn::Assistant(t) = t {
+                    Some(t)
+                } else {
+                    None
+                }
+            })
+            .flat_map(|t| t.activities.iter())
+            .filter(|a| a.kind == ActivityType::Plan)
+            .map(|a| a.id.clone())
+            .collect();
+        for id in plan_ids {
+            if !self.plans.contains_key(&id) {
+                let plan = cx.new(|cx| PlanCard::new(self.store.clone(), id.clone(), cx));
+                let subscription =
+                    cx.subscribe(&plan, |_, _, event: &ChatIntent, cx| cx.emit(event.clone()));
+                self.plans.insert(id, (plan, subscription));
+            }
+        }
         let model = &self.store.read(cx).model;
         let Some(Turn::Assistant(turn)) = model.turns.get(self.row) else {
             return div().into_any_element();
@@ -94,7 +122,9 @@ impl Render for TurnCard {
             .iter()
             .filter(|a| turn.response.as_ref().and_then(|r| r.message_id.as_ref()) != Some(&a.id))
             .collect();
-        let collapsible = phase == TurnPhase::Complete && activities.len() > 3;
+        let collapsible = phase == TurnPhase::Complete
+            && activities.len() > 3
+            && !activities.iter().any(|a| a.kind == ActivityType::Plan);
         let open = !collapsible || self.expanded.unwrap_or(false);
         let mut body = v_flex().w_full().gap_3();
         if collapsible {
@@ -141,13 +171,21 @@ impl Render for TurnCard {
         }
         if open {
             body = body.child(activity::render(
-                activities,
+                activities
+                    .into_iter()
+                    .filter(|a| a.kind != ActivityType::Plan)
+                    .collect(),
                 &cache,
                 &self.tools,
                 &self.outputs,
                 &self.collapsed_groups,
                 cx,
             ));
+        }
+        for activity in &turn.activities {
+            if let Some((plan, _)) = self.plans.get(&activity.id) {
+                body = body.child(plan.clone());
+            }
         }
         if matches!(phase, TurnPhase::Pending | TurnPhase::Awaiting) {
             body = body.child(

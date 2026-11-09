@@ -1,0 +1,87 @@
+--- a/packages/server-core/src/sessions/SessionManager.ts
++++ b/packages/server-core/src/sessions/SessionManager.ts
+@@ -429,6 +429,7 @@
+     if (stored) {
+       managed.messages = stored.messages.map(storedToMessage)
+       managed.tokenUsage = stored.tokenUsage
++      managed.pendingPlanExecution = stored.pendingPlanExecution
+     }
+     managed.messagesLoaded = true
+   }
+@@ -1939,6 +1940,7 @@
+   setPendingPlanExecution(sessionId: string, planPath: string, draftInputSnapshot?: string): Promise<void> {
+     const managed = this.sessions.get(sessionId)
+     if (!managed) return Promise.resolve()
++    this.ensureMessagesLoaded(managed)
+     managed.pendingPlanExecution = { planPath, draftInputSnapshot, awaitingCompaction: true, executionDispatched: false }
+     return setStoredPendingPlanExecution(managed.workspace.rootPath, sessionId, planPath, draftInputSnapshot)
+   }
+@@ -1953,6 +1955,7 @@
+ 
+   async markPendingPlanExecutionDispatched(sessionId: string): Promise<boolean> {
+     const managed = this.sessions.get(sessionId)
++    if (managed && !managed.isProcessing) this.ensureMessagesLoaded(managed)
+     if (!managed || managed.isProcessing || !managed.pendingPlanExecution || managed.pendingPlanExecution.awaitingCompaction || managed.pendingPlanExecution.executionDispatched) return false
+     managed.pendingPlanExecution.executionDispatched = true
+     await this.flushSession(sessionId)
+@@ -1962,6 +1965,7 @@
+   async clearPendingPlanExecution(sessionId: string): Promise<void> {
+     const managed = this.sessions.get(sessionId)
+     if (!managed) return
++    this.ensureMessagesLoaded(managed)
+     managed.pendingPlanExecution = undefined
+     await clearStoredPendingPlanExecution(managed.workspace.rootPath, sessionId)
+   }
+--- /dev/null
++++ b/packages/server-core/src/sessions/pending-plan-recovery.test.ts
+@@ -0,0 +1,50 @@
++import { expect, test } from 'bun:test'
++import { mkdtempSync, rmSync } from 'node:fs'
++import { tmpdir } from 'node:os'
++import { join } from 'node:path'
++import { createSession, loadSession, saveSession, listSessions } from '@mkagent/shared/sessions'
++import { SessionManager, createManagedSession } from './SessionManager'
++
++type Managed = ReturnType<typeof createManagedSession>
++type Harness = {
++  sessions: Map<string,Managed>
++  ensureMessagesLoaded(session:Managed):void
++  toStored(session:Managed):NonNullable<ReturnType<typeof loadSession>>
++  flushSession(id:string):Promise<void>
++  markPendingPlanExecutionDispatched(id:string):Promise<boolean>
++}
++async function fixture(root:string, awaiting:boolean, dispatched:boolean) {
++  const config=await createSession(root)
++  const stored=loadSession(root,config.id)!
++  stored.pendingPlanExecution={planPath:join(root,'plan.md'),draftInputSnapshot:'preserved draft',awaitingCompaction:awaiting,executionDispatched:dispatched}
++  await saveSession(stored)
++  const metadata=listSessions(root).find(s=>s.id===config.id)!
++  const managed=createManagedSession(metadata,{id:'w',slug:'w',name:'Test',rootPath:root,createdAt:1})
++  const manager=Object.create(SessionManager.prototype) as Harness
++  manager.sessions=new Map([[managed.id,managed]])
++  manager.flushSession=async()=>{await saveSession(manager.toStored(managed))}
++  return {manager,managed}
++}
++test('cold metadata preserves durable readiness and draft on first read/write; claim is atomic',async()=>{
++  const root=mkdtempSync(join(tmpdir(),'plan-recovery-'))
++  try{
++    const {manager,managed}=await fixture(root,false,false)
++    expect(managed.messagesLoaded).toBe(false)
++    expect(managed.pendingPlanExecution).toBeUndefined()
++    const results=await Promise.all([manager.markPendingPlanExecutionDispatched(managed.id),manager.markPendingPlanExecutionDispatched(managed.id)])
++    expect(results).toEqual([true,false])
++    expect(managed.messagesLoaded).toBe(true)
++    expect(loadSession(root,managed.id)?.pendingPlanExecution).toMatchObject({awaitingCompaction:false,executionDispatched:true,draftInputSnapshot:'preserved draft'})
++    // A normal metadata write after lazy loading must not erase a restored record.
++    const again=createManagedSession(listSessions(root)[0]!,managed.workspace)
++    manager.ensureMessagesLoaded(again)
++    await saveSession(manager.toStored(again))
++    expect(loadSession(root,managed.id)?.pendingPlanExecution?.executionDispatched).toBe(true)
++  }finally{rmSync(root,{recursive:true,force:true})}
++})
++test('restored awaiting, busy and previously claimed plans never grant a second claim',async()=>{
++  for(const [awaiting,dispatched,busy] of [[true,false,false],[false,true,false],[false,false,true]]){
++    const root=mkdtempSync(join(tmpdir(),'plan-recovery-'))
++    try{const {manager,managed}=await fixture(root,awaiting!,dispatched!);managed.isProcessing=busy!;expect(await manager.markPendingPlanExecutionDispatched(managed.id)).toBe(false)}finally{rmSync(root,{recursive:true,force:true})}
++  }
++})

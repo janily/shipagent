@@ -242,6 +242,10 @@ impl SessionModel {
             self.draft_revision = self.draft_revision.wrapping_add(1);
         }
     }
+    /// Capture the current editor revision for plan-approval draft ownership.
+    pub fn draft_revision(&self) -> u64 {
+        self.draft_revision
+    }
     /// Whether an acknowledgement still owns the current draft, including restored queued input.
     pub fn draft_is_current(&self, id: &str) -> bool {
         self.pending.get(id).is_some_and(|p| {

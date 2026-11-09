@@ -252,3 +252,38 @@ fn copied_turn_markdown_does_not_duplicate_a_promoted_intermediate() {
         "Earlier commentary\n\nFinal **Markdown**"
     );
 }
+
+#[gpui_kit::test]
+fn loaded_plan_markdown_remeasures_the_virtual_row(cx: &mut TestAppContext) {
+    let (w, _, store) = open(cx, session(vec![message("plan", "plan", "/plan.md", 1)]));
+    let before = cx
+        .update_window(w, |_, w, cx| {
+            w.render_frame(cx);
+            w.render_frame(cx);
+            w.find(("message", 0usize)).bounds().size.height
+        })
+        .unwrap();
+    cx.update(|cx| {
+        store.update(cx, |s, cx| {
+            s.plan.content.insert(
+                "plan".into(),
+                Ok((0..12)
+                    .map(|i| format!("{}. Verify plan step.\n\n", i + 1))
+                    .collect()),
+            );
+            cx.emit(SessionStoreEvent::TurnsChanged { from_turn: 0 });
+            cx.notify();
+        })
+    });
+    let after = cx
+        .update_window(w, |_, w, cx| {
+            w.render_frame(cx);
+            w.render_frame(cx);
+            w.find(("message", 0usize)).bounds().size.height
+        })
+        .unwrap();
+    assert!(
+        after > before,
+        "loaded Markdown must grow the measured plan row"
+    );
+}

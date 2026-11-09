@@ -38,3 +38,7 @@ required-features = ["samples"]
 [[example]]
 name = "settings"
 required-features = ["samples"]
+
+[[example]]
+name = "plans"
+required-features = ["samples"]

@@ -14,6 +14,11 @@ impl WorkbenchController {
             return;
         };
         match action {
+            ChatIntent::LoadPlan(id) => self.load_plan(id, window, cx),
+            ChatIntent::AcceptPlan {
+                message_id,
+                compact,
+            } => self.accept_plan(message_id, compact, window, cx),
             ChatIntent::OpenToolContent {
                 activity_id,
                 content,

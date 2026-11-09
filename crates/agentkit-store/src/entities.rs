@@ -5,6 +5,9 @@ pub mod annotations;
 /// Ephemeral native approval leases and acknowledged annotations.
 #[path = "entities_permissions.rs"]
 pub mod permissions;
+/// Native plan presentation state.
+#[path = "entities_plans.rs"]
+pub mod plans;
 use crate::core::{
     reducer::{Context as ReductionContext, Effect},
     session::{SessionModel, SessionStoreEvent, SessionSummaries},
@@ -104,6 +107,8 @@ impl SessionListStore {
 }
 /// Per-open-session entity. Views read the canonical cache and subscribe to typed changes.
 pub struct SessionStore {
+    /// Plan file cache and current acceptance operation.
+    pub plan: plans::PlanState,
     /// Pure mutable session cache.
     pub model: SessionModel,
     /// Controller-owned session configuration RPC in flight; survives cached view switches.
@@ -122,6 +127,7 @@ impl SessionStore {
         annotations.rebuild(&model.turns);
         Self {
             model,
+            plan: Default::default(),
             annotations,
             selection_pending: false,
             approval: Default::default(),
