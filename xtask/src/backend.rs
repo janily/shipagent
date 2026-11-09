@@ -200,14 +200,17 @@ pub fn build(with_contract: bool) -> Result<()> {
             .current_dir(&source),
     )?;
     // Full upstream validation is opt-in locally and mandatory in the Linux contract job.
+    // rust-cache recursively prunes non-Cargo files under target. Keep Python and
+    // uv state in this build-owned scratch directory so a restored partial install
+    // cannot be mistaken for a valid interpreter. Scratch removes it on all exits.
     if std::env::var("AGENTKIT_VALIDATE_UPSTREAM").as_deref() == Ok("1") {
         checked(
             Command::new(&bun)
                 .args(["run", "validate:ci"])
                 .env("PATH", &build_path)
                 .env("CONFIG_DIR", scratch.0.join("validation-config"))
-                .env("UV_CACHE_DIR", target.join("upstream-uv-cache"))
-                .env("UV_PYTHON_INSTALL_DIR", target.join("upstream-python"))
+                .env("UV_CACHE_DIR", scratch.0.join("validation-uv-cache"))
+                .env("UV_PYTHON_INSTALL_DIR", scratch.0.join("validation-python"))
                 .current_dir(&source),
         )?;
     }

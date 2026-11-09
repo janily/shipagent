@@ -20,6 +20,8 @@ PKCE 与 token 交换仍归后端；原生端不读取 token，不记录授权 U
 
 本地沿用 T-2-02 工具缓存和固定后端构建。官方 ripgrep 下载的本地 403/504 替代方式见 [上一轮报告](verification-extended-settings-2026-11-08.md)；本轮没有更改锁定版本、下载配置或补丁。三平台 CI 验证正式下载路径，最终以 PR 最新 head 为准。
 
+Linux 首轮 CI 在上游文档工具验证报告 Python 缺少 `_sysconfigdata_`。核查 rust-cache 的递归清理实现与 xtask 路径后，发现验证解释器/uv 缓存位于会被裁剪的 target 目录；改为每次构建独占的 scratch 子目录，随构建清理，避免恢复残缺安装。没有跳过上游验证或改变 Python 需求；后续当前 head CI 重新验证。
+
 ## 原生截图
 
 Linux Xvfb/lavapipe 实际运行 Kit SettingsView 示例，以明确的 OAuth 等待态展示夹具捕获；不含账号或凭据，也不代表真人登录完成。已检查亮暗布局与取消入口：
