@@ -394,3 +394,55 @@ fn chatgpt_login_disables_duplicate_start_but_keeps_cancel_available(cx: &mut Te
     assert_eq!(events.borrow().len(), 2);
     assert!(matches!(events.borrow()[1], SettingsIntent::CancelChatGpt));
 }
+
+#[gpui_kit::test]
+fn claude_settings_login_emits_the_shared_flow(cx: &mut TestAppContext) {
+    let (w, _, events) = open(cx);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("settings-claude-login", cx);
+    })
+    .unwrap();
+    assert!(matches!(
+        events.borrow().as_slice(),
+        [SettingsIntent::StartClaude]
+    ));
+}
+#[gpui_kit::test]
+fn claude_code_form_requires_browser_ready_and_submits_once(cx: &mut TestAppContext) {
+    use agentkit_ui::settings::{ClaudeIntent, ClaudeLoginForm};
+    use secrecy::ExposeSecret;
+    let events = Rc::new(RefCell::new(Vec::new()));
+    let (w, v) = cx.update(|cx| {
+        gpui_kit::init(cx);
+        let (w, v) = gpui_kit::open_window(options(), cx, |w, cx| {
+            cx.new(|cx| ClaudeLoginForm::new(w, cx))
+        })
+        .unwrap();
+        let sink = events.clone();
+        cx.subscribe(&v, move |_, e: &ClaudeIntent, _| {
+            sink.borrow_mut().push(e.clone())
+        })
+        .detach();
+        (w, v)
+    });
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("claude-submit", cx);
+        v.update(cx, |v, cx| v.ready(w, cx));
+        w.render_frame(cx);
+        w.click("claude-submit", cx);
+        w.click("claude-code", cx);
+        w.input("  fixture-code  ", cx);
+        w.click("claude-submit", cx);
+        w.render_frame(cx);
+        w.click("claude-submit", cx);
+        w.click("claude-cancel", cx);
+    })
+    .unwrap();
+    assert_eq!(events.borrow().len(), 2);
+    assert!(
+        matches!(&events.borrow()[0],ClaudeIntent::Submit(code) if code.expose_secret()=="fixture-code")
+    );
+    assert!(matches!(events.borrow()[1], ClaudeIntent::Cancel));
+}

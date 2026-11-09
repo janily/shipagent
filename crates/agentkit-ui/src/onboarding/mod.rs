@@ -15,6 +15,8 @@ pub enum OnboardingIntent {
     Back,
     /// Start a ChatGPT Plus browser login.
     ChatGpt,
+    /// Start Claude Pro/Max with a native code form.
+    Claude,
     /// Cancel the active browser login.
     CancelChatGpt,
     /// Persist the user's request to configure later.

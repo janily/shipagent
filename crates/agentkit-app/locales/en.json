@@ -243,7 +243,6 @@
   "ak.onboard.ollama_hint": "No API key. Run models on this computer.",
   "ak.onboard.claude": "Claude Pro/Max",
   "ak.onboard.chatgpt": "ChatGPT Plus",
-  "ak.onboard.oauth_later": "Subscription login is coming later. API key connections are available now.",
   "ak.onboard.ready": "Your model connection is saved and selected as default.",
   "ak.onboard.first_chat": "Start your first conversation",
   "ak.onboard.local": "Connections, credentials and conversations stay on this computer.",
@@ -363,5 +362,13 @@
   "ak.oauth.timeout": "Sign-in timed out. Please start again.",
   "ak.oauth.denied": "Browser authorization was denied. Please try again.",
   "ak.oauth.browser_failed": "Unable to open a secure sign-in page. Check your default browser and retry.",
-  "ak.oauth.failed": "Sign-in could not be confirmed. Reload connections and try again."
+  "ak.oauth.failed": "Sign-in could not be confirmed. Reload connections and try again.",
+  "ak.claude.title": "Connect Claude Pro/Max",
+  "ak.claude.instructions": "Finish login in your browser, then paste the authorization code here. Valid for ten minutes.",
+  "ak.claude.code": "Authorization code",
+  "ak.claude.submit": "Connect",
+  "ak.claude.exchanging": "Verifying connection…",
+  "ak.claude.code_failed": "The authorization code could not be verified. Start a new login and paste a fresh code.",
+  "ak.claude.busy": "Another window is signing in to Claude. Finish or cancel that login first.",
+  "ak.claude.waiting": "Complete browser login and paste the authorization code."
 }

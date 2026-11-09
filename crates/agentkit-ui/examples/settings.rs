@@ -3,7 +3,7 @@ use agentkit_protocol::generated::PermissionMode;
 use agentkit_store::entities::AppState;
 use agentkit_ui::settings::{BackendPreferences, ProxyValues, SettingsView};
 use gpui_kit::{
-    component::{Theme, ThemeMode, TitleBar},
+    component::{Theme, ThemeMode, TitleBar, WindowExt},
     *,
 };
 
@@ -29,6 +29,13 @@ fn main() {
                 view
             })
         });
+        if let Ok((handle,_))=&result && std::env::var_os("AGENTKIT_SETTINGS_SAMPLE_CLAUDE").is_some() {
+            let _=handle.update(cx,|_,window,cx|{
+                let form=cx.new(|cx|agentkit_ui::settings::ClaudeLoginForm::new(window,cx));
+                form.update(cx,|v,cx|v.ready(window,cx));
+                window.open_sheet_at(gpui_kit::component::Placement::Right,cx,move |sheet,_,_|sheet.size(px(480.)).title(agentkit_ui::t!("ak.claude.title")).child(form.clone()));
+            });
+        }
         if result.is_err() { cx.quit(); }
         cx.activate(true);
     });

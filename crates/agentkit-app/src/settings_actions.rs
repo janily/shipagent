@@ -41,6 +41,10 @@ impl WorkbenchController {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if matches!(action, SettingsIntent::StartClaude) {
+            self.start_claude(window, cx);
+            return;
+        }
         if matches!(action, SettingsIntent::CancelChatGpt) {
             self.oauth_cancel.take();
             return;
@@ -51,6 +55,7 @@ impl WorkbenchController {
         }
         if let SettingsIntent::Back = action {
             self.oauth_cancel.take();
+            self.close_claude(window, cx);
             window.close_sheet(cx);
             self.view.update(cx, |v, cx| v.close_settings(window, cx));
             return;
@@ -203,7 +208,9 @@ impl WorkbenchController {
                         });
                     }));
             }
-            SettingsIntent::StartChatGpt | SettingsIntent::CancelChatGpt => {}
+            SettingsIntent::StartChatGpt
+            | SettingsIntent::StartClaude
+            | SettingsIntent::CancelChatGpt => {}
             SettingsIntent::Back
             | SettingsIntent::Local(_)
             | SettingsIntent::OpenKeymap

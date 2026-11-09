@@ -178,6 +178,9 @@ jobs:
       - run: cargo test -p agentkit-sidecar --test navigation --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
+      - run: cargo test -p agentkit-sidecar --test claude_oauth --locked -- --ignored
+        env:
+          AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}
       - run: cargo test -p agentkit-sidecar --test chatgpt_oauth --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ matrix.backend }}

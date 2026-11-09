@@ -262,3 +262,46 @@ impl WorkbenchApi {
         Ok(())
     }
 }
+
+impl WorkbenchApi {
+    /// Prepare the backend's singleton Claude PKCE session.
+    pub async fn start_claude(&self) -> Result<super::super::secrets::ClaudeStart, RpcError> {
+        self.client.oauth().start_claude().await
+    }
+    /// Exchange one pasted code; token remains redacted and is consumed by setup.
+    pub async fn finish_claude(
+        &self,
+        slug: &str,
+        code: &secrecy::SecretString,
+    ) -> Result<(), RpcError> {
+        let exchanged = self.client.oauth().exchange_claude(code, slug).await?;
+        let token = exchanged
+            .token
+            .filter(|t| !secrecy::ExposeSecret::expose_secret(t).is_empty())
+            .ok_or_else(|| {
+                super::super::business_error("Claude authentication not confirmed".into())
+            })?;
+        self.client
+            .connections()
+            .setup(&ConnectionSetup {
+                slug: slug.into(),
+                credential: Some(token),
+                oauth_identity: exchanged.identity,
+                ..Default::default()
+            })
+            .await?;
+        self.client.connections().test(slug).await?;
+        Ok(())
+    }
+    /// Clear the singleton session while the app still owns its exclusive login lease.
+    pub async fn clear_claude(&self) -> Result<(), RpcError> {
+        self.client.oauth().clear_claude_state().await.map(|_| ())
+    }
+    /// Best-effort cleanup of a uniquely allocated, failed Claude connection.
+    pub async fn discard_claude(&self, slug: &str) {
+        let _ = self.client.connections().delete(slug).await;
+        // v0.2.6's chatgpt:logout handler deletes all LLM credentials for the
+        // supplied slug, including Claude credentials saved before setup failed.
+        let _ = self.client.oauth().logout_chatgpt(slug).await;
+    }
+}

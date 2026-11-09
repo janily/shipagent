@@ -4,6 +4,8 @@ mod approval_notifications;
 mod chat_actions;
 #[path = "chatgpt_oauth.rs"]
 mod chatgpt_oauth;
+#[path = "claude_oauth.rs"]
+mod claude_oauth;
 #[path = "composer_actions.rs"]
 mod composer_actions;
 #[cfg(feature = "e2e")]
@@ -115,7 +117,7 @@ impl Running {
         }
     }
 }
-struct SharedAppState(Entity<AppState>);
+struct SharedAppState(Entity<AppState>, std::sync::Arc<smol::lock::Mutex<()>>);
 impl Global for SharedAppState {}
 struct ContextEvents {
     unread: async_channel::Receiver<
@@ -386,6 +388,10 @@ pub(crate) struct WorkbenchController {
     onboarding_saved: Option<(String, f64)>,
     settings_pending: bool,
     oauth_cancel: Option<async_channel::Sender<()>>,
+    claude_cancel: Option<async_channel::Sender<()>>,
+    claude_code: Option<async_channel::Sender<secrecy::SecretString>>,
+    claude_form: Option<Entity<agentkit_ui::settings::ClaudeLoginForm>>,
+    claude_subscription: Option<Subscription>,
     settings_providers: Vec<(String, String)>,
     settings_editor: Option<Entity<agentkit_ui::settings::ConnectionEditor>>,
     settings_editor_subscription: Option<Subscription>,
@@ -421,7 +427,7 @@ impl WorkbenchController {
             shared.0.clone()
         } else {
             let entity = cx.new(|_| AppState::default());
-            cx.set_global(SharedAppState(entity.clone()));
+            cx.set_global(SharedAppState(entity.clone(), Default::default()));
             entity
         };
         let (recording_sender, recording_worker) =
@@ -493,6 +499,10 @@ impl WorkbenchController {
             onboarding_saved: None,
             settings_pending: false,
             oauth_cancel: None,
+            claude_cancel: None,
+            claude_code: None,
+            claude_form: None,
+            claude_subscription: None,
             settings_providers: Vec::new(),
             settings_editor: None,
             settings_editor_subscription: None,
@@ -571,6 +581,8 @@ impl WorkbenchController {
             return;
         }
         self.oauth_cancel.take();
+        self.close_claude(window, cx);
+        self.claude_cancel.take();
         self.recovery = Default::default();
         self.set_phase(agentkit_ui::recovery::Phase::Starting, cx);
         self.save_draft(cx);
@@ -1843,3 +1855,8 @@ fn backend_log_dir(_brand: &Brand, config: &std::path::Path) -> PathBuf {
     }
     config.join("logs")
 }
+
+#[cfg(test)]
+#[path = "../../agentkit-client/tests/support/mod.rs"]
+#[allow(clippy::unwrap_used)]
+mod oauth_test_support;

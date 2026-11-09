@@ -191,6 +191,24 @@ fn recovery_contract_child(cx: &mut TestAppContext) {
         window.click("onboarding-welcome", cx);
         window.render_frame(cx);
         assert!(window.try_find("onboarding-start").is_some());
+        controller.update(cx, |this, cx| {
+            let (tx, rx) = async_channel::bounded(1);
+            this.claude_cancel = Some(tx);
+            let wizard = this.view.read(cx).onboarding().unwrap();
+            wizard.update(cx, |v, cx| {
+                v.methods(cx);
+                v.status(true, None, cx);
+            });
+            this.close_claude(window, cx);
+            assert!(rx.is_closed());
+            assert!(this.claude_cancel.is_some());
+            this.close_recovery_editor(window, cx);
+            assert!(this.claude_cancel.is_none());
+        });
+        window.render_frame(cx);
+        window.click("onboarding-welcome", cx);
+        window.render_frame(cx);
+        assert!(window.try_find("onboarding-start").is_some());
     })
     .unwrap();
     quitting.set(true);

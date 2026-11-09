@@ -243,7 +243,6 @@
   "ak.onboard.ollama_hint": "无需密钥，模型在本机运行。",
   "ak.onboard.claude": "Claude Pro/Max",
   "ak.onboard.chatgpt": "ChatGPT Plus",
-  "ak.onboard.oauth_later": "订阅登录将在后续版本开放；当前可用 API Key 连接。",
   "ak.onboard.ready": "模型连接已保存并设为默认。",
   "ak.onboard.first_chat": "开始第一个会话",
   "ak.onboard.local": "连接、密钥和会话均保存在这台电脑上。",
@@ -363,5 +362,13 @@
   "ak.oauth.timeout": "登录已超时，请重新开始。",
   "ak.oauth.denied": "浏览器授权未获批准，请重试。",
   "ak.oauth.browser_failed": "无法打开安全的登录页面，请检查默认浏览器后重试。",
-  "ak.oauth.failed": "无法确认登录完成，请重新读取连接列表并重试。"
+  "ak.oauth.failed": "无法确认登录完成，请重新读取连接列表并重试。",
+  "ak.claude.title": "连接 Claude Pro/Max",
+  "ak.claude.instructions": "在浏览器完成登录后，将授权码粘贴到这里。十分钟内有效。",
+  "ak.claude.code": "授权码",
+  "ak.claude.submit": "连接",
+  "ak.claude.exchanging": "正在验证连接…",
+  "ak.claude.code_failed": "授权码验证失败。请重新登录并粘贴新的授权码。",
+  "ak.claude.busy": "另一个窗口正在登录 Claude，请先完成或取消该登录。",
+  "ak.claude.waiting": "请在浏览器完成登录并粘贴授权码。"
 }
