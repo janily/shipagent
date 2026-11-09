@@ -173,6 +173,26 @@ fn recovery_contract_child(cx: &mut TestAppContext) {
         assert!(window.try_find("connection-banner").is_none());
     })
     .unwrap();
+    // A disconnected OAuth owner must release the wizard, not leave disabled choices.
+    cx.update_window(w, |_, window, cx| {
+        controller.update(cx, |this, cx| {
+            let (tx, rx) = async_channel::bounded(1);
+            this.oauth_cancel = Some(tx);
+            this.view.update(cx, |v, cx| v.show_onboarding(cx));
+            let wizard = this.view.read(cx).onboarding().unwrap();
+            wizard.update(cx, |v, cx| {
+                v.methods(cx);
+                v.oauth_pending(true, cx);
+            });
+            this.close_recovery_editor(window, cx);
+            assert!(rx.is_closed());
+        });
+        window.render_frame(cx);
+        window.click("onboarding-welcome", cx);
+        window.render_frame(cx);
+        assert!(window.try_find("onboarding-start").is_some());
+    })
+    .unwrap();
     quitting.set(true);
     let running = runtime.borrow_mut().take().unwrap();
     smol::block_on(running.shutdown());

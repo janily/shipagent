@@ -352,5 +352,16 @@
   "ak.settings.power_scope": "本页保存通知和防休眠偏好；当前版本尚未提供完整系统通知与防休眠集成。",
   "ak.settings.diagnostic_privacy": "导出版本、平台与连接状态，不包含日志、会话正文、代理或密钥。",
   "ak.settings.execute_confirm": "此工作区的新会话将允许 Agent 无需确认写入文件和执行命令。确认设为默认执行模式？",
-  "ak.settings.update_failed": "设置未能完成保存和读回确认。请重新读取设置后重试。"
+  "ak.settings.update_failed": "设置未能完成保存和读回确认。请重新读取设置后重试。",
+  "ak.oauth.chatgpt": "连接 ChatGPT Plus",
+  "ak.oauth.cancel": "取消登录",
+  "ak.oauth.waiting": "请在浏览器完成登录；五分钟内有效，可随时取消。",
+  "ak.oauth.callback": "登录响应已收到，可以关闭此页并返回应用。",
+  "ak.oauth.connected": "已连接 ChatGPT Plus",
+  "ak.oauth.occupied": "登录端口 1455 被其他程序占用，请关闭该程序的登录流程后重试。",
+  "ak.oauth.cancelled": "登录已取消，可以重新开始。",
+  "ak.oauth.timeout": "登录已超时，请重新开始。",
+  "ak.oauth.denied": "浏览器授权未获批准，请重试。",
+  "ak.oauth.browser_failed": "无法打开安全的登录页面，请检查默认浏览器后重试。",
+  "ak.oauth.failed": "无法确认登录完成，请重新读取连接列表并重试。"
 }

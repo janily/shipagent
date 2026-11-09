@@ -24,6 +24,7 @@ fn main() {
                 let mut view = SettingsView::new(cx);
                 view.bind(app,cx);
                 view.backend_preferences(BackendPreferences { proxy: ProxyValues { enabled:true,http_proxy:"http://127.0.0.1:8080".into(),..Default::default() }, keep_awake:true, workspace_id:"visual-fixture".into(), permission_mode:PermissionMode::Safe,permission_policy:"{\n  \"version\": \"1\",\n  \"allowedBashPatterns\": [\"git status\"],\n  \"blockedTools\": []\n}".into(),restart_available:true },window,cx);
+                if std::env::var_os("AGENTKIT_SETTINGS_SAMPLE_OAUTH").is_some(){view.oauth_pending(true,cx);view.status(true,None,Some(agentkit_ui::t!("ak.oauth.waiting")),cx);}
                 view.preview_page(page,cx);
                 view
             })

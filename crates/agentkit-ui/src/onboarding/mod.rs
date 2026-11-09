@@ -13,6 +13,10 @@ pub enum OnboardingIntent {
     Choose(ConnectionKind),
     /// Return from the credential form, dropping its secrets.
     Back,
+    /// Start a ChatGPT Plus browser login.
+    ChatGpt,
+    /// Cancel the active browser login.
+    CancelChatGpt,
     /// Persist the user's request to configure later.
     Defer,
     /// Enter the first conversation after saving and selecting a default.
@@ -22,17 +26,26 @@ pub enum OnboardingIntent {
 pub struct OnboardingView {
     step: usize,
     busy: bool,
+    oauth_pending: bool,
     editor: Option<Entity<ConnectionEditor>>,
     error: Option<String>,
     focus: FocusHandle,
 }
 impl EventEmitter<OnboardingIntent> for OnboardingView {}
 impl OnboardingView {
+    /// Reflect window-owned browser login, with an always reachable cancel action.
+    pub fn oauth_pending(&mut self, value: bool, cx: &mut Context<Self>) {
+        self.oauth_pending = value;
+        self.busy = value;
+        cx.notify();
+    }
+
     /// Start at welcome without fetching credentials or configuration.
     pub fn new(cx: &mut Context<Self>) -> Self {
         Self {
             step: 0,
             busy: false,
+            oauth_pending: false,
             editor: None,
             error: None,
             focus: cx.focus_handle(),

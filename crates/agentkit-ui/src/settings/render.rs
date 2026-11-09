@@ -41,6 +41,15 @@ impl Render for SettingsView {
                             .on_click(cx.listener(|_, _, _, cx| cx.emit(SettingsIntent::Reload))),
                     ),
             )
+            .when(self.oauth_pending, |v| {
+                v.child(
+                    Button::new("settings-oauth-cancel")
+                        .label(t!("ak.oauth.cancel"))
+                        .on_click(
+                            cx.listener(|_, _, _, cx| cx.emit(SettingsIntent::CancelChatGpt)),
+                        ),
+                )
+            })
             .when_some(self.error.clone(), |v, error| {
                 v.child(
                     div()

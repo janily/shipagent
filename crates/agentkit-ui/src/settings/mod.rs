@@ -89,6 +89,10 @@ pub enum LocalChange {
 pub enum SettingsIntent {
     /// Return to the conversation.
     Back,
+    /// Start a new ChatGPT browser login.
+    StartChatGpt,
+    /// Cancel this window-owned login.
+    CancelChatGpt,
     /// Open the client-owned keymap in the operating system editor.
     OpenKeymap,
     /// Reload client key bindings.
@@ -134,6 +138,7 @@ pub struct SettingsView {
     locale_generation: usize,
     app: Option<Entity<AppState>>,
     busy: bool,
+    oauth_pending: bool,
     loaded: bool,
     thinking: g::ThinkingLevel,
     compact: Option<u32>,
@@ -146,6 +151,12 @@ pub struct SettingsView {
 }
 impl EventEmitter<SettingsIntent> for SettingsView {}
 impl SettingsView {
+    /// Set the cancellable browser-login state.
+    pub fn oauth_pending(&mut self, value: bool, cx: &mut Context<Self>) {
+        self.oauth_pending = value;
+        cx.notify();
+    }
+
     /// Select a page for the standalone native verification sample.
     #[cfg(feature = "samples")]
     pub fn preview_page(&mut self, index: usize, cx: &mut Context<Self>) {
@@ -164,6 +175,7 @@ impl SettingsView {
             locale_generation: 0,
             app: None,
             busy: false,
+            oauth_pending: false,
             loaded: false,
             thinking: g::ThinkingLevel::Medium,
             compact: None,
@@ -211,6 +223,7 @@ impl SettingsView {
     }
     /// Invalidate server controls when a transport generation is replaced.
     pub fn reset(&mut self, cx: &mut Context<Self>) {
+        self.oauth_pending = false;
         self.loaded = false;
         self.backend = None;
         self.proxy_form = None;

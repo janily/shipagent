@@ -2,6 +2,8 @@
 mod approval_notifications;
 #[path = "chat_actions.rs"]
 mod chat_actions;
+#[path = "chatgpt_oauth.rs"]
+mod chatgpt_oauth;
 #[path = "composer_actions.rs"]
 mod composer_actions;
 #[cfg(feature = "e2e")]
@@ -383,6 +385,7 @@ pub(crate) struct WorkbenchController {
     navigation_pending: bool,
     onboarding_saved: Option<(String, f64)>,
     settings_pending: bool,
+    oauth_cancel: Option<async_channel::Sender<()>>,
     settings_providers: Vec<(String, String)>,
     settings_editor: Option<Entity<agentkit_ui::settings::ConnectionEditor>>,
     settings_editor_subscription: Option<Subscription>,
@@ -489,6 +492,7 @@ impl WorkbenchController {
             navigation_pending: false,
             onboarding_saved: None,
             settings_pending: false,
+            oauth_cancel: None,
             settings_providers: Vec::new(),
             settings_editor: None,
             settings_editor_subscription: None,
@@ -566,6 +570,7 @@ impl WorkbenchController {
         {
             return;
         }
+        self.oauth_cancel.take();
         self.recovery = Default::default();
         self.set_phase(agentkit_ui::recovery::Phase::Starting, cx);
         self.save_draft(cx);
