@@ -431,3 +431,20 @@ fn workspace_refresh_waits_for_send_ack_even_after_canonical_echo_replaces_pendi
     model.finish_send("u", true);
     assert!(!model.has_pending_send());
 }
+
+#[test]
+fn plan_snapshot_version_distinguishes_fresh_edits_even_when_text_returns_to_original() {
+    let mut model = SessionModel::new(snapshot());
+    model.set_draft("plan review context".into());
+    let original = model.draft.text.clone();
+    let captured = model.draft_revision();
+    // An unchanged editor still belongs to its acceptance snapshot.
+    model.set_draft(original.clone());
+    assert_eq!(model.draft_revision(), captured);
+    // Editing away and back creates a new draft with identical text; an old ACK
+    // may not consume it just because the final string happens to match again.
+    model.set_draft("new follow-up".into());
+    model.set_draft(original.clone());
+    assert_eq!(model.draft.text, original);
+    assert_ne!(model.draft_revision(), captured);
+}

@@ -24,13 +24,15 @@ P-06 在既有消息懒加载处恢复字段，prepare/claim/clear 在改状态�
 
 ## 本地验证
 
-- 核心 284 项通过，包含 3 项新纯策略/单飞测试；entities 模式另验证延迟旧读取不能影响重连后读取。类型化 facade 80 项操作的精确位置参数与返回类型全部覆盖，5 项 facade 测试通过。
+- 核心 285 项通过，包含 3 项新纯策略/单飞测试及草稿改走又改回的快照版本回归；entities 模式另验证延迟旧读取不能影响重连后读取。类型化 facade 80 项操作的精确位置参数与返回类型全部覆盖，5 项 facade 测试通过。
 - 应用 42 项通过，6 项资源测试默认忽略。模拟真实 WebSocket 验证 12 个顺序场景：持久等待/已认领/忙、不赢认领/旧 void 结果、发送拒绝、safe→allow-all ACK、直接批准、持久准备后 `/compact`、准备失败不发送、陈旧计划拒绝、clear 失败；send/clear 错误合并唤醒后不再请求。
 - 显式真实后端 `persisted_plan_compacts_and_resumes_after_backend_restart` 通过：实际 SubmitPlan 与受限文件读取；短会话拒绝压缩时不派发；增加超过 SDK 保留窗口的真实会话历史后，手动压缩成功、pending ready；正常退出并启动全新后端，保留草稿快照，两次合并唤醒只发送一次批准消息，随后 clear 且再次唤醒不重复。该测试已加入三平台 native-check；使用明确的本地模型，不访问外部提供商。
 - 重建完整后端及 contract bundle 成功，25 项相关 Bun 测试通过；真实控制器 recovery 契约通过。原生计划动作/历史只读/读取失败回归与已有 transcript 测试通过，另覆盖加载后虚拟行高度增长。
 - fmt、全 workspace/all-targets/all-features clippy、389 个双语键与 35 根 codegen 检查通过；规格/规范两项独立审查及 P-06 增量审查通过。最终三平台、完整 E2E 与工程包状态见 PR 当前 head。
 
 本地第一次后端重建因 8GB overlay 磁盘不足失败；迁移可再生 Rust 缓存后重跑成功。沿用上轮工具缓存，本地官方 ripgrep 下载限制与源码缓存来源见 [T-2-02](verification-extended-settings-2026-11-08.md)；锁定版本、正式下载和 CI 路径不变。完整上游 validate:ci 仍由 Linux contract CI 强制执行。
+
+首轮 CI 的 session 100% 行覆盖门禁指出新 draft_revision 接口未由纯核心测试执行；补充相同文本但不同编辑版本的回归，保持门禁不变，后续以 PR 当前 head 的覆盖结果为准。
 
 ## 原生视觉记录
 
