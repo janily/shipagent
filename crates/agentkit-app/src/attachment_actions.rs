@@ -92,6 +92,8 @@ impl WorkbenchController {
         self.save_draft(cx);
         let id = store.read(cx).model.state.session.id.clone();
         let revision = store.read(cx).model.draft_revision();
+        let epoch = self.epoch;
+        let transport = self.transport_epoch;
         let files = store.read(cx).attachments.files.clone();
         let mut previous = store.read(cx).model.draft_attachments.clone();
         store.update(cx, |s, cx| {
@@ -107,12 +109,20 @@ impl WorkbenchController {
                     .spawn(async move { store_batch(&upload, &session, &files).await })
                     .await;
                 let valid = weak
-                    .update_in(cx, |this, _, cx| {
+                    .update_in(cx, |this, window, cx| {
                         if this
                             .stores
                             .get(&id)
                             .is_none_or(|s| s.entity_id() != store.entity_id())
                         {
+                            return false;
+                        }
+                        if !this.settings_operation_current(epoch, transport, cx) {
+                            store.update(cx, |s, cx| {
+                                s.attachments.sending = false;
+                                cx.notify();
+                            });
+                            this.finish_attachment_view(&store, &text, false, window, cx);
                             return false;
                         }
                         store.update(cx, |s, cx| {
@@ -191,16 +201,18 @@ impl WorkbenchController {
                     }
                     let accepted = result.as_ref().is_ok_and(|a| a.accepted)
                         || store.read(cx).model.send_confirmed(&pending.id);
+                    let current = this.settings_operation_current(epoch, transport, cx);
                     let clear_text = accepted
+                        && current
                         && store.read(cx).model.draft_revision() == revision
                         && store.read(cx).model.draft.text == text;
                     store.update(cx, |s, cx| {
                         s.model.finish_send(&pending.id, accepted);
-                        s.attachments.acknowledged(&batch.ids, accepted);
+                        s.attachments.acknowledged(&batch.ids, accepted && current);
                         if clear_text {
                             s.model.set_draft(String::new());
                         }
-                        if accepted {
+                        if accepted && current {
                             let remaining = s
                                 .model
                                 .draft_attachments

@@ -8,7 +8,7 @@
 
 普通文件读取前后校验；50 MiB 本地上限、有界 read 防增长文件；Unix 非阻塞打开防 FIFO/替换竞态挂起。图片解码限制内存/尺寸，生成最长边 ≤256 px PNG 缩略图，损坏或不支持图片逐项提示。Kit Attachment 预览与单项移除；上传准备、转换复制和 JSON 编码/发送全在后台。读取中禁止发送，附件非空允许空文本发送。
 
-逐个 storeAttachment，失败项显示本地 warning 并保留；成功项带服务器 storedPath/markdownPath、mimeType、resizedBase64 发送。全失败无文本不发空消息；ACK 仅消费成功 ID，文本按捕获 revision 清理。瞬态缩放字节不进入长期 StoredAttachment 展示状态。同进程切换、后端恢复缓存重建保留附件，跨应用重启自动持久草稿归 T-2-08。
+逐个 storeAttachment，失败项显示本地 warning 并保留；成功项带服务器 storedPath/markdownPath、mimeType、resizedBase64 发送。全失败无文本不发空消息；ACK 仅在捕获连接代际仍有效时消费成功 ID，文本按捕获 revision 清理；旧结果只结束自己的乐观标记，不清理恢复后的草稿。瞬态缩放字节不进入长期 StoredAttachment 展示状态。同进程切换、后端恢复缓存重建保留附件，跨应用重启自动持久草稿归 T-2-08。
 
 ## 本地证据
 
@@ -34,3 +34,5 @@ Linux Xvfb/lavapipe 实际渲染 `examples/attachments`，完整原生 Workbench
 **F-26 完整 50 MB 容量尚未通过。** 固定 Bun `maxMessageBytes=16 MiB`，单文件 base64 或多文件聚合可能超限。50 MiB 是本地读取上限，不承诺所有 ≤50 MB 均可发送；超限报错、保留草稿，不扩大协商限制或静默删载荷。完整容量需要另外设计上传协议/后端能力，逐项警告不能替代容量验收。
 
 下一项 T-2-07 @ 提及、/ Skill；T-2-08 草稿持久化。阶段0/P0、实体 IME/辅助功能、参考机性能、Developer ID/公证仍开放。
+
+首轮 CI i18n 发现示例模型名称被源代码扫描识别为界面文案；移入明确的样例 JSON 后按同一门禁验证。

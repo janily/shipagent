@@ -65,7 +65,11 @@ fn main() {
                 });
                 cx.new(|cx| {
                     let mut v = WorkbenchView::new("Workbench".into(), window, cx);
-                    v.connected("Default".into(), Some("Claude Sonnet".into()), cx);
+                    v.connected(
+                        "Default".into(),
+                        seed["model"].as_str().map(str::to_owned),
+                        cx,
+                    );
                     v.bind_session(store, window, cx);
                     v
                 })
