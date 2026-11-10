@@ -59,11 +59,9 @@ impl WorkbenchView {
                                 .label(text.clone())
                                 .disabled(!self.ready)
                                 .on_click(cx.listener(move |this, _, window, cx| {
+                                    let skills = this.mention_skills(cx);
                                     this.composer
-                                        .read(cx)
-                                        .input()
-                                        .clone()
-                                        .update(cx, |s, cx| s.set_value(text.clone(), window, cx));
+                                        .update(cx, |c, cx| c.set_text(&text, &skills, window, cx));
                                     this.command_focus(false, false, window, cx);
                                 }))
                         }),
@@ -120,7 +118,11 @@ impl WorkbenchView {
                             .state
                             .as_ref()
                             .is_some_and(|s| s.read(cx).plan.pending.is_some()),
-                    loading: self.loading,
+                    loading: self.loading
+                        || self.draft_closing
+                        || self.state.as_ref().is_some_and(|s| {
+                            s.read(cx).draft_sync.loading || s.read(cx).draft_sync.closing
+                        }),
                     choices,
                     model: effective_model,
                     connection: selected_connection,
@@ -140,6 +142,10 @@ impl WorkbenchView {
             .on_drop(cx.listener(|this, paths: &ExternalPaths, _, cx| {
                 if this.ready
                     && !this.loading
+                    && !this.draft_closing
+                    && this.state.as_ref().is_some_and(|s| {
+                        !s.read(cx).draft_sync.loading && !s.read(cx).draft_sync.closing
+                    })
                     && let Some(s) = &this.state
                 {
                     cx.emit(WorkbenchIntent::Attach {

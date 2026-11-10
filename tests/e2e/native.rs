@@ -751,7 +751,7 @@ pub(super) fn install(
                     let path=p.config.root.join(format!("{}.json",p.config.case));
                     this.operations.push(cx.spawn_in(window,async move|weak,cx|{
                         let _=smol::unblock(move||->std::io::Result<()>{let f=fs::OpenOptions::new().write(true).create_new(true).open(path)?;serde_json::to_writer_pretty(f,&report).map_err(std::io::Error::other)}).await;
-                        let _=weak.update_in(cx,|this,_,cx|crate::orderly_quit(&this.runtime,&this.startup,&this.quitting,&this.preferences,cx));
+                        let _=weak.update_in(cx,|_,window,cx|window.defer(cx,|_,cx|cx.dispatch_action(&crate::actions::ConfirmedQuit)));
                     }));true
                 }else{this.e2e=Some(p);window.refresh();false}
             }).unwrap_or(true);

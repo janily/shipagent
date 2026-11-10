@@ -28,6 +28,8 @@ pub enum AttachmentInput {
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Retry a failed draft load, attachment restoration or save.
+    RetryDraft(String),
     /// Refresh the cached project Skill catalog for the active session directory.
     LoadMentionSkills(String),
     /// Search files through the session-bound controller.
@@ -147,6 +149,7 @@ pub struct WorkbenchView {
     pub(crate) status_key: &'static str,
     pub(crate) ready: bool,
     pub(crate) loading: bool,
+    pub(crate) draft_closing: bool,
     pub(crate) error: Option<String>,
     pub(crate) state: Option<Entity<SessionStore>>,
     pub(crate) sessions: Option<Entity<SessionListStore>>,
@@ -251,6 +254,7 @@ impl WorkbenchView {
             status_key: "ak.starting",
             ready: false,
             loading: false,
+            draft_closing: false,
             error: None,
             state: None,
             sessions: None,
@@ -511,6 +515,34 @@ impl WorkbenchView {
                 )
             })
             .unwrap_or_default()
+    }
+    /// Freeze native text input synchronously during the ordinary quit drain.
+    pub fn draft_closing(&mut self, closing: bool, cx: &mut Context<Self>) {
+        self.draft_closing = closing;
+        self.composer
+            .read(cx)
+            .input()
+            .clone()
+            .update(cx, |input, cx| input.set_disabled(closing, cx));
+        cx.notify();
+    }
+    /// Apply an already version-checked hydrated draft only to its owning session.
+    pub fn apply_draft(
+        &mut self,
+        id: &str,
+        text: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self
+            .state
+            .as_ref()
+            .is_some_and(|s| s.read(cx).model.state.session.id == id)
+        {
+            let skills = self.mention_skills(cx);
+            self.composer
+                .update(cx, |c, cx| c.set_text(text, &skills, window, cx));
+        }
     }
     /// Restore text without overwriting newer user input.
     pub fn restore_draft(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {

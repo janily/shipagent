@@ -1,5 +1,6 @@
 //! Session-scoped native input. Emits intent packets; owns no backend handles.
 mod attachments;
+mod draft_status;
 mod keyboard;
 mod mention_menu;
 mod mentions;

@@ -467,3 +467,27 @@ fn optimistic_mentions_update_cached_turns_without_touching_canonical_messages()
     m.annotate_pending("u", None);
     assert!(m.state.session.messages[0].badges.is_some());
 }
+
+#[test]
+fn failing_old_send_does_not_resurrect_explicitly_cleared_draft() {
+    let mut model = SessionModel::new(snapshot());
+    model.set_draft("submitted".into());
+    model
+        .begin_send("submitted".into(), vec![], &ctx("old"))
+        .unwrap();
+    model.set_draft(String::new());
+    model.finish_send("old", false);
+    assert_eq!(model.draft.text, "");
+}
+#[test]
+fn successful_send_advances_draft_edit_generation_for_persistence() {
+    let mut model = SessionModel::new(snapshot());
+    model.set_draft("submitted".into());
+    let revision = model.draft_revision();
+    model
+        .begin_send("submitted".into(), vec![], &ctx("old"))
+        .unwrap();
+    model.finish_send("old", true);
+    assert!(model.draft_revision() > revision);
+    assert_eq!(model.draft.text, "");
+}

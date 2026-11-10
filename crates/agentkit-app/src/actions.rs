@@ -46,6 +46,8 @@ gpui_kit::actions!(
         CloseWindow,
         /// Exit only after explicit confirmation when sessions are running.
         ConfirmedQuit,
+        /// Quit after explicitly discarding unsaved draft changes.
+        DiscardDraftsAndQuit,
         /// Increase body text within the supported range.
         ZoomIn,
         /// Decrease body text within the supported range.

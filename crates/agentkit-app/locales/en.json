@@ -398,5 +398,19 @@
   "ak.mention.commands": "Commands",
   "ak.mention.compact": "Compact conversation context",
   "ak.mention.empty": "No matches",
-  "ak.mention.failed": "Search failed: %{error}. Edit the query to retry."
+  "ak.mention.failed": "Search failed: %{error}. Edit the query to retry.",
+  "ak.draft.loading": "Restoring draft…",
+  "ak.draft.saving": "Saving draft…",
+  "ak.draft.failed": "Draft sync failed: %{error}",
+  "ak.draft.attachments_unavailable": "Some attachments could not be restored. Retry or remove them before sending.",
+  "ak.draft.content_too_large": "Clipboard attachment exceeds the 20 MiB draft limit.",
+  "ak.draft.missing_content": "Draft attachment content is missing.",
+  "ak.draft.invalid_content": "Draft attachment content is invalid.",
+  "ak.draft.worker_stopped": "Draft worker stopped.",
+  "ak.draft.unsaved": "Some drafts could not be saved.",
+  "ak.draft.quit_title": "Drafts have not been saved",
+  "ak.draft.quit_warning": "Saving failed. Stay to retry, or quit and discard the unsaved changes.",
+  "ak.draft.quit_discard": "Quit without saving",
+  "ak.draft.closing": "Saving drafts before closing…",
+  "ak.draft.retry": "Retry"
 }

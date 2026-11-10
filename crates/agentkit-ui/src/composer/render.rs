@@ -41,7 +41,13 @@ impl Render for Composer {
             .as_ref()
             .is_some_and(|s| !s.read(cx).model.permissions.is_empty());
         let enabled = self.enabled();
-        let placeholder = if !self.ready {
+        let placeholder = if self
+            .store
+            .as_ref()
+            .is_some_and(|s| s.read(cx).draft_sync.closing)
+        {
+            t!("ak.draft.closing")
+        } else if !self.ready {
             t!("ak.compose.disconnected")
         } else if self.loading {
             t!("ak.loading")
@@ -114,6 +120,13 @@ impl Render for Composer {
             }))
             .child(self.mention_popover(cx))
             .child(self.attachment_row(cx))
+            .when(
+                self.store.as_ref().is_some_and(|s| {
+                    let d = &s.read(cx).draft_sync;
+                    d.loading || d.saving || d.error.is_some() || !d.unavailable.is_empty()
+                }),
+                |v| v.child(self.draft_status(cx)),
+            )
             .child(
                 div()
                     .id("composer")

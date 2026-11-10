@@ -9,9 +9,13 @@ impl Composer {
         })
     }
     pub(super) fn attachments_busy(&self, cx: &App) -> bool {
-        self.store
-            .as_ref()
-            .is_some_and(|s| s.read(cx).attachments.sending || s.read(cx).attachments.reading > 0)
+        self.store.as_ref().is_some_and(|s| {
+            s.read(cx).attachments.sending
+                || s.read(cx).attachments.reading > 0
+                || s.read(cx).draft_sync.loading
+                || s.read(cx).draft_sync.closing
+                || !s.read(cx).draft_sync.unavailable.is_empty()
+        })
     }
     pub(super) fn pick(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if !self.selectable() {
@@ -133,6 +137,25 @@ impl Composer {
                                 id: id.clone(),
                             })
                         })),
+                );
+            }
+            for pending in &s.draft_sync.unavailable {
+                let id = format!("draft-ref:{}", pending.id);
+                let session_id = s.model.state.session.id.clone();
+                row = row.child(
+                    div()
+                        .id(SharedString::from(format!("draft-ref-row:{}", pending.id)))
+                        .test_support()
+                        .child(
+                            crate::attachment::card(pending.reference.name.clone(), None)
+                                .id(SharedString::from(id.clone()))
+                                .on_remove(cx.listener(move |_, _, _, cx| {
+                                    cx.emit(WorkbenchIntent::RemoveAttachment {
+                                        session_id: session_id.clone(),
+                                        id: id.clone(),
+                                    })
+                                })),
+                        ),
                 );
             }
             if s.attachments.reading > 0 {

@@ -192,6 +192,9 @@ impl WorkbenchController {
                         cx.notify();
                         clear
                     });
+                    if result.is_ok() {
+                        this.persist_draft(&store, true, cx);
+                    }
                     if this
                         .state
                         .as_ref()

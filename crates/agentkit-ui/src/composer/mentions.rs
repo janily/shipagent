@@ -30,6 +30,12 @@ impl Composer {
             input.set_value(content, window, cx);
             input.set_selected_range(text.len()..text.len(), cx);
         });
+        if let Some(store) = &self.store {
+            cx.emit(WorkbenchIntent::DraftChanged {
+                session_id: store.read(cx).model.state.session.id.clone(),
+                text: text.to_owned(),
+            });
+        }
     }
     pub(super) fn dismiss_mentions(&mut self, cx: &mut Context<Self>) {
         self.mention_dismissed = self.mention_query.clone();

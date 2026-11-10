@@ -206,8 +206,8 @@ impl SessionModel {
             self.authoritative_processing = true;
         }
         if accepted && clear_draft {
-            self.draft.text.clear();
-            self.draft_attachments.clear();
+            self.set_draft(String::new());
+            self.set_draft_attachments(Vec::new());
         }
         if !accepted {
             // An accepted user_message may race a lost acknowledgement: never remove canonical work.
@@ -222,10 +222,14 @@ impl SessionModel {
                 if self.pending.is_empty() {
                     self.state.session.is_processing = self.authoritative_processing;
                 }
-                if pending.owns_draft && self.draft.text.is_empty() {
+                if pending.owns_draft
+                    && pending.draft_revision == self.draft_revision
+                    && self.draft.text.is_empty()
+                {
                     self.draft.text = pending.text.clone();
                 }
                 if pending.owns_draft
+                    && pending.draft_revision == self.draft_revision
                     && self.draft.text == pending.text
                     && self.draft_attachments.is_empty()
                 {

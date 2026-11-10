@@ -134,7 +134,7 @@ impl WorkbenchController {
                                 state.update(cx,|s,cx|{s.refresh_snapshot(snapshot.session,cx);s.apply_batch(&replay,cx);});state
                             }else{
                                 let mut model=SessionStore::new(snapshot.session);
-                                if let Some((draft,attachments,mut files))=this.drafts.remove(&id){model.model.draft=draft;model.model.draft_attachments=attachments;files.reading=0;files.sending=false;model.attachments=files;}
+                                if let Some(draft)=this.drafts.remove(&id){draft.restore(&mut model);}
                                 let state=cx.new(|_|model);state.update(cx,|s,cx|{s.apply_batch(&replay,cx);});state
                             };
                             this.stores.insert(id.clone(),state.clone());
@@ -142,7 +142,7 @@ impl WorkbenchController {
                             if let Some(runtime) = this.runtime.borrow_mut().as_mut() {
                                 runtime.session_id = Some(id);
                             }
-                            this.remember_session(cx);
+                            this.remember_session(window,cx);
                             this.view.update(cx, |v, cx| {
                                 v.workspace_changed(workspace.name, cx);
                                 v.bind_session(state, window, cx);

@@ -845,3 +845,180 @@ fn mention_popover_is_visible_and_mouse_selection_keeps_editor_focus(cx: &mut Te
     });
     assert!(sent(&e).is_empty());
 }
+
+#[gpui_kit::test]
+fn hydrated_draft_is_session_scoped_and_programmatic_text_emits_change(cx: &mut TestAppContext) {
+    let (w, v, _, events) = open(cx);
+    step(cx, w, |window, cx| {
+        v.update(cx, |v, cx| {
+            v.apply_draft("other", "wrong draft", window, cx)
+        });
+        assert_eq!(v.read(cx).current_draft(cx).unwrap().1, "");
+        v.update(cx, |v, cx| {
+            v.apply_draft("s", "😀 [file:src/main.rs]", window, cx)
+        });
+        let input = v.read(cx).composer_input(cx);
+        assert_eq!(input.read(cx).tokens().len(), 1);
+    });
+    cx.run_until_parked();
+    assert!(events.borrow().iter().any(|e|matches!(e,WorkbenchIntent::DraftChanged{session_id,text} if session_id=="s" && text=="😀 [file:src/main.rs]")));
+}
+#[gpui_kit::test]
+fn missing_draft_reference_blocks_send_and_retry_keeps_owning_session(cx: &mut TestAppContext) {
+    let (w, v, s, events) = open(cx);
+    step(cx, w, |window, cx| {
+        s.update(cx, |s, cx| {
+            s.draft_sync
+                .unavailable
+                .push(agentkit_store::core::drafts::Unavailable {
+                    id: "missing".into(),
+                    reference: std::sync::Arc::new(
+                        serde_json::from_value(
+                            serde_json::json!({"path":"/missing.txt","name":"missing.txt"}),
+                        )
+                        .unwrap(),
+                    ),
+                });
+            cx.notify();
+        });
+        v.update(cx, |v, cx| v.apply_draft("s", "keep text", window, cx));
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.press("enter", cx);
+        window.click("send", cx);
+        window.click("retry-draft", cx);
+    });
+    cx.run_until_parked();
+    assert!(sent(&events).is_empty());
+    assert!(
+        events
+            .borrow()
+            .iter()
+            .any(|e| matches!(e,WorkbenchIntent::RetryDraft(id) if id=="s"))
+    );
+    step(cx, w, |window, cx| {
+        window.hover("draft-ref-row:missing", cx);
+        window.render_frame(cx);
+        window.click(
+            (
+                gpui_kit::ElementId::from(gpui_kit::SharedString::from("draft-ref:missing")),
+                "remove",
+            ),
+            cx,
+        );
+    });
+    assert!(events.borrow().iter().any(|e|matches!(e,WorkbenchIntent::RemoveAttachment{session_id,id} if session_id=="s" && id=="draft-ref:missing")));
+}
+#[gpui_kit::test]
+fn draft_loading_and_save_failure_are_visible_without_losing_text(cx: &mut TestAppContext) {
+    let (w, v, s, events) = open(cx);
+    step(cx, w, |window, cx| {
+        v.update(cx, |v, cx| v.apply_draft("s", "kept", window, cx));
+        s.update(cx, |s, cx| {
+            s.draft_sync.loading = true;
+            cx.notify();
+        });
+        window.render_frame(cx);
+        assert!(window.try_find("draft-status").is_some());
+        window.click("send", cx);
+        s.update(cx, |s, cx| {
+            s.draft_sync.loading = false;
+            s.draft_sync.error = Some("fixture save error".into());
+            cx.notify();
+        });
+        window.render_frame(cx);
+        window.click("retry-draft", cx);
+        assert_eq!(v.read(cx).current_draft(cx).unwrap().1, "kept");
+    });
+    assert!(sent(&events).is_empty());
+    assert!(
+        events
+            .borrow()
+            .iter()
+            .any(|e| matches!(e,WorkbenchIntent::RetryDraft(id) if id=="s"))
+    );
+}
+
+#[gpui_kit::test]
+fn hydration_and_closing_gate_file_drop_and_quit_freezes_native_input(cx: &mut TestAppContext) {
+    let (w, v, s, events) = open(cx);
+    step(cx, w, |window, cx| {
+        v.update(cx, |v, cx| v.apply_draft("s", "last edit", window, cx));
+        s.update(cx, |s, cx| {
+            s.draft_sync.loading = true;
+            cx.notify();
+        });
+        window.render_frame(cx);
+        let position = window.find("composer").bounds().center();
+        window.dispatch_event(
+            gpui_kit::PlatformInput::FileDrop(gpui_kit::FileDropEvent::Entered {
+                position,
+                paths: gpui_kit::ExternalPaths(vec!["/during-hydration.txt".into()].into()),
+            }),
+            cx,
+        );
+        window.render_frame(cx);
+        window.dispatch_event(
+            gpui_kit::PlatformInput::FileDrop(gpui_kit::FileDropEvent::Submit { position }),
+            cx,
+        );
+        s.update(cx, |s, cx| {
+            s.draft_sync.loading = false;
+            s.draft_sync.closing = true;
+            cx.notify();
+        });
+        v.update(cx, |v, cx| v.draft_closing(true, cx));
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input(" lost", cx);
+        window.click("send", cx);
+        assert_eq!(v.read(cx).current_draft(cx).unwrap().1, "last edit");
+        s.update(cx, |s, cx| {
+            s.draft_sync.closing = false;
+            cx.notify();
+        });
+        v.update(cx, |v, cx| v.draft_closing(false, cx));
+        window.render_frame(cx);
+    });
+    cx.run_until_parked();
+    assert!(!events.borrow().iter().any(|e| matches!(
+        e,
+        WorkbenchIntent::Attach { .. } | WorkbenchIntent::Submit(_)
+    )));
+}
+
+#[gpui_kit::test]
+fn quit_freeze_survives_late_session_binding(cx: &mut TestAppContext) {
+    let (w, v, s, events) = open(cx);
+    step(cx, w, |window, cx| {
+        v.update(cx, |v, cx| v.draft_closing(true, cx));
+        let mut session = s.read(cx).model.state.session.clone();
+        session.id = "late-navigation".into();
+        let next = cx.new(|_| {
+            let mut s = SessionStore::new(session);
+            s.model.set_draft("restored late draft".into());
+            s
+        });
+        v.update(cx, |v, cx| v.bind_session(next, window, cx));
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input(" dropped edit", cx);
+        window.click("send", cx);
+        assert_eq!(
+            v.read(cx).current_draft(cx).unwrap().1,
+            "restored late draft"
+        );
+        v.update(cx, |v, cx| v.draft_closing(false, cx));
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input(" retained edit", cx);
+        assert!(
+            v.read(cx)
+                .current_draft(cx)
+                .unwrap()
+                .1
+                .contains("retained edit")
+        );
+    });
+    assert!(sent(&events).is_empty());
+}

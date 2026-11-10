@@ -182,3 +182,5 @@ node tools/menus/smoke.mjs target/debug/workbench target/backend/linux-x64 targe
 ## macOS nightly 工程包与签名入口
 
 `cargo xtask package --target macos-arm64 --sign ad-hoc --probe` 在原生 macOS 构建工程 DMG；Intel 宿主用 macos-x64。定时/手动/相关 PR 的工程流水线覆盖两架构，详细命令、可信 ref、临时 keychain、Secrets 名称与未验证范围见 [打包说明](../tools/package/README.md)。当前无 Developer ID 凭据，只保留工程包；T-0-09 的正式公证、干净机和发布门槛仍开放。
+
+T-2-08 草稿验证见 [报告](verification-drafts-2026-11-10.md)。真实后端契约：`AGENTKIT_BACKEND_DIR=target/backend/linux-x64 cargo test -p agentkit-app --lib draft_contract_parent --locked -- --ignored`（macOS/Windows 使用对应工程包目录）；原生恢复夹具：`cargo run -p agentkit-ui --features samples --example drafts`，`AGENTKIT_DRAFT_DARK=1` 切换深色。
