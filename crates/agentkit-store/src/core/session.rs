@@ -184,6 +184,19 @@ impl SessionModel {
         self.regroup(self.turns.len().saturating_sub(1));
         Some(pending)
     }
+    /// Attach captured metadata only to a pending user message, then refresh turn projections.
+    pub fn annotate_pending(&mut self, id: &str, badges: Option<Vec<g::MessageBadgesItem>>) {
+        if let Some(message) = self
+            .state
+            .session
+            .messages
+            .iter_mut()
+            .find(|m| m.id == id && m.is_pending == Some(true))
+        {
+            message.badges = badges;
+            self.regroup(self.turns.len().saturating_sub(1));
+        }
+    }
     /// Commit acknowledgement or roll back a still-pending optimistic message.
     pub fn finish_send(&mut self, id: &str, accepted: bool) -> Option<PendingSend> {
         let clear_draft = self.draft_is_current(id);

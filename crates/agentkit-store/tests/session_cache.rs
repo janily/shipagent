@@ -448,3 +448,22 @@ fn plan_snapshot_version_distinguishes_fresh_edits_even_when_text_returns_to_ori
     assert_eq!(model.draft.text, original);
     assert_ne!(model.draft_revision(), captured);
 }
+
+#[test]
+fn optimistic_mentions_update_cached_turns_without_touching_canonical_messages() {
+    use agentkit_store::core::mentions::{message_badges, metadata};
+    let mut m = SessionModel::new(snapshot());
+    let badges = message_badges(&metadata("[file:src/main.rs]", &[]));
+    m.annotate_pending("missing", badges.clone());
+    m.begin_send("[file:src/main.rs]".into(), vec![], &ctx("u"))
+        .unwrap();
+    m.annotate_pending("u", badges.clone());
+    assert_eq!(
+        m.state.session.messages[0].badges.as_ref().unwrap()[0].label,
+        "main.rs"
+    );
+    equal_turns(&m);
+    m.state.session.messages[0].is_pending = None;
+    m.annotate_pending("u", None);
+    assert!(m.state.session.messages[0].badges.is_some());
+}

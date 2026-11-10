@@ -6,12 +6,27 @@ use gpui_kit::component::{
     tag::Tag,
 };
 pub(super) fn render(message: g::Message, parent: WeakEntity<ChatView>) -> impl IntoElement {
-    let mut body = v_flex().gap_2().child(message.content.clone());
+    let mut content = h_flex().flex_wrap().gap_1();
+    let mut offset = 0;
+    for badge in message.badges.iter().flatten() {
+        if let Some(range) =
+            agentkit_store::core::mentions::byte_range(&message.content, badge.start, badge.end)
+            && range.start >= offset
+            && range.end > range.start
+        {
+            if range.start > offset {
+                content = content.child(message.content[offset..range.start].to_owned());
+            }
+            content = content.child(Tag::new().child(badge.label.clone()));
+            offset = range.end;
+        }
+    }
+    if offset < message.content.len() {
+        content = content.child(message.content[offset..].to_owned());
+    }
+    let mut body = v_flex().gap_2().child(content);
     if message.is_queued == Some(true) {
         body = body.child(Tag::new().child(t!("ak.chat.queued")));
-    }
-    for badge in message.badges.iter().flatten() {
-        body = body.child(Tag::new().child(badge.label.clone()));
     }
     for attachment in message.attachments.iter().flatten() {
         body = body.child(crate::attachment::card(

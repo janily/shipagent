@@ -391,5 +391,12 @@
   "ak.attach.picker_failed": "File picker unavailable. Retry or drop files here",
   "ak.attach.reading": "Reading attachments…",
   "ak.attach.sending": "Storing and sending attachments…",
-  "ak.attach.too_large": "Each attachment must be at most 50 MB"
+  "ak.attach.too_large": "Each attachment must be at most 50 MB",
+  "ak.mention.files": "Files",
+  "ak.mention.folders": "Folders",
+  "ak.mention.skills": "Skills",
+  "ak.mention.commands": "Commands",
+  "ak.mention.compact": "Compact conversation context",
+  "ak.mention.empty": "No matches",
+  "ak.mention.failed": "Search failed: %{error}. Edit the query to retry."
 }

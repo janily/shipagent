@@ -7,8 +7,8 @@ use agentkit_ui::{
     composer::{SendKey, model_choices},
 };
 use gpui_kit::{
-    AnyWindowHandle, AppContext, Bounds, ElementInputHandler, Entity, Point, TestAppContext,
-    WindowBounds, WindowOptions, px, size,
+    AnyWindowHandle, AppContext, Bounds, ElementInputHandler, Entity, EntityInputHandler,
+    Focusable, Point, TestAppContext, WindowBounds, WindowOptions, px, size,
     test::{TestInput, TestWindowExt},
 };
 use std::{cell::RefCell, rc::Rc};
@@ -506,4 +506,342 @@ fn image_clipboard_and_whole_chat_file_drop_emit_import_intents(cx: &mut TestApp
     });
     cx.run_until_parked();
     assert!(e.borrow().iter().any(|e|matches!(e,WorkbenchIntent::Attach{session_id,inputs}if session_id=="s" && matches!(&inputs[0],agentkit_ui::AttachmentInput::Path(path)if path==std::path::Path::new("/drop.txt")))));
+}
+
+#[gpui_kit::test]
+fn slash_menu_uses_cached_skill_and_atomic_token_with_undo(cx: &mut TestAppContext) {
+    let (w, v, _, e) = open(cx);
+    step(cx, w, |window, cx| {
+        let app = cx.new(|_| AppState {
+            connections: vec![connection("valid", true)],
+            ..Default::default()
+        });
+        let workspace=cx.new(|_|WorkspaceStore{workspace:Some(serde_json::from_value(serde_json::json!({"id":"w","name":"W","slug":"my workspace","rootPath":"/tmp/w","createdAt":0})).unwrap()),skills:vec![serde_json::from_value(serde_json::json!({"slug":"review-code","path":"/tmp/skill","content":"instructions","source":"workspace","metadata":{"name":"Review","description":"Review changes"}})).unwrap()],..Default::default()});
+        v.update(cx, |v, cx| v.bind_context(app, workspace, cx));
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input("/rev", cx);
+        window.render_frame(cx);
+        window.press("tab", cx);
+    });
+    cx.run_until_parked();
+    step(cx, w, |window, cx| {
+        let input = v.read(cx).composer_input(cx);
+        assert_eq!(input.read(cx).value(), "[skill:my workspace:review-code]");
+        assert_eq!(input.read(cx).tokens().len(), 1);
+        assert!(input.read(cx).focus_handle(cx).is_focused(window));
+        window.press("backspace", cx);
+        assert_eq!(input.read(cx).value(), "");
+        window.press(
+            if cfg!(target_os = "macos") {
+                "cmd-z"
+            } else {
+                "ctrl-z"
+            },
+            cx,
+        );
+    });
+    cx.run_until_parked();
+    step(cx, w, |window, cx| {
+        let input = v.read(cx).composer_input(cx);
+        assert_eq!(input.read(cx).value(), "[skill:my workspace:review-code]");
+        assert_eq!(input.read(cx).tokens().len(), 1);
+        window.press("enter", cx);
+    });
+    assert_eq!(sent(&e), ["[skill:my workspace:review-code]"]);
+}
+#[gpui_kit::test]
+fn file_search_is_debounced_and_stale_results_cannot_replace_current_query(
+    cx: &mut TestAppContext,
+) {
+    let (w, v, _, e) = open(cx);
+    step(cx, w, |window, cx| {
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input("@old", cx);
+    });
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(160));
+    cx.run_until_parked();
+    let (request, query) = e
+        .borrow()
+        .iter()
+        .rev()
+        .find_map(|e| {
+            if let WorkbenchIntent::SearchMentions { request, query, .. } = e {
+                Some((*request, query.clone()))
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    step(cx, w, |window, cx| {
+        window.input("er", cx);
+        v.update(cx,|v,cx|v.mention_results("s",request,&query,Ok(vec![serde_json::from_value(serde_json::json!({"name":"wrong","path":"/tmp/wrong","relativePath":"wrong","type":"file"})).unwrap()]),window,cx));
+        window.press("enter", cx);
+    });
+    assert!(sent(&e).is_empty());
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(160));
+    cx.run_until_parked();
+    let request = e
+        .borrow()
+        .iter()
+        .rev()
+        .find_map(|e| {
+            if let WorkbenchIntent::SearchMentions { request, query, .. } = e {
+                assert_eq!(query, "older");
+                Some(*request)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    step(cx, w, |window, cx| {
+        v.update(cx,|v,cx|v.mention_results("s",request,"older",Ok(vec![serde_json::from_value(serde_json::json!({"name":"你好.rs","path":"/tmp/你好.rs","relativePath":"src/你好.rs","type":"file"})).unwrap()]),window,cx));
+        window.render_frame(cx);
+        window.press("enter", cx);
+    });
+    cx.run_until_parked();
+    step(cx, w, |_, cx| {
+        let input = v.read(cx).composer_input(cx);
+        assert_eq!(input.read(cx).value(), "[file:src/你好.rs]");
+        assert_eq!(input.read(cx).tokens().len(), 1);
+    });
+    assert!(sent(&e).is_empty());
+}
+#[gpui_kit::test]
+fn escape_closes_menu_without_cancelling_and_ime_never_confirms(cx: &mut TestAppContext) {
+    let (w, v, s, e) = open(cx);
+    step(cx, w, |window, cx| {
+        s.update(cx, |s, cx| {
+            s.model.state.session.is_processing = true;
+            cx.notify();
+        });
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input("/", cx);
+        window.render_frame(cx);
+        let input = v.read(cx).composer_input(cx);
+        input.update(cx, |input, cx| {
+            input.replace_and_mark_text_in_range(None, "compact", None, window, cx)
+        });
+        window.press("enter", cx);
+        assert!(input.read(cx).tokens().is_empty());
+        input.update(cx, |input, cx| input.unmark_text(window, cx));
+        window.input("x", cx);
+        window.press("escape", cx);
+    });
+    assert!(sent(&e).is_empty());
+    assert!(
+        !e.borrow()
+            .iter()
+            .any(|e| matches!(e, WorkbenchIntent::Cancel))
+    );
+}
+
+#[gpui_kit::test]
+fn compact_selection_submits_next_enter_and_escape_allows_literal_slash(cx: &mut TestAppContext) {
+    let (w, v, _, e) = open(cx);
+    step(cx, w, |window, cx| {
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input("/comp", cx);
+        window.press("enter", cx);
+    });
+    cx.run_until_parked();
+    step(cx, w, |window, cx| {
+        assert_eq!(v.read(cx).composer_input(cx).read(cx).tokens().len(), 1);
+        window.press("enter", cx);
+    });
+    assert_eq!(sent(&e), ["/compact"]);
+    step(cx, w, |window, cx| {
+        v.update(cx, |v, cx| {
+            v.submission_finished("/compact", true, window, cx)
+        });
+        window.input("/unknown", cx);
+        window.press("escape", cx);
+        window.press("enter", cx);
+    });
+    assert_eq!(sent(&e), ["/compact", "/unknown"]);
+}
+#[gpui_kit::test]
+fn mention_retry_renews_request_and_switching_sessions_invalidates_search(cx: &mut TestAppContext) {
+    let (w, v, _, e) = open(cx);
+    step(cx, w, |window, cx| {
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input("@src", cx);
+    });
+    cx.run_until_parked();
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(160));
+    cx.run_until_parked();
+    let request = e
+        .borrow()
+        .iter()
+        .rev()
+        .find_map(|e| {
+            if let WorkbenchIntent::SearchMentions { request, .. } = e {
+                Some(*request)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    step(cx, w, |window, cx| {
+        v.update(cx, |v, cx| {
+            v.mention_results(
+                "s",
+                request,
+                "src",
+                Err("fixture search error".into()),
+                window,
+                cx,
+            )
+        });
+        window.press("enter", cx);
+    });
+    cx.run_until_parked();
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(160));
+    cx.run_until_parked();
+    let next = e
+        .borrow()
+        .iter()
+        .rev()
+        .find_map(|e| {
+            if let WorkbenchIntent::SearchMentions { request, .. } = e {
+                Some(*request)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    assert!(next > request);
+    step(cx, w, |window, cx| {
+        let session=serde_json::from_value(serde_json::json!({"id":"other","workspaceId":"w","workspaceName":"W","messages":[],"lastMessageAt":0,"isProcessing":false})).unwrap();
+        let other = cx.new(|_| SessionStore::new(session));
+        v.update(cx, |v, cx| v.bind_session(other, window, cx));
+        v.update(cx,|v,cx|v.mention_results("s",next,"src",Ok(vec![serde_json::from_value(serde_json::json!({"name":"old","path":"/old","relativePath":"old","type":"file"})).unwrap()]),window,cx));
+        assert_eq!(v.read(cx).composer_input(cx).read(cx).value(), "");
+        assert!(v.read(cx).composer_input(cx).read(cx).tokens().is_empty());
+    });
+}
+#[gpui_kit::test]
+fn restored_file_brackets_are_atomic_and_group_arrows_select_folder(cx: &mut TestAppContext) {
+    let (w, v, _, e) = open(cx);
+    step(cx, w, |window, cx| {
+        window.render_frame(cx);
+        v.update(cx, |v, cx| {
+            v.restore_draft("😀 [file:src/你好.rs]", window, cx)
+        });
+        assert_eq!(v.read(cx).composer_input(cx).read(cx).tokens().len(), 1);
+        v.read(cx)
+            .composer_input(cx)
+            .update(cx, |i, cx| i.set_value("", window, cx));
+        window.click("composer", cx);
+        window.input("@src", cx);
+    });
+    cx.run_until_parked();
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(160));
+    cx.run_until_parked();
+    let request = e
+        .borrow()
+        .iter()
+        .rev()
+        .find_map(|e| {
+            if let WorkbenchIntent::SearchMentions { request, .. } = e {
+                Some(*request)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    step(cx, w, |window, cx| {
+        let files=serde_json::from_value(serde_json::json!([{"name":"main.rs","path":"/p/src/main.rs","relativePath":"src/main.rs","type":"file"},{"name":"src","path":"/p/src","relativePath":"src","type":"directory"}])).unwrap();
+        v.update(cx, |v, cx| {
+            v.mention_results("s", request, "src", Ok(files), window, cx)
+        });
+        window.render_frame(cx);
+        window.press("down", cx);
+        window.press("tab", cx);
+    });
+    cx.run_until_parked();
+    step(cx, w, |_, cx| {
+        assert_eq!(
+            v.read(cx).composer_input(cx).read(cx).value(),
+            "[folder:src]"
+        )
+    });
+}
+
+#[gpui_kit::test]
+fn history_recall_restores_atomic_file_and_directory_change_invalidates_results(
+    cx: &mut TestAppContext,
+) {
+    let (w, v, s, e) = open(cx);
+    step(cx, w, |window, cx| {
+        s.update(cx,|s,cx|{s.model.state.session.messages.push(serde_json::from_value(serde_json::json!({"id":"u","role":"user","content":"[file:src/main.rs]","timestamp":0})).unwrap());cx.notify();});
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.press("up", cx);
+        assert_eq!(v.read(cx).composer_input(cx).read(cx).tokens().len(), 1);
+        window.press("backspace", cx);
+        assert_eq!(v.read(cx).composer_input(cx).read(cx).value(), "");
+        window.input("@src", cx);
+    });
+    cx.run_until_parked();
+    cx.executor()
+        .advance_clock(std::time::Duration::from_millis(160));
+    cx.run_until_parked();
+    let request = e
+        .borrow()
+        .iter()
+        .rev()
+        .find_map(|e| {
+            if let WorkbenchIntent::SearchMentions { request, .. } = e {
+                Some(*request)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    step(cx, w, |window, cx| {
+        s.update(cx, |s, cx| {
+            s.model.state.session.working_directory = Some("/other/directory".into());
+            cx.notify();
+        });
+        window.render_frame(cx);
+        v.update(cx,|v,cx|v.mention_results("s",request,"src",Ok(vec![serde_json::from_value(serde_json::json!({"name":"old","path":"/old","relativePath":"old","type":"file"})).unwrap()]),window,cx));
+        window.press("enter", cx);
+        assert!(v.read(cx).composer_input(cx).read(cx).tokens().is_empty());
+    });
+    assert!(sent(&e).is_empty());
+}
+
+#[gpui_kit::test]
+fn mention_popover_is_visible_and_mouse_selection_keeps_editor_focus(cx: &mut TestAppContext) {
+    let (w, v, _, e) = open(cx);
+    step(cx, w, |window, cx| {
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.input("/comp", cx);
+    });
+    cx.run_until_parked();
+    step(cx, w, |window, cx| {
+        window.render_frame(cx);
+        assert!(window.try_find("mention-menu").is_some());
+        window
+            .within("mention-menu")
+            .click(("mention-option", 0usize), cx);
+    });
+    cx.run_until_parked();
+    step(cx, w, |window, cx| {
+        let input = v.read(cx).composer_input(cx);
+        assert_eq!(input.read(cx).value(), "/compact");
+        assert!(input.read(cx).focus_handle(cx).is_focused(window));
+    });
+    assert!(sent(&e).is_empty());
 }

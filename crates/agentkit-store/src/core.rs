@@ -266,3 +266,6 @@ pub mod plan_dispatch;
 
 /// Session-local attachment staging and acknowledgement ownership.
 pub mod attachments;
+
+/// Pure upstream bracket grammar and UTF-16 metadata.
+pub mod mentions;

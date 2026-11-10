@@ -50,6 +50,8 @@ pub struct WorkspaceStore {
     pub workspace: Option<g::Workspace>,
     /// Workspace configuration snapshot.
     pub settings: Option<g::WorkspaceSettings>,
+    /// Effective directory used for the project skill cache; None means workspace-only.
+    pub skills_directory: Option<String>,
     /// Loaded skill metadata.
     pub skills: Vec<g::LoadedSkill>,
 }

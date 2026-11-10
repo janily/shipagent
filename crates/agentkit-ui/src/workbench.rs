@@ -28,6 +28,17 @@ pub enum AttachmentInput {
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Refresh the cached project Skill catalog for the active session directory.
+    LoadMentionSkills(String),
+    /// Search files through the session-bound controller.
+    SearchMentions {
+        /// Owning session.
+        session_id: String,
+        /// Monotonic editor request.
+        request: u64,
+        /// Search text.
+        query: String,
+    },
     /// Import into the session captured when the gesture began.
     Attach {
         /// Session captured at the gesture.
@@ -400,11 +411,9 @@ impl WorkbenchView {
             .update(cx, |c, cx| c.bind(Some(store.clone()), cx));
 
         let draft = store.read(cx).model.draft.text.clone();
+        let skills = self.mention_skills(cx);
         self.composer
-            .read(cx)
-            .input()
-            .clone()
-            .update(cx, |input, cx| input.set_value(draft, window, cx));
+            .update(cx, |c, cx| c.set_text(&draft, &skills, window, cx));
         self.session_subscriptions
             .push(cx.observe(&store, |_, _, cx| {
                 cx.notify();
@@ -465,14 +474,50 @@ impl WorkbenchView {
             cx.emit(WorkbenchIntent::DraftChanged { session_id, text });
         }
     }
+    pub(crate) fn mention_directory(&self, cx: &App) -> Option<String> {
+        self.state
+            .as_ref()
+            .and_then(|s| s.read(cx).model.state.session.working_directory.clone())
+            .or_else(|| {
+                self.workspace_state.as_ref().and_then(|s| {
+                    s.read(cx)
+                        .settings
+                        .as_ref()
+                        .and_then(|s| s.working_directory.clone())
+                })
+            })
+            .or_else(|| {
+                self.workspace_state
+                    .as_ref()
+                    .and_then(|s| s.read(cx).workspace.as_ref().map(|w| w.root_path.clone()))
+            })
+    }
+    pub(crate) fn mention_skills(&self, cx: &App) -> Vec<agentkit_store::core::mentions::Skill> {
+        self.workspace_state
+            .as_ref()
+            .map(|s| {
+                let s = s.read(cx);
+                let slug = s
+                    .workspace
+                    .as_ref()
+                    .map(|w| w.slug.as_str())
+                    .unwrap_or_default();
+                let directory = self.mention_directory(cx);
+                agentkit_store::core::mentions::catalog(
+                    &s.skills,
+                    slug,
+                    s.skills_directory.as_deref(),
+                    directory.as_deref(),
+                )
+            })
+            .unwrap_or_default()
+    }
     /// Restore text without overwriting newer user input.
     pub fn restore_draft(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {
         if self.composer.read(cx).input().read(cx).value().is_empty() {
+            let skills = self.mention_skills(cx);
             self.composer
-                .read(cx)
-                .input()
-                .clone()
-                .update(cx, |input, cx| input.set_value(text, window, cx));
+                .update(cx, |c, cx| c.set_text(text, &skills, window, cx));
         }
     }
     /// Preserve draft text until send persistence is acknowledged; do not clear later edits.

@@ -15,6 +15,8 @@ mod composer_actions;
 pub(crate) mod e2e;
 #[path = "list_refresh.rs"]
 mod list_refresh;
+#[path = "mention_actions.rs"]
+mod mention_actions;
 #[path = "menu_actions.rs"]
 mod menu_actions;
 #[path = "navigation.rs"]
@@ -376,6 +378,7 @@ pub(crate) struct WorkbenchController {
     quitting: Rc<Cell<bool>>,
     loading: bool,
     workspace_switching: bool,
+    mention_skill_request: u64,
     transport_epoch: u64,
     recovery: recovery::Recovery,
     startup: StartupSlot,
@@ -495,6 +498,7 @@ impl WorkbenchController {
             quitting,
             loading: false,
             workspace_switching: false,
+            mention_skill_request: 0,
             transport_epoch: 0,
             recovery: Default::default(),
             startup,
@@ -703,6 +707,7 @@ impl WorkbenchController {
             s.workspace = Some(started.workspace.clone());
             s.settings = started.settings;
             s.skills = started.skills;
+            s.skills_directory = None;
             cx.notify();
         });
         self.list
@@ -836,12 +841,22 @@ impl WorkbenchController {
             while let Ok(update) = skills.recv().await {
                 if weak
                     .update(cx, |this, cx| match update {
-                        Ok((id, skills)) => this.workspace_store.update(cx, |s, cx| {
-                            if s.id == id {
-                                s.skills = skills;
-                                cx.notify();
+                        Ok((id, skills)) => {
+                            if this.workspace_store.read(cx).id == id {
+                                this.workspace_store.update(cx, |s, cx| {
+                                    s.skills = skills;
+                                    s.skills_directory = None;
+                                    cx.notify();
+                                });
+                                if let Some(session) = this
+                                    .state
+                                    .as_ref()
+                                    .map(|s| s.read(cx).model.state.session.id.clone())
+                                {
+                                    this.load_mention_skills(&session, cx);
+                                }
                             }
-                        }),
+                        }
                         Err(_) => this.view.update(cx, |v, cx| {
                             v.show_error(agentkit_ui::t!("ak.event_invalid"), false, cx)
                         }),
@@ -1370,6 +1385,12 @@ impl WorkbenchController {
             | WorkbenchIntent::RemoveAttachment { .. }
             | WorkbenchIntent::Settings(_)
             | WorkbenchIntent::Onboarding(_) => {}
+            WorkbenchIntent::LoadMentionSkills(id) => self.load_mention_skills(&id, cx),
+            WorkbenchIntent::SearchMentions {
+                session_id,
+                request,
+                query,
+            } => self.search_mentions(session_id, request, query, api, window, cx),
             WorkbenchIntent::Sidebar(action) => self.handle_navigation(action, api, window, cx),
             selection @ (WorkbenchIntent::ModelChanged { .. }
             | WorkbenchIntent::ThinkingChanged(_)
@@ -1399,6 +1420,19 @@ impl WorkbenchController {
                     return;
                 }
 
+                let historical_badges = if let WorkbenchIntent::ResendMessage(ref id) = intent {
+                    store
+                        .read(cx)
+                        .model
+                        .state
+                        .session
+                        .messages
+                        .iter()
+                        .find(|m| m.id == *id)
+                        .and_then(|m| m.badges.clone())
+                } else {
+                    None
+                };
                 let (text, attachments) = match intent {
                     WorkbenchIntent::Submit(text) => {
                         (text, store.read(cx).model.draft_attachments.clone())
@@ -1420,6 +1454,24 @@ impl WorkbenchController {
                     }
                     _ => return,
                 };
+                let mut options = self.mention_options(&text, cx);
+                if let Some(badges) = historical_badges {
+                    let mut slugs = Vec::new();
+                    for badge in &badges {
+                        if badge.type_ == agentkit_protocol::generated::MessageBadgesItemType::Skill
+                        {
+                            for slug in agentkit_store::core::mentions::parse(&badge.raw_text, &[])
+                                .invalid_skills
+                            {
+                                if !slugs.contains(&slug) {
+                                    slugs.push(slug);
+                                }
+                            }
+                        }
+                    }
+                    options.skill_slugs = (!slugs.is_empty()).then_some(slugs);
+                    options.badges = serde_json::from_value(serde_json::json!(badges)).ok();
+                }
                 let context = reduction_context();
                 let id = store.read(cx).model.state.session.id.clone();
                 let pending = store.update(cx, |s, cx| {
@@ -1430,7 +1482,11 @@ impl WorkbenchController {
                         s.model
                             .begin_send(text.clone(), attachments.clone(), &context)
                     };
-                    if p.is_some() {
+                    if let Some(p) = &p {
+                        s.model.annotate_pending(
+                            &p.id,
+                            agentkit_store::core::mentions::message_badges(&options),
+                        );
                         s.refresh_annotations();
                         cx.emit(
                             agentkit_store::core::session::SessionStoreEvent::TurnsChanged {
@@ -1450,7 +1506,7 @@ impl WorkbenchController {
                 }
                 let generation = self.epoch;
                 self.operations.push(cx.spawn_in(window,async move |weak,cx| {
-                    let result=api.send_with_attachments(&id,&text,&pending.id,&[],&pending.attachments).await;
+                    let result=api.send_with_attachments_with_options(&id,&text,&pending.id,&[],&pending.attachments,options).await;
                     let _=weak.update_in(cx,|this,window,cx| {
                         if this.epoch!=generation || this.stores.get(&id).is_none_or(|s|s.entity_id()!=store.entity_id()) {return;}
                         #[cfg(feature = "e2e")]

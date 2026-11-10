@@ -1,0 +1,366 @@
+{
+  "upstream": {
+    "tag": "v0.2.6",
+    "revision": "6e8ebc456b6b82441be09118ca11afca79b84836",
+    "sources": [
+      {
+        "file": "packages/shared/src/mentions/index.ts",
+        "sha256": "3339295484729f26ad6c633a54800855f3fe3934c02659a49b1619484c9f37fb"
+      },
+      {
+        "file": "apps/electron/src/renderer/lib/mentions.ts",
+        "sha256": "a26f2a3a6f5d112a4a3f3a19e911f2474066acc5b3cdea75c055722861745a4c"
+      }
+    ]
+  },
+  "workspace": "my workspace",
+  "skills": [
+    {
+      "slug": "review-code",
+      "metadata": {
+        "name": "Review",
+        "description": "Review changes"
+      },
+      "source": "workspace",
+      "path": "/skills/review-code",
+      "content": ""
+    },
+    {
+      "slug": "project-review",
+      "metadata": {
+        "name": "Project review",
+        "description": "Project changes"
+      },
+      "source": "project",
+      "path": "/project/.agents/skills/project-review",
+      "content": ""
+    },
+    {
+      "slug": "global-review",
+      "metadata": {
+        "name": "Global review",
+        "description": "Global changes"
+      },
+      "source": "global",
+      "path": "/global/global-review",
+      "content": ""
+    }
+  ],
+  "cases": [
+    {
+      "text": "plain text",
+      "parsed": {
+        "skills": [],
+        "invalidSkills": [],
+        "files": [],
+        "folders": []
+      },
+      "badges": []
+    },
+    {
+      "text": "[skill:review-code] [skill:project-review] [skill:global-review]",
+      "parsed": {
+        "skills": [
+          "review-code",
+          "project-review",
+          "global-review"
+        ],
+        "invalidSkills": [],
+        "files": [],
+        "folders": []
+      },
+      "badges": [
+        {
+          "type": "skill",
+          "label": "Review",
+          "rawText": "[skill:my workspace:review-code]",
+          "start": 0,
+          "end": 19
+        },
+        {
+          "type": "skill",
+          "label": "Project review",
+          "rawText": "[skill:.agents:project-review]",
+          "start": 20,
+          "end": 42
+        },
+        {
+          "type": "skill",
+          "label": "Global review",
+          "rawText": "[skill:.agents:global-review]",
+          "start": 43,
+          "end": 64
+        }
+      ]
+    },
+    {
+      "text": "😀 [file:src/你好.rs] [folder:src] [skill:my workspace:review-code]",
+      "parsed": {
+        "skills": [
+          "review-code"
+        ],
+        "invalidSkills": [],
+        "files": [
+          "src/你好.rs"
+        ],
+        "folders": [
+          "src"
+        ]
+      },
+      "badges": [
+        {
+          "type": "file",
+          "label": "你好.rs",
+          "rawText": "[file:src/你好.rs]",
+          "filePath": "src/你好.rs",
+          "start": 3,
+          "end": 19
+        },
+        {
+          "type": "folder",
+          "label": "src",
+          "rawText": "[folder:src]",
+          "filePath": "src",
+          "start": 20,
+          "end": 32
+        },
+        {
+          "type": "skill",
+          "label": "Review",
+          "rawText": "[skill:my workspace:review-code]",
+          "start": 33,
+          "end": 65
+        }
+      ]
+    },
+    {
+      "text": "[skill:review-code] [skill:missing] [skill:review-code] [file:a] [file:a]",
+      "parsed": {
+        "skills": [
+          "review-code"
+        ],
+        "invalidSkills": [
+          "missing"
+        ],
+        "files": [
+          "a"
+        ],
+        "folders": []
+      },
+      "badges": [
+        {
+          "type": "skill",
+          "label": "Review",
+          "rawText": "[skill:my workspace:review-code]",
+          "start": 0,
+          "end": 19
+        },
+        {
+          "type": "skill",
+          "label": "Review",
+          "rawText": "[skill:my workspace:review-code]",
+          "start": 36,
+          "end": 55
+        },
+        {
+          "type": "file",
+          "label": "a",
+          "rawText": "[file:a]",
+          "filePath": "a",
+          "start": 56,
+          "end": 64
+        },
+        {
+          "type": "file",
+          "label": "a",
+          "rawText": "[file:a]",
+          "filePath": "a",
+          "start": 65,
+          "end": 73
+        }
+      ]
+    },
+    {
+      "text": "[skill:my.workspace-1_2:review-code]",
+      "parsed": {
+        "skills": [
+          "review-code"
+        ],
+        "invalidSkills": [],
+        "files": [],
+        "folders": []
+      },
+      "badges": [
+        {
+          "type": "skill",
+          "label": "Review",
+          "rawText": "[skill:my workspace:review-code]",
+          "start": 0,
+          "end": 36
+        }
+      ]
+    },
+    {
+      "text": "[skill:bad\nworkspace:review-code] [skill:bad\tworkspace:review-code]",
+      "parsed": {
+        "skills": [],
+        "invalidSkills": [],
+        "files": [],
+        "folders": []
+      },
+      "badges": []
+    },
+    {
+      "text": "[skill:中文:review-code] [skill:review.code]",
+      "parsed": {
+        "skills": [],
+        "invalidSkills": [],
+        "files": [],
+        "folders": []
+      },
+      "badges": []
+    },
+    {
+      "text": "[file:a/] [folder:a/]",
+      "parsed": {
+        "skills": [],
+        "invalidSkills": [],
+        "files": [
+          "a/"
+        ],
+        "folders": [
+          "a/"
+        ]
+      },
+      "badges": [
+        {
+          "type": "file",
+          "label": "a/",
+          "rawText": "[file:a/]",
+          "filePath": "a/",
+          "start": 0,
+          "end": 9
+        },
+        {
+          "type": "folder",
+          "label": "a/",
+          "rawText": "[folder:a/]",
+          "filePath": "a/",
+          "start": 10,
+          "end": 21
+        }
+      ]
+    },
+    {
+      "text": "[file:[file:nested]] [folder:[file:overlap]]",
+      "parsed": {
+        "skills": [],
+        "invalidSkills": [],
+        "files": [
+          "[file:nested",
+          "overlap"
+        ],
+        "folders": [
+          "[file:overlap"
+        ]
+      },
+      "badges": [
+        {
+          "type": "file",
+          "label": "[file:nested",
+          "rawText": "[file:[file:nested]",
+          "filePath": "[file:nested",
+          "start": 0,
+          "end": 19
+        },
+        {
+          "type": "folder",
+          "label": "[file:overlap",
+          "rawText": "[folder:[file:overlap]",
+          "filePath": "[file:overlap",
+          "start": 21,
+          "end": 43
+        },
+        {
+          "type": "file",
+          "label": "overlap",
+          "rawText": "[file:overlap]",
+          "filePath": "overlap",
+          "start": 29,
+          "end": 43
+        }
+      ]
+    },
+    {
+      "text": "[file:a\nb] [folder:src with spaces]",
+      "parsed": {
+        "skills": [],
+        "invalidSkills": [],
+        "files": [
+          "a\nb"
+        ],
+        "folders": [
+          "src with spaces"
+        ]
+      },
+      "badges": [
+        {
+          "type": "file",
+          "label": "a\nb",
+          "rawText": "[file:a\nb]",
+          "filePath": "a\nb",
+          "start": 0,
+          "end": 10
+        },
+        {
+          "type": "folder",
+          "label": "src with spaces",
+          "rawText": "[folder:src with spaces]",
+          "filePath": "src with spaces",
+          "start": 11,
+          "end": 35
+        }
+      ]
+    },
+    {
+      "text": "[file:] [folder:] [skill:]",
+      "parsed": {
+        "skills": [],
+        "invalidSkills": [],
+        "files": [],
+        "folders": []
+      },
+      "badges": []
+    },
+    {
+      "text": "𠮷😀[skill:.agents:project-review][file:/tmp/a]",
+      "parsed": {
+        "skills": [
+          "project-review"
+        ],
+        "invalidSkills": [],
+        "files": [
+          "/tmp/a"
+        ],
+        "folders": []
+      },
+      "badges": [
+        {
+          "type": "skill",
+          "label": "Project review",
+          "rawText": "[skill:.agents:project-review]",
+          "start": 4,
+          "end": 34
+        },
+        {
+          "type": "file",
+          "label": "a",
+          "rawText": "[file:/tmp/a]",
+          "filePath": "/tmp/a",
+          "start": 34,
+          "end": 47
+        }
+      ]
+    }
+  ]
+}
