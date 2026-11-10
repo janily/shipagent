@@ -182,7 +182,17 @@ fn real_mentions_search_send_and_restart() {
             .await
             .unwrap();
         let api = WorkbenchApi::connect(restarted.endpoint(), workspace.id);
-        let snapshot = api.session_generated(&s.id).await.unwrap();
+        let snapshot = api.session_generated(&s.id).await.unwrap_or_else(|error| {
+            let session_file = std::path::Path::new(&workspace.root_path)
+                .join("sessions")
+                .join(&s.id)
+                .join("session.jsonl");
+            panic!(
+                "mention reload failed: {error}; snapshotExists={}, temporaryExists={}",
+                session_file.exists(),
+                session_file.with_extension("jsonl.tmp").exists()
+            );
+        });
         assert_eq!(
             snapshot
                 .messages
