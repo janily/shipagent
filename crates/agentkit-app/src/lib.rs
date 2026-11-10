@@ -314,6 +314,12 @@ pub fn run(brand_toml: &str) -> Result<()> {
     Ok(())
 }
 
+#[cfg(any(test, feature = "e2e", feature = "perf"))]
+fn defer_confirmed_quit(cx: &mut App) {
+    // No window lease may be held when App routes an action to its active window.
+    cx.defer(|cx| cx.dispatch_action(&actions::ConfirmedQuit));
+}
+
 fn orderly_quit(
     runtime: &controller::RuntimeSlot,
     startup: &controller::StartupSlot,
@@ -466,6 +472,38 @@ async fn exit_tasks(
 }
 #[cfg(test)]
 mod exit_policy_tests {
+    #![allow(clippy::unwrap_used)]
+    #[gpui_kit::test]
+    fn deferred_quit_reaches_handler_with_an_active_window(cx: &mut gpui_kit::TestAppContext) {
+        use gpui_kit::test::TestWindowExt;
+        use gpui_kit::*;
+        use std::cell::Cell;
+        use std::rc::Rc;
+        struct Empty;
+        impl Render for Empty {
+            fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+                div()
+            }
+        }
+        let received = Rc::new(Cell::new(0));
+        let window = cx.update(|cx| {
+            gpui_kit::init(cx);
+            let mark = received.clone();
+            cx.on_action(move |_: &super::actions::ConfirmedQuit, _| mark.set(mark.get() + 1));
+            gpui_kit::open_window(WindowOptions::default(), cx, |_, cx| cx.new(|_| Empty))
+                .unwrap()
+                .0
+        });
+        cx.update_window(window, |_, window, cx| {
+            window.activate_window();
+            window.render_frame(cx);
+            assert!(cx.active_window().is_some());
+            super::defer_confirmed_quit(cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        assert_eq!(received.get(), 1);
+    }
     #[::core::prelude::v1::test]
     fn stalled_preferences_never_postpone_starting_backend_cleanup() {
         smol::block_on(async {
