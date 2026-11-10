@@ -2,6 +2,10 @@
 use super::*;
 pub struct Files<'a>(pub(super) &'a RpcClient);
 impl Files<'_> {
+    pub async fn read_text(&self, path: &str) -> Result<String, RpcError> {
+        execute(self.0, p::FILES_READ_TEXT, vec![json!(path)]).await
+    }
+
     pub async fn store_attachment(
         &self,
         id: &str,

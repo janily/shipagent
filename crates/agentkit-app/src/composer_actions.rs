@@ -25,6 +25,10 @@ impl WorkbenchController {
             });
             return;
         }
+        if store.read(cx).plan.pending.is_some() {
+            self.view.update(cx, |v, cx| v.selection_finished(cx));
+            return;
+        }
         if store.read(cx).selection_pending {
             return;
         }

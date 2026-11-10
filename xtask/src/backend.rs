@@ -191,6 +191,7 @@ pub fn build(with_contract: bool) -> Result<()> {
                 "test",
                 "./packages/shared/src/agent/backend/connection-probe-workspace.test.ts",
                 "./packages/server-core/src/sessions/turn-journal.test.ts",
+                "./packages/server-core/src/sessions/pending-plan-recovery.test.ts",
                 "./packages/shared/src/sessions/__tests__/persistence-queue.test.ts",
                 "./packages/server-core/src/handlers/rpc/headless-desktop.test.ts",
                 "./packages/server-core/src/services/headless-proxy.test.ts",

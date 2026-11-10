@@ -24,6 +24,8 @@ mod onboarding;
 pub(crate) mod perf;
 #[path = "permission_actions.rs"]
 mod permission_actions;
+#[path = "plan_actions.rs"]
+mod plan_actions;
 #[path = "recovery/mod.rs"]
 mod recovery;
 #[path = "settings_actions.rs"]
@@ -117,7 +119,11 @@ impl Running {
         }
     }
 }
-struct SharedAppState(Entity<AppState>, std::sync::Arc<smol::lock::Mutex<()>>);
+struct SharedAppState(
+    Entity<AppState>,
+    std::sync::Arc<smol::lock::Mutex<()>>,
+    agentkit_store::core::plan_dispatch::Scheduler,
+);
 impl Global for SharedAppState {}
 struct ContextEvents {
     unread: async_channel::Receiver<
@@ -427,7 +433,11 @@ impl WorkbenchController {
             shared.0.clone()
         } else {
             let entity = cx.new(|_| AppState::default());
-            cx.set_global(SharedAppState(entity.clone(), Default::default()));
+            cx.set_global(SharedAppState(
+                entity.clone(),
+                Default::default(),
+                Default::default(),
+            ));
             entity
         };
         let (recording_sender, recording_worker) =
@@ -855,8 +865,8 @@ impl WorkbenchController {
                 }
             }
         }));
-        self.mark_viewed(window, cx);
         self.set_phase(agentkit_ui::recovery::Phase::Online, cx);
+        self.mark_viewed(window, cx);
         self.start_monitor(api, window, cx);
     }
     fn route(
@@ -969,7 +979,20 @@ impl WorkbenchController {
             let Some(store) = self.stores.get(&id).cloned() else {
                 continue;
             };
+            let was_busy = store.read(cx).model.busy();
             let effects = store.update(cx, |s, cx| s.apply_batch(&batch, cx));
+            if (was_busy && !store.read(cx).model.busy())
+                || batch.iter().any(|(e, _)| {
+                    e.raw().get("type").and_then(serde_json::Value::as_str) == Some("complete")
+                        || e.raw()
+                            .get("statusType")
+                            .and_then(serde_json::Value::as_str)
+                            == Some("compaction_complete")
+                })
+            {
+                self.wake_plan(&id, window, cx);
+            }
+
             for effect in effects {
                 if let Effect::PermissionModeChanged {
                     permission_mode,
@@ -1094,6 +1117,47 @@ impl WorkbenchController {
         }
     }
     fn mark_viewed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(store) = self.state.clone() {
+            let mut ids: std::collections::HashSet<String> = store
+                .read(cx)
+                .plan
+                .loading
+                .keys()
+                .chain(
+                    store
+                        .read(cx)
+                        .plan
+                        .content
+                        .iter()
+                        .filter(|(_, v)| v.is_err())
+                        .map(|(k, _)| k),
+                )
+                .cloned()
+                .collect();
+            if let Some(m) = store
+                .read(cx)
+                .model
+                .state
+                .session
+                .messages
+                .iter()
+                .rev()
+                .find(|m| m.role == agentkit_protocol::generated::MessageRole::Plan)
+            {
+                ids.insert(m.id.clone());
+            }
+            for id in ids {
+                self.load_plan(id, window, cx);
+            }
+        }
+
+        if let Some(id) = self
+            .state
+            .as_ref()
+            .map(|s| s.read(cx).model.state.session.id.clone())
+        {
+            self.wake_plan(&id, window, cx);
+        }
         let (Some(api), Some(store), Some(workspace)) =
             (self.api(), self.state.clone(), self.workspace.as_ref())
         else {
@@ -1144,7 +1208,10 @@ impl WorkbenchController {
         if let Some((id, text)) = self.view.read(cx).current_draft(cx)
             && let Some(store) = self.stores.get(&id)
         {
-            store.update(cx, |s, _| s.model.set_draft(text));
+            store.update(cx, |s, cx| {
+                s.model.set_draft(text);
+                cx.notify();
+            });
         }
     }
     fn handle(&mut self, intent: WorkbenchIntent, window: &mut Window, cx: &mut Context<Self>) {
@@ -1224,7 +1291,19 @@ impl WorkbenchController {
         }
         if let WorkbenchIntent::DraftChanged { session_id, text } = intent {
             if let Some(store) = self.stores.get(&session_id) {
-                store.update(cx, |s, _| s.model.set_draft(text));
+                store.update(cx, |s, cx| {
+                    let hint_changed =
+                        s.model.draft.text.trim().is_empty() != text.trim().is_empty();
+                    s.model.set_draft(text);
+                    if hint_changed {
+                        cx.emit(
+                            agentkit_store::core::session::SessionStoreEvent::TurnsChanged {
+                                from_turn: 0,
+                            },
+                        );
+                    }
+                    cx.notify();
+                });
             }
             return;
         }
@@ -1262,6 +1341,11 @@ impl WorkbenchController {
                 let Some(store) = self.state.clone() else {
                     return;
                 };
+                if store.read(cx).plan.pending.is_some() {
+                    self.view
+                        .update(cx, |v, cx| v.submission_finished("", false, window, cx));
+                    return;
+                }
                 let is_resend = matches!(intent, WorkbenchIntent::ResendMessage(_));
                 let (text, attachments) = match intent {
                     WorkbenchIntent::Submit(text) => {

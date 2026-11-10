@@ -211,6 +211,13 @@ fn every_v1_request_uses_typed_returns_and_exact_positional_wire_arguments() {
             Value::Null
         );
         rpc!(
+            String,
+            client.files().read_text("/plan.md"),
+            "file:read",
+            json!(["/plan.md"]),
+            json!("# Plan")
+        );
+        rpc!(
             Option<g::PendingPlanExecution>,
             client.sessions().pending_plan("s"),
             "sessions:getPendingPlanExecution",
@@ -658,7 +665,7 @@ fn every_v1_request_uses_typed_returns_and_exact_positional_wire_arguments() {
     drop(expected);
     client.close();
     let visited = server.join().unwrap();
-    assert_eq!(visited.len(), 79);
+    assert_eq!(visited.len(), 80);
     assert_eq!(
         visited,
         agentkit_client::api::V1_OPERATIONS

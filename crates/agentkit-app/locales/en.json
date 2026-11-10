@@ -370,5 +370,18 @@
   "ak.claude.exchanging": "Verifying connection…",
   "ak.claude.code_failed": "The authorization code could not be verified. Start a new login and paste a fresh code.",
   "ak.claude.busy": "Another window is signing in to Claude. Finish or cancel that login first.",
-  "ak.claude.waiting": "Complete browser login and paste the authorization code."
+  "ak.claude.waiting": "Complete browser login and paste the authorization code.",
+  "ak.plan.title": "Plan",
+  "ak.plan.accept": "Accept and execute",
+  "ak.plan.compact": "Compact context and execute",
+  "ak.plan.accepted": "Accepted",
+  "ak.plan.draft_hint": "Your current input will be included as additional context.",
+  "ak.plan.loading": "Loading plan…",
+  "ak.plan.read_failed": "The plan could not be read. Retry before accepting.",
+  "ak.plan.retry": "Retry",
+  "ak.plan.failed": "The plan operation could not be confirmed. Review the session before trying again.",
+  "ak.plan.approved": "Plan approved, please execute.",
+  "ak.plan.additional": "Additional user context",
+  "ak.plan.waiting": "Waiting for context compaction before execution. If compaction fails, send /compact to retry.",
+  "ak.plan.dispatch_wait": "Plan accepted. Waiting for execution confirmation; do not approve it again."
 }

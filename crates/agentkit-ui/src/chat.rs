@@ -109,7 +109,11 @@ impl WorkbenchView {
                 crate::composer::Config {
                     store: self.state.clone(),
                     ready: self.ready,
-                    submitting: self.submitting,
+                    submitting: self.submitting
+                        || self
+                            .state
+                            .as_ref()
+                            .is_some_and(|s| s.read(cx).plan.pending.is_some()),
                     loading: self.loading,
                     choices,
                     model: effective_model,

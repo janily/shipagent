@@ -63,6 +63,12 @@ impl WorkbenchController {
         self.recovery.events.clear();
         self.recovery.overflow = false;
         self.close_recovery_editor(window, cx);
+        for store in self.stores.values() {
+            store.update(cx, |s, cx| {
+                s.plan.pending = None;
+                cx.notify();
+            });
+        }
         self.set_phase(Phase::Refreshing, cx);
         let id = self
             .state
