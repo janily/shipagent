@@ -47,3 +47,7 @@ required-features = ["samples"]
 [[example]]
 name = "attachments"
 required-features = ["samples"]
+
+[[example]]
+name = "mentions"
+required-features = ["samples"]

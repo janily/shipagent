@@ -120,6 +120,7 @@ impl WorkbenchController {
                                 s.workspace = Some(workspace.clone());
                                 s.settings = snapshot.settings;
                                 s.skills = snapshot.skills;
+                    s.skills_directory=None;
                                 cx.notify();
                             });
                             let buffered=std::mem::take(&mut this.backlog);

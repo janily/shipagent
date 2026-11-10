@@ -182,6 +182,7 @@ impl WorkbenchController {
                         s.workspace = Some(workspace_info.clone());
                         s.settings = loaded.settings;
                         s.skills = loaded.skills;
+                        s.skills_directory = None;
                         cx.notify();
                     });
                     let info = api.snapshot();

@@ -140,3 +140,72 @@ fn composer_configuration_is_session_scoped_and_preserves_model_connection_pair(
     api.close();
     server.join().unwrap();
 }
+
+#[test]
+fn mention_options_and_search_preserve_exact_positional_contracts() {
+    use agentkit_protocol::generated as g;
+    let options = json!({"badges":[{"type":"file","label":"你好.rs","rawText":"[file:src/你好.rs]","filePath":"src/你好.rs","start":3.0,"end":19.0}],"skillSlugs":["review-code"]});
+    let expected = options.clone();
+    let (endpoint, server) = serve_checked(
+        vec![
+            ("fs:search", json!([])),
+            (
+                "sessions:sendMessage",
+                json!({"accepted":true,"messageId":"optimistic"}),
+            ),
+            (
+                "sessions:sendMessage",
+                json!({"accepted":true,"messageId":"optimistic"}),
+            ),
+        ],
+        move |req| {
+            if req["channel"] == "fs:search" {
+                assert_eq!(req["args"], json!(["/session/directory", "src"]));
+            } else {
+                assert_eq!(req["args"].as_array().unwrap().len(), 5);
+                assert_eq!(req["args"][0], "s");
+                assert_eq!(req["args"][1], "😀 [file:src/你好.rs]");
+                assert_eq!(req["args"][2], json!([]));
+                assert_eq!(req["args"][3], json!([]));
+                let mut options = expected.clone();
+                options["optimisticMessageId"] = json!("optimistic");
+                assert_eq!(req["args"][4], options);
+            }
+        },
+    );
+    let api = WorkbenchApi::connect(endpoint, "w".into());
+    smol::block_on(async {
+        api.search_mentions("/session/directory", "src")
+            .await
+            .unwrap();
+        let options: g::SendMessageOptions = serde_json::from_value(options).unwrap();
+        assert!(
+            api.send_with_attachments_with_options(
+                "s",
+                "😀 [file:src/你好.rs]",
+                "optimistic",
+                &[],
+                &[],
+                options.clone()
+            )
+            .await
+            .unwrap()
+            .accepted
+        );
+        assert!(
+            api.send_prepared_with_options(
+                "s",
+                "😀 [file:src/你好.rs]",
+                "optimistic",
+                &[],
+                &[],
+                options
+            )
+            .await
+            .unwrap()
+            .accepted
+        );
+    });
+    api.close();
+    server.join().unwrap();
+}

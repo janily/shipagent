@@ -7,6 +7,20 @@ use gpui_kit::component::{
 };
 impl Render for Composer {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if self.mention_context_changed {
+            self.mention_context_changed = false;
+            self.refresh_mentions(window, cx);
+        }
+        if self.mention_catalog_changed {
+            self.mention_catalog_changed = false;
+            if self
+                .mention_query
+                .as_ref()
+                .is_some_and(|q| q.kind == agentkit_store::core::mentions::Kind::Skill)
+            {
+                self.refresh_skills(window, cx);
+            }
+        }
         let session = self.session(cx);
         let mode = session
             .and_then(|s| s.permission_mode)
@@ -59,6 +73,10 @@ impl Render for Composer {
             .capture_action(cx.listener(Self::enter))
             .capture_action(cx.listener(Self::escape))
             .capture_action(cx.listener(Self::history))
+            .capture_action(cx.listener(Self::mention_down))
+            .capture_action(cx.listener(Self::mention_tab))
+            .capture_action(cx.listener(Self::mention_left))
+            .capture_action(cx.listener(Self::mention_right))
             .capture_action(cx.listener(Self::cycle_mode))
             .on_action(cx.listener(|this, a: &ChooseModel, _, cx| {
                 if this.selectable()
@@ -94,6 +112,7 @@ impl Render for Composer {
                 this.set_send_key(a.key, cx);
                 cx.emit(WorkbenchIntent::SendKeyChanged(a.key));
             }))
+            .child(self.mention_popover(cx))
             .child(self.attachment_row(cx))
             .child(
                 div()

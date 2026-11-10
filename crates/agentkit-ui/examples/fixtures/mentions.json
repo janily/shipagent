@@ -1,0 +1,8 @@
+{
+  "model":"Claude Sonnet",
+  "workspace":{"id":"w","name":"默认工作区","slug":"default","rootPath":"/code/shipagent","createdAt":0},
+  "connection":{"slug":"fixture","name":"Fixture","providerType":"pi_compat","authType":"none","isAuthenticated":true,"createdAt":0,"defaultModel":"Claude Sonnet"},
+  "skills":[{"slug":"review-code","path":"/code/skills/review-code","source":"workspace","content":"Fixture only","metadata":{"name":"代码审查","description":"检查变更、测试覆盖和潜在回归"}},{"slug":"review-docs","path":"/code/skills/review-docs","source":"workspace","content":"Fixture only","metadata":{"name":"文档审阅","description":"核对技术方案与实现是否一致"}}],
+  "session":{"id":"s","workspaceId":"w","workspaceName":"默认工作区","name":"检查原生提及与 Skill","workingDirectory":"/code/shipagent","lastMessageAt":0,"isProcessing":false,"messages":[{"id":"u","role":"user","content":"请检查 [file:src/main.rs]","timestamp":0,"badges":[{"type":"file","label":"main.rs","rawText":"[file:src/main.rs]","start":4,"end":22,"filePath":"src/main.rs"}]},{"id":"a","role":"assistant","content":"可以继续选择文件或文件夹，也可以在行首输入 / 搜索可用的 Skill。选择后，提及会以标签显示在输入框中。","timestamp":1}]},
+  "files":[{"name":"main.rs","path":"/code/shipagent/src/main.rs","relativePath":"src/main.rs","type":"file"},{"name":"mentions.rs","path":"/code/shipagent/src/mentions.rs","relativePath":"src/mentions.rs","type":"file"},{"name":"src","path":"/code/shipagent/src","relativePath":"src","type":"directory"}]
+}

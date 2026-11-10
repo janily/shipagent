@@ -14,6 +14,10 @@ impl Composer {
             cx.stop_propagation();
             return;
         }
+        if !action.shift && self.mention_key(None, window, cx) {
+            cx.stop_propagation();
+            return;
+        }
         if !action.shift && (self.send_key == SendKey::Enter || action.secondary) {
             self.submit(window, cx);
             cx.stop_propagation();
@@ -27,6 +31,12 @@ impl Composer {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        self.refresh_mentions(window, cx);
+        if self.mention_query.is_some() && !self.composing(window, cx) {
+            self.dismiss_mentions(cx);
+            cx.stop_propagation();
+            return;
+        }
         if self.escape_stops
             && self.input.read(cx).focus_handle(cx).is_focused(window)
             && !self.composing(window, cx)
@@ -44,6 +54,10 @@ impl Composer {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if self.mention_key(Some(-1), window, cx) {
+            cx.stop_propagation();
+            return;
+        }
         if self.input.read(cx).focus_handle(cx).is_focused(window)
             && self.input.read(cx).value().is_empty()
             && !self.composing(window, cx)
@@ -57,8 +71,8 @@ impl Composer {
                 })
                 .map(|m| m.content.clone())
         {
-            self.input
-                .update(cx, |input, cx| input.set_value(text, window, cx));
+            let skills = self.mention_skills.clone();
+            self.set_text(&text, &skills, window, cx);
             cx.stop_propagation();
             return;
         }

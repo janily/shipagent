@@ -391,5 +391,12 @@
   "ak.attach.picker_failed": "文件选择器不可用，请重试或拖入文件",
   "ak.attach.reading": "正在读取附件…",
   "ak.attach.sending": "正在存储并发送附件…",
-  "ak.attach.too_large": "单个附件不能超过 50 MB"
+  "ak.attach.too_large": "单个附件不能超过 50 MB",
+  "ak.mention.files": "文件",
+  "ak.mention.folders": "文件夹",
+  "ak.mention.skills": "技能",
+  "ak.mention.commands": "命令",
+  "ak.mention.compact": "压缩会话上下文",
+  "ak.mention.empty": "没有匹配项",
+  "ak.mention.failed": "搜索失败：%{error}。修改关键词重试。"
 }

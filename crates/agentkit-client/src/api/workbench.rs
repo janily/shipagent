@@ -80,6 +80,14 @@ impl WorkbenchApi {
     pub async fn workspace_skills(&self, id: &str) -> Result<Vec<g::LoadedSkill>, RpcError> {
         self.client.skills().list(id, None).await
     }
+    /// Include project .agents skills for this authoritative session directory.
+    pub async fn session_skills(
+        &self,
+        id: &str,
+        directory: Option<&str>,
+    ) -> Result<Vec<g::LoadedSkill>, RpcError> {
+        self.client.skills().list(id, directory).await
+    }
     /// Mark the selected conversation as actively viewed and read, once per open intent.
     pub async fn view_session(&self, id: &str, workspace: &str) -> Result<(), RpcError> {
         self.client
@@ -205,10 +213,27 @@ impl WorkbenchApi {
         attachments: &[g::FileAttachment],
         stored: &[g::StoredAttachment],
     ) -> Result<SendAck, RpcError> {
-        let options = g::SendMessageOptions {
-            optimistic_message_id: Some(optimistic_id.into()),
-            ..Default::default()
-        };
+        self.send_with_attachments_with_options(
+            session,
+            text,
+            optimistic_id,
+            attachments,
+            stored,
+            g::SendMessageOptions::default(),
+        )
+        .await
+    }
+    /// Send the captured mention metadata with this exact optimistic operation.
+    pub async fn send_with_attachments_with_options(
+        &self,
+        session: &str,
+        text: &str,
+        optimistic_id: &str,
+        attachments: &[g::FileAttachment],
+        stored: &[g::StoredAttachment],
+        mut options: g::SendMessageOptions,
+    ) -> Result<SendAck, RpcError> {
+        options.optimistic_message_id = Some(optimistic_id.into());
         let ack = self
             .client
             .sessions()
@@ -401,10 +426,27 @@ impl WorkbenchApi {
         files: &[super::types::PreparedAttachment],
         stored: &[g::StoredAttachment],
     ) -> Result<SendAck, RpcError> {
-        let options = g::SendMessageOptions {
-            optimistic_message_id: Some(optimistic_id.into()),
-            ..Default::default()
-        };
+        self.send_prepared_with_options(
+            session,
+            text,
+            optimistic_id,
+            files,
+            stored,
+            g::SendMessageOptions::default(),
+        )
+        .await
+    }
+    /// Send the captured mention metadata with this exact optimistic operation.
+    pub async fn send_prepared_with_options(
+        &self,
+        session: &str,
+        text: &str,
+        optimistic_id: &str,
+        files: &[super::types::PreparedAttachment],
+        stored: &[g::StoredAttachment],
+        mut options: g::SendMessageOptions,
+    ) -> Result<SendAck, RpcError> {
+        options.optimistic_message_id = Some(optimistic_id.into());
         let ack: super::types::SendAck = super::execute(
             &self.client,
             super::policy::SESSIONS_SEND_MESSAGE,
@@ -421,5 +463,16 @@ impl WorkbenchApi {
             accepted: ack.accepted,
             message_id: ack.message_id,
         })
+    }
+}
+
+impl WorkbenchApi {
+    /// Search workspace-relative paths through the authenticated backend.
+    pub async fn search_mentions(
+        &self,
+        base: &str,
+        query: &str,
+    ) -> Result<Vec<g::FileSearchResult>, RpcError> {
+        self.client.files().search(base, query).await
     }
 }

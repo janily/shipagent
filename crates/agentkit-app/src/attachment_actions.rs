@@ -89,6 +89,7 @@ impl WorkbenchController {
         {
             return;
         }
+        let options = self.mention_options(&text, cx);
         self.save_draft(cx);
         let id = store.read(cx).model.state.session.id.clone();
         let revision = store.read(cx).model.draft_revision();
@@ -162,6 +163,12 @@ impl WorkbenchController {
                                 previous.clone(),
                                 &reduction_context(),
                             );
+                            if let Some(p) = &p {
+                                s.model.annotate_pending(
+                                    &p.id,
+                                    agentkit_store::core::mentions::message_badges(&options),
+                                );
+                            }
                             s.refresh_annotations();
                             cx.emit(
                                 agentkit_store::core::session::SessionStoreEvent::TurnsChanged {
@@ -187,7 +194,14 @@ impl WorkbenchController {
                     .background_executor()
                     .spawn(async move {
                         sender
-                            .send_prepared(&session, &message, &message_id, &payload, &previous)
+                            .send_prepared_with_options(
+                                &session,
+                                &message,
+                                &message_id,
+                                &payload,
+                                &previous,
+                                options,
+                            )
                             .await
                     })
                     .await;

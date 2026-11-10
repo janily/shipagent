@@ -108,6 +108,8 @@ impl WorkbenchView {
             c.configure(
                 crate::composer::Config {
                     store: self.state.clone(),
+                    skills: self.mention_skills(cx),
+                    directory: self.mention_directory(cx),
                     ready: self.ready,
                     submitting: self.submitting
                         || self
