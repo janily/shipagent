@@ -1,14 +1,14 @@
 {
-  "261103-lively-zenith": {
-    "createdAt": 1793683418299,
-    "id": "261103-lively-zenith",
+  "261110-smooth-flower": {
+    "createdAt": 1794280527964,
+    "id": "261110-smooth-flower",
     "isProcessing": false,
-    "lastMessageAt": 1793683418299,
+    "lastMessageAt": 1794280527964,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture permission-allow",
     "permissionMode": "ask",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-lively-zenith",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-smooth-flower",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_f6d289fb",
+    "workspaceId": "ws_0d5e75ae",
     "workspaceName": "Default"
   }
 }

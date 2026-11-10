@@ -113,6 +113,10 @@ impl WorkbenchView {
                         || self
                             .state
                             .as_ref()
+                            .is_some_and(|s| s.read(cx).attachments.sending)
+                        || self
+                            .state
+                            .as_ref()
                             .is_some_and(|s| s.read(cx).plan.pending.is_some()),
                     loading: self.loading,
                     choices,
@@ -128,12 +132,50 @@ impl WorkbenchView {
             p.set_ready(self.ready && !self.loading, window, cx);
         });
         v_flex()
+            .drag_over::<ExternalPaths>(|style, _, _, cx| {
+                style.border_2().border_color(cx.theme().primary)
+            })
+            .on_drop(cx.listener(|this, paths: &ExternalPaths, _, cx| {
+                if this.ready
+                    && !this.loading
+                    && let Some(s) = &this.state
+                {
+                    cx.emit(WorkbenchIntent::Attach {
+                        session_id: s.read(cx).model.state.session.id.clone(),
+                        inputs: paths
+                            .0
+                            .iter()
+                            .cloned()
+                            .map(crate::AttachmentInput::Path)
+                            .collect(),
+                    });
+                }
+            }))
             .flex_1()
             .min_h_0()
             .when_some(self.state.as_ref(), |v, s| {
                 v.child(crate::permissions::render_notices(s.read(cx), None, cx))
             })
+            .when(cx.has_active_drag(), |v| {
+                v.child(
+                    div()
+                        .p_3()
+                        .text_color(cx.theme().primary)
+                        .child(t!("ak.attach.drop")),
+                )
+            })
             .child(history)
+            .when_some(self.state.as_ref(), |v, s| {
+                v.child(
+                    div()
+                        .id("attachment-warnings")
+                        .max_h(px(120.))
+                        .overflow_y_scroll()
+                        .children(s.read(cx).attachments.warnings.iter().map(|warning| {
+                            div().text_color(cx.theme().warning).child(warning.clone())
+                        })),
+                )
+            })
             .when(
                 self.state
                     .as_ref()

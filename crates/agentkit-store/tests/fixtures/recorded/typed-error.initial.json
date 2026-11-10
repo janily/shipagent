@@ -1,14 +1,14 @@
 {
-  "261103-neat-sparrow": {
-    "createdAt": 1793683449241,
-    "id": "261103-neat-sparrow",
+  "261110-golden-coral": {
+    "createdAt": 1794280557779,
+    "id": "261110-golden-coral",
     "isProcessing": false,
-    "lastMessageAt": 1793683449241,
+    "lastMessageAt": 1794280557779,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture typed-error",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-neat-sparrow",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-golden-coral",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_0dbf6c15",
+    "workspaceId": "ws_52491b5c",
     "workspaceName": "Default"
   }
 }

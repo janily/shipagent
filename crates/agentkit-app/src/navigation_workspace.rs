@@ -133,7 +133,7 @@ impl WorkbenchController {
                                 state.update(cx,|s,cx|{s.refresh_snapshot(snapshot.session,cx);s.apply_batch(&replay,cx);});state
                             }else{
                                 let mut model=SessionStore::new(snapshot.session);
-                                if let Some((draft,attachments))=this.drafts.remove(&id){model.model.draft=draft;model.model.draft_attachments=attachments;}
+                                if let Some((draft,attachments,mut files))=this.drafts.remove(&id){model.model.draft=draft;model.model.draft_attachments=attachments;files.reading=0;files.sending=false;model.attachments=files;}
                                 let state=cx.new(|_|model);state.update(cx,|s,cx|{s.apply_batch(&replay,cx);});state
                             };
                             this.stores.insert(id.clone(),state.clone());

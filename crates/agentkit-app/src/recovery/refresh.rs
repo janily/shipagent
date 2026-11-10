@@ -122,6 +122,7 @@ impl WorkbenchController {
                             (
                                 store.read(cx).model.draft.clone(),
                                 store.read(cx).model.draft_attachments.clone(),
+                                store.read(cx).attachments.clone(),
                             ),
                         );
                     }
@@ -153,9 +154,12 @@ impl WorkbenchController {
                             old
                         } else {
                             let mut store = SessionStore::new(session);
-                            if let Some((draft, attachments)) = this.drafts.remove(&id) {
+                            if let Some((draft, attachments, mut files)) = this.drafts.remove(&id) {
                                 store.model.draft = draft;
                                 store.model.draft_attachments = attachments;
+                                files.reading = 0;
+                                files.sending = false;
+                                store.attachments = files;
                             }
                             cx.new(|_| store)
                         };

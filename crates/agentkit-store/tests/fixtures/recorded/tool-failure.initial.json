@@ -1,14 +1,14 @@
 {
-  "261103-quiet-gust": {
-    "createdAt": 1793683413609,
-    "id": "261103-quiet-gust",
+  "261110-apt-eclipse": {
+    "createdAt": 1794280523386,
+    "id": "261110-apt-eclipse",
     "isProcessing": false,
-    "lastMessageAt": 1793683413609,
+    "lastMessageAt": 1794280523386,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture tool-failure",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-quiet-gust",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-apt-eclipse",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_8f443191",
+    "workspaceId": "ws_f1888615",
     "workspaceName": "Default"
   }
 }

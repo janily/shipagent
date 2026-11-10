@@ -1,14 +1,14 @@
 {
-  "261103-spry-nickel": {
-    "createdAt": 1793683458691,
-    "id": "261103-spry-nickel",
+  "261110-snug-branch": {
+    "createdAt": 1794280566854,
+    "id": "261110-snug-branch",
     "isProcessing": false,
-    "lastMessageAt": 1793683458691,
+    "lastMessageAt": 1794280566854,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture compaction",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-spry-nickel",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-snug-branch",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_1830194d",
+    "workspaceId": "ws_0ba99694",
     "workspaceName": "Default"
   }
 }

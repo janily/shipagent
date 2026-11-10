@@ -408,3 +408,102 @@ fn removed_escape_shortcut_does_not_cancel_via_legacy_textinput_action(cx: &mut 
         1
     );
 }
+
+#[gpui_kit::test]
+fn attachment_only_send_paste_text_and_busy_import_gate(cx: &mut TestAppContext) {
+    let (w, v, s, e) = open(cx);
+    step(cx, w, |window, cx| {
+        s.update(cx,|s,cx|{s.attachments.files.push(agentkit_store::core::attachments::Entry{id:"local".into(),file:std::sync::Arc::new(serde_json::from_value(serde_json::json!({"path":"/note.txt","name":"note.txt","type":"text","mimeType":"text/plain","size":4,"text":"note"})).unwrap())});s.attachments.reading=1;cx.notify();});
+        window.render_frame(cx);
+        window.click("send", cx);
+    });
+    assert!(sent(&e).is_empty());
+    step(cx, w, |window, cx| {
+        s.update(cx, |s, cx| {
+            s.attachments.reading = 0;
+            cx.notify();
+        });
+        window.render_frame(cx);
+        window.click("send", cx);
+    });
+    assert_eq!(sent(&e), [""]);
+    step(cx, w, |window, cx| {
+        v.update(cx, |v, cx| v.submission_finished("", false, window, cx));
+        cx.write_to_clipboard(gpui_kit::ClipboardItem::new_string("ordinary text".into()));
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.dispatch_action(Box::new(gpui_kit::component::input::Paste), cx);
+        window.click("attach-files", cx);
+    });
+    cx.run_until_parked();
+    step(cx, w, |_, cx| {
+        assert_eq!(v.read(cx).current_draft(cx).unwrap().1, "ordinary text")
+    });
+    assert!(cx.did_prompt_for_paths());
+    let other = cx.update(|cx| {
+        let mut session = s.read(cx).model.state.session.clone();
+        session.id = "other".into();
+        cx.new(|_| SessionStore::new(session))
+    });
+    step(cx, w, |window, cx| {
+        v.update(cx, |v, cx| v.bind_session(other, window, cx))
+    });
+    cx.simulate_path_prompt_response(|options| {
+        assert!(options.multiple && options.files && !options.directories);
+        Some(vec!["/first.txt".into(), "/second.txt".into()])
+    });
+    cx.run_until_parked();
+    assert!(e.borrow().iter().any(|e|matches!(e,WorkbenchIntent::Attach{session_id,inputs}if session_id=="s"&&inputs.len()==2)));
+}
+
+#[gpui_kit::test]
+fn native_attachment_remove_control_emits_stable_identity(cx: &mut TestAppContext) {
+    let (w, _, s, e) = open(cx);
+    step(cx, w, |window, cx| {
+        s.update(cx,|s,cx|{s.attachments.files.push(agentkit_store::core::attachments::Entry{id:"remove-me".into(),file:std::sync::Arc::new(serde_json::from_value(serde_json::json!({"path":"/note.txt","name":"note.txt","type":"text","mimeType":"text/plain","size":4})).unwrap())});cx.notify();});
+        window.render_frame(cx);
+        window.hover("attachment-row:remove-me", cx);
+        window.render_frame(cx);
+        window.click(
+            (
+                gpui_kit::ElementId::from(gpui_kit::SharedString::from("attachment:remove-me")),
+                "remove",
+            ),
+            cx,
+        );
+    });
+    assert!(e.borrow().iter().any(|e|matches!(e,WorkbenchIntent::RemoveAttachment{session_id,id}if session_id=="s"&&id=="remove-me")));
+}
+
+#[gpui_kit::test]
+fn image_clipboard_and_whole_chat_file_drop_emit_import_intents(cx: &mut TestAppContext) {
+    let (w, _, _, e) = open(cx);
+    step(cx, w, |window, cx| {
+        cx.write_to_clipboard(gpui_kit::ClipboardItem::new_image(
+            &gpui_kit::Image::from_bytes(gpui_kit::ImageFormat::Png, vec![1, 2, 3]),
+        ));
+        window.render_frame(cx);
+        window.click("composer", cx);
+        window.dispatch_action(Box::new(gpui_kit::component::input::Paste), cx);
+    });
+    cx.run_until_parked();
+    assert!(e.borrow().iter().any(|e|matches!(e,WorkbenchIntent::Attach{session_id,inputs}if session_id=="s" && matches!(&inputs[0],agentkit_ui::AttachmentInput::Image{name,bytes}if name=="pasted.png"&&bytes.as_ref()==[1,2,3]))));
+    step(cx, w, |window, cx| {
+        window.render_frame(cx);
+        let position = window.find("composer").bounds().center();
+        window.dispatch_event(
+            gpui_kit::PlatformInput::FileDrop(gpui_kit::FileDropEvent::Entered {
+                position,
+                paths: gpui_kit::ExternalPaths(vec![std::path::PathBuf::from("/drop.txt")].into()),
+            }),
+            cx,
+        );
+        window.render_frame(cx);
+        window.dispatch_event(
+            gpui_kit::PlatformInput::FileDrop(gpui_kit::FileDropEvent::Submit { position }),
+            cx,
+        );
+    });
+    cx.run_until_parked();
+    assert!(e.borrow().iter().any(|e|matches!(e,WorkbenchIntent::Attach{session_id,inputs}if session_id=="s" && matches!(&inputs[0],agentkit_ui::AttachmentInput::Path(path)if path==std::path::Path::new("/drop.txt")))));
+}

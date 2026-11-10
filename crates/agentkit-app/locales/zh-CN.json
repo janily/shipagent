@@ -383,5 +383,13 @@
   "ak.plan.approved": "计划已批准，请执行。",
   "ak.plan.additional": "额外的用户上下文",
   "ak.plan.waiting": "等待上下文压缩完成后执行。压缩失败时可发送 /compact 重试。",
-  "ak.plan.dispatch_wait": "计划已接受，等待执行确认；请勿重复批准。"
+  "ak.plan.dispatch_wait": "计划已接受，等待执行确认；请勿重复批准。",
+  "ak.attach.drop": "释放以添加附件",
+  "ak.attach.failed": "附件 %{name} 失败：%{error}",
+  "ak.attach.file_only": "请选择普通文件",
+  "ak.attach.pick": "添加附件",
+  "ak.attach.picker_failed": "文件选择器不可用，请重试或拖入文件",
+  "ak.attach.reading": "正在读取附件…",
+  "ak.attach.sending": "正在存储并发送附件…",
+  "ak.attach.too_large": "单个附件不能超过 50 MB"
 }

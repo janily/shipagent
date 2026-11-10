@@ -1,14 +1,14 @@
 {
-  "261103-still-river": {
-    "createdAt": 1793683427895,
-    "id": "261103-still-river",
+  "261110-sunny-jasper": {
+    "createdAt": 1794280537102,
+    "id": "261110-sunny-jasper",
     "isProcessing": false,
-    "lastMessageAt": 1793683427895,
+    "lastMessageAt": 1794280537102,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture cancel",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-still-river",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-sunny-jasper",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_facad13b",
+    "workspaceId": "ws_99814fea",
     "workspaceName": "Default"
   }
 }

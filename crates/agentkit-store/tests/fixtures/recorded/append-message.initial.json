@@ -1,14 +1,14 @@
 {
-  "261103-polished-amber": {
-    "createdAt": 1793683432661,
-    "id": "261103-polished-amber",
+  "261110-eager-swamp": {
+    "createdAt": 1794280541656,
+    "id": "261110-eager-swamp",
     "isProcessing": false,
-    "lastMessageAt": 1793683432661,
+    "lastMessageAt": 1794280541656,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture append-message",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-polished-amber",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-eager-swamp",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_e74aee6b",
+    "workspaceId": "ws_b55be9af",
     "workspaceName": "Default"
   }
 }

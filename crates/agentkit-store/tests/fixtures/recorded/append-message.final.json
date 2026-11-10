@@ -1,46 +1,46 @@
 {
-  "261103-polished-amber": {
-    "createdAt": 1793683432661,
+  "261110-eager-swamp": {
+    "createdAt": 1794280541656,
     "hasUnread": true,
-    "id": "261103-polished-amber",
+    "id": "261110-eager-swamp",
     "isProcessing": false,
-    "lastFinalMessageId": "86ba5e37-eb7d-4647-b122-5130cd6fed57",
-    "lastMessageAt": 1793683433350,
+    "lastFinalMessageId": "3fb375fe-ac1d-4f9e-9c2d-ab012fd7b8be",
+    "lastMessageAt": 1794280542269,
     "lastMessageRole": "assistant",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture append-message.",
-        "id": "msg-1793683432665-vo67ek",
+        "id": "msg-1794280541660-djmcw4",
         "role": "user",
-        "timestamp": 1793683432665
+        "timestamp": 1794280541660
       },
       {
         "content": "Appended fixture input.",
-        "id": "msg-1793683433350-nyd78o",
+        "id": "msg-1794280542269-7a23z6",
         "role": "user",
-        "timestamp": 1793683433350
+        "timestamp": 1794280542269
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "f6b4b159-8d4a-47ed-995a-ef271d9cb74e",
+        "id": "21df5c60-7b76-48fa-9896-81630593d2f1",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683435155,
+        "timestamp": 1794280544073,
         "turnId": "pi-turn-1__m0"
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "86ba5e37-eb7d-4647-b122-5130cd6fed57",
+        "id": "3fb375fe-ac1d-4f9e-9c2d-ab012fd7b8be",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683436976,
+        "timestamp": 1794280545888,
         "turnId": "pi-turn-1__m1"
       }
     ],
     "name": "Fixture append-message",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-polished-amber",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-eager-swamp",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -60,7 +60,7 @@
       "totalTokens": 520.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_e74aee6b",
+    "workspaceId": "ws_b55be9af",
     "workspaceName": "Default"
   }
 }

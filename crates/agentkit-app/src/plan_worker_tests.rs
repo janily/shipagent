@@ -215,6 +215,7 @@ fn persisted_plan_compacts_and_resumes_after_backend_restart() {
                 .arg(repo.join("tools/fixtures/model.mjs"))
                 .arg(repo.join("tools/fake-llm/scenarios/plan.yaml"))
                 .env("AGENTKIT_FIXTURE_ROOT", &root)
+                .env("AGENTKIT_FIXTURE_DIAGNOSTICS", "1")
                 .stdout(Stdio::piped())
                 .stderr(Stdio::inherit())
                 .spawn()
@@ -252,7 +253,24 @@ fn persisted_plan_compacts_and_resumes_after_backend_restart() {
                 .unwrap()
                 .accepted
         );
-        let ready = wait_idle(&api, &id).await;
+        let plan_deadline = std::time::Instant::now() + Duration::from_secs(40);
+        let ready = loop {
+            let snapshot = api.session_generated(&id).await.unwrap();
+            if !snapshot.is_processing
+                && snapshot
+                    .messages
+                    .iter()
+                    .any(|m| m.role == g::MessageRole::Plan)
+            {
+                break snapshot;
+            }
+            assert!(
+                std::time::Instant::now() < plan_deadline,
+                "SubmitPlan did not become observable: {:?}",
+                snapshot.messages
+            );
+            smol::Timer::after(Duration::from_millis(30)).await;
+        };
         let message = ready
             .messages
             .iter()

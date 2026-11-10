@@ -1,14 +1,14 @@
 {
-  "261103-ivory-fjord": {
-    "createdAt": 1793683453900,
-    "id": "261103-ivory-fjord",
+  "261110-noble-thunder": {
+    "createdAt": 1794280562298,
+    "id": "261110-noble-thunder",
     "isProcessing": false,
-    "lastMessageAt": 1793683453900,
+    "lastMessageAt": 1794280562298,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture plan",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-ivory-fjord",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-noble-thunder",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_bb37d8f1",
+    "workspaceId": "ws_f21f3f5c",
     "workspaceName": "Default"
   }
 }

@@ -1,31 +1,31 @@
-{"message":{"content":"Complete isolated fixture plan.","id":"msg-1793683453904-afgftt","role":"user","timestamp":1793683453904},"sessionId":"261103-ivory-fjord","status":"accepted","type":"user_message"}
-{"sessionId":"261103-ivory-fjord","tokenUsage":{"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-ivory-fjord","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-ivory-fjord","timestamp":1793683454587,"toolInput":{"planPath":"<FIXTURE_ROOT>/plan.md"},"toolName":"mcp__session__SubmitPlan","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_start"}
-{"message":{"content":"<FIXTURE_ROOT>/plan.md","id":"msg-1793683454597-8uobqu","role":"plan","timestamp":1793683454597},"sessionId":"261103-ivory-fjord","type":"plan_submitted"}
-{"isError":false,"result":"Plan submitted for review. Waiting for user feedback.","sessionId":"261103-ivory-fjord","timestamp":1793683454600,"toolName":"mcp__session__SubmitPlan","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_result"}
-{"sessionId":"261103-ivory-fjord","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":524},"inputTokens":500},"type":"usage_update"}
-{"delta":"F","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"i","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"x","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"t","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"u","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"a","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"n","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"s","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"w","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"中","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"文","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"。","sessionId":"261103-ivory-fjord","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"messageId":"ae9dc002-54bd-4403-9404-858262d7e875","sessionId":"261103-ivory-fjord","text":"Fixture answer 中文。","timestamp":1793683454630,"turnId":"pi-turn-1__m0","type":"text_complete"}
-{"sessionId":"261103-ivory-fjord","tokenUsage":{"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-ivory-fjord","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-ivory-fjord","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-ivory-fjord","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"backgroundTasksAlive":false,"hasUnread":true,"sessionId":"261103-ivory-fjord","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":20,"totalTokens":520},"type":"complete"}
+{"message":{"content":"Complete isolated fixture plan.","id":"msg-1794280562302-cjyyva","role":"user","timestamp":1794280562302},"sessionId":"261110-noble-thunder","status":"accepted","type":"user_message"}
+{"sessionId":"261110-noble-thunder","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-noble-thunder","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-noble-thunder","timestamp":1794280562879,"toolInput":{"planPath":"<FIXTURE_ROOT>/plan.md"},"toolName":"mcp__session__SubmitPlan","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_start"}
+{"message":{"content":"<FIXTURE_ROOT>/plan.md","id":"msg-1794280562885-3qxg77","role":"plan","timestamp":1794280562885},"sessionId":"261110-noble-thunder","type":"plan_submitted"}
+{"isError":false,"result":"Plan submitted for review. Waiting for user feedback.","sessionId":"261110-noble-thunder","timestamp":1794280562887,"toolName":"mcp__session__SubmitPlan","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_result"}
+{"sessionId":"261110-noble-thunder","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":524},"inputTokens":500},"type":"usage_update"}
+{"delta":"F","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"i","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"x","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"t","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"u","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"a","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"n","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"s","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"w","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"中","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"文","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"。","sessionId":"261110-noble-thunder","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"messageId":"a036dc66-8bd5-40b6-9cb8-722fc656e0d0","sessionId":"261110-noble-thunder","text":"Fixture answer 中文。","timestamp":1794280562915,"turnId":"pi-turn-1__m0","type":"text_complete"}
+{"sessionId":"261110-noble-thunder","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-noble-thunder","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-noble-thunder","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-noble-thunder","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"backgroundTasksAlive":false,"hasUnread":true,"sessionId":"261110-noble-thunder","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":20,"totalTokens":520},"type":"complete"}

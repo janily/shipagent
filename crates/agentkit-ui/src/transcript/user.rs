@@ -14,7 +14,10 @@ pub(super) fn render(message: g::Message, parent: WeakEntity<ChatView>) -> impl 
         body = body.child(Tag::new().child(badge.label.clone()));
     }
     for attachment in message.attachments.iter().flatten() {
-        body = body.child(Tag::new().child(attachment.name.clone()));
+        body = body.child(crate::attachment::card(
+            attachment.name.clone(),
+            attachment.thumbnail_base64.as_deref(),
+        ));
     }
     let copy = message.id.clone();
     let branch = message.id.clone();

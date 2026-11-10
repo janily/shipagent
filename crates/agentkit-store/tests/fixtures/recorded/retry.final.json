@@ -1,32 +1,32 @@
 {
-  "261103-calm-dolphin": {
-    "createdAt": 1793683441029,
+  "261110-brave-lion": {
+    "createdAt": 1794280549847,
     "hasUnread": true,
-    "id": "261103-calm-dolphin",
+    "id": "261110-brave-lion",
     "isProcessing": false,
-    "lastFinalMessageId": "bb1efbb0-ba3f-4fbf-868e-9ca9c5ce8c7a",
-    "lastMessageAt": 1793683441035,
+    "lastFinalMessageId": "7beceb9b-10e2-4cde-bd60-fde6509f72ba",
+    "lastMessageAt": 1794280549851,
     "lastMessageRole": "assistant",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture retry.",
-        "id": "msg-1793683441035-f0z4e5",
+        "id": "msg-1794280549851-94kcrw",
         "role": "user",
-        "timestamp": 1793683441035
+        "timestamp": 1794280549851
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "bb1efbb0-ba3f-4fbf-868e-9ca9c5ce8c7a",
+        "id": "7beceb9b-10e2-4cde-bd60-fde6509f72ba",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683445022,
+        "timestamp": 1794280553818,
         "turnId": "pi-turn-1__m0"
       }
     ],
     "name": "Fixture retry",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-calm-dolphin",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-brave-lion",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -46,7 +46,7 @@
       "totalTokens": 510.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_c685c1cb",
+    "workspaceId": "ws_43368515",
     "workspaceName": "Default"
   }
 }

@@ -107,6 +107,8 @@ impl SessionListStore {
 }
 /// Per-open-session entity. Views read the canonical cache and subscribe to typed changes.
 pub struct SessionStore {
+    /// Session-local file payloads and individual warnings.
+    pub attachments: crate::core::attachments::Draft,
     /// Plan file cache and current acceptance operation.
     pub plan: plans::PlanState,
     /// Pure mutable session cache.
@@ -128,6 +130,7 @@ impl SessionStore {
         Self {
             model,
             plan: Default::default(),
+            attachments: Default::default(),
             annotations,
             selection_pending: false,
             approval: Default::default(),

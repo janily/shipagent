@@ -1,38 +1,38 @@
 {
-  "261103-ivory-fjord": {
-    "createdAt": 1793683453900,
+  "261110-noble-thunder": {
+    "createdAt": 1794280562298,
     "hasUnread": true,
-    "id": "261103-ivory-fjord",
+    "id": "261110-noble-thunder",
     "isProcessing": false,
-    "lastFinalMessageId": "ae9dc002-54bd-4403-9404-858262d7e875",
-    "lastMessageAt": 1793683453904,
+    "lastFinalMessageId": "a036dc66-8bd5-40b6-9cb8-722fc656e0d0",
+    "lastMessageAt": 1794280562302,
     "lastMessageRole": "assistant",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture plan.",
-        "id": "msg-1793683453904-afgftt",
+        "id": "msg-1794280562302-cjyyva",
         "role": "user",
-        "timestamp": 1793683453904
+        "timestamp": 1794280562302
       },
       {
         "content": "<FIXTURE_ROOT>/plan.md",
-        "id": "msg-1793683454597-8uobqu",
+        "id": "msg-1794280562885-3qxg77",
         "role": "plan",
-        "timestamp": 1793683454597
+        "timestamp": 1794280562885
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "ae9dc002-54bd-4403-9404-858262d7e875",
+        "id": "a036dc66-8bd5-40b6-9cb8-722fc656e0d0",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683454630,
+        "timestamp": 1794280562915,
         "turnId": "pi-turn-1__m0"
       }
     ],
     "name": "Fixture plan",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-ivory-fjord",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-noble-thunder",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -52,7 +52,7 @@
       "totalTokens": 520.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_bb37d8f1",
+    "workspaceId": "ws_f21f3f5c",
     "workspaceName": "Default"
   }
 }

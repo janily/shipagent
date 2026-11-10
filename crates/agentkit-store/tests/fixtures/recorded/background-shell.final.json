@@ -1,47 +1,47 @@
 {
-  "261103-witty-vista": {
-    "createdAt": 1793683463789,
+  "261110-alert-lion": {
+    "createdAt": 1794280571516,
     "hasUnread": true,
-    "id": "261103-witty-vista",
+    "id": "261110-alert-lion",
     "isProcessing": false,
-    "lastFinalMessageId": "b806c07e-9d0b-41d6-8137-d1ac13eb80ad",
-    "lastMessageAt": 1793683465565,
+    "lastFinalMessageId": "52bbb4a0-a822-4c26-b146-8c79956ed602",
+    "lastMessageAt": 1794280573111,
     "lastMessageRole": "assistant",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture background-shell.",
-        "id": "msg-1793683463796-m2c5vi",
+        "id": "msg-1794280571520-pqjgwa",
         "role": "user",
-        "timestamp": 1793683463796
+        "timestamp": 1794280571520
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "dcd29bc8-add3-45b6-b276-2bb9b990e88a",
+        "id": "b4afe39d-2553-4eec-8096-5687a29eeccc",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683464582,
+        "timestamp": 1794280572127,
         "turnId": "pi-turn-1__m0"
       },
       {
-        "content": "<system-notification>\nSent by MkAgent automatically, not typed by the user. It is not a reply to, or approval of, anything you asked.\n[background-task-completed] The background agent you launched (task shell-84152ccf-8c86-478d-a6e5-e6d55ffabd32) has finished.\nIts full output is saved at: <FIXTURE_ROOT>/config/workspaces/default/sessions/261103-witty-vista/.pi-agent/tasks/shell-84152ccf-8c86-478d-a6e5-e6d55ffabd32.output\nRead that output file and present the results to the user now. Do NOT spawn another background agent — just read the file and summarize the findings inline.\n</system-notification>",
+        "content": "<system-notification>\nSent by MkAgent automatically, not typed by the user. It is not a reply to, or approval of, anything you asked.\n[background-task-completed] The background agent you launched (task shell-9bbe579a-d76d-467e-93c0-e4aed99f4250) has finished.\nIts full output is saved at: <FIXTURE_ROOT>/config/workspaces/default/sessions/261110-alert-lion/.pi-agent/tasks/shell-9bbe579a-d76d-467e-93c0-e4aed99f4250.output\nRead that output file and present the results to the user now. Do NOT spawn another background agent — just read the file and summarize the findings inline.\n</system-notification>",
         "hidden": true,
-        "id": "msg-1793683465565-q62obz",
+        "id": "msg-1794280573111-nk38ll",
         "role": "user",
-        "timestamp": 1793683465565
+        "timestamp": 1794280573111
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "b806c07e-9d0b-41d6-8137-d1ac13eb80ad",
+        "id": "52bbb4a0-a822-4c26-b146-8c79956ed602",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683465619,
+        "timestamp": 1794280573158,
         "turnId": "pi-turn-2__m0"
       }
     ],
     "name": "Fixture background-shell",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-witty-vista",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-alert-lion",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -61,7 +61,7 @@
       "totalTokens": 530.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_07964a93",
+    "workspaceId": "ws_e3653136",
     "workspaceName": "Default"
   }
 }

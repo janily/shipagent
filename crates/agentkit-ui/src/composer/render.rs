@@ -55,6 +55,7 @@ impl Render for Composer {
             .p_3()
             .gap_3()
             .key_context("Composer")
+            .capture_action(cx.listener(Self::paste))
             .capture_action(cx.listener(Self::enter))
             .capture_action(cx.listener(Self::escape))
             .capture_action(cx.listener(Self::history))
@@ -93,6 +94,7 @@ impl Render for Composer {
                 this.set_send_key(a.key, cx);
                 cx.emit(WorkbenchIntent::SendKeyChanged(a.key));
             }))
+            .child(self.attachment_row(cx))
             .child(
                 div()
                     .id("composer")
@@ -111,6 +113,14 @@ impl Render for Composer {
                     .gap_2()
                     .flex_wrap()
                     .items_center()
+                    .child(
+                        Button::new("attach-files")
+                            .small()
+                            .ghost()
+                            .label(t!("ak.attach.pick"))
+                            .disabled(!enabled)
+                            .on_click(cx.listener(|this, _, window, cx| this.pick(window, cx))),
+                    )
                     .child(self.mode_menu(mode, cx))
                     .child(self.model_menu(model, connection))
                     .child(self.thinking_menu(thinking))
@@ -139,7 +149,9 @@ impl Render for Composer {
                                 !enabled
                                     || self.submitting
                                     || changing
-                                    || self.input.read(cx).value().trim().is_empty(),
+                                    || self.attachments_busy(cx)
+                                    || (self.input.read(cx).value().trim().is_empty()
+                                        && !self.has_attachments(cx)),
                             )
                             .on_click(cx.listener(|this, _, window, cx| this.submit(window, cx))),
                     ),

@@ -250,3 +250,15 @@ pub struct NetworkProxyUpdate {
     /// Restart the owned backend before treating the new routing as active.
     pub restart_required: bool,
 }
+
+/// The renderer enriches FileAttachment with server references before sendMessage.
+/// Kept here because these fields are not declared on the upstream root interface.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreparedAttachment {
+    #[serde(flatten)]
+    pub file: g::FileAttachment,
+    pub stored_path: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub markdown_path: Option<String>,
+}

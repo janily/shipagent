@@ -22,7 +22,9 @@ pub mod tools;
 /// Virtualized transcript, assistant cards and streaming Markdown documents.
 pub mod transcript;
 mod workbench;
-pub use workbench::{WorkbenchIntent, WorkbenchView};
+pub use workbench::{AttachmentInput, WorkbenchIntent, WorkbenchView};
+/// Shared native file/image presentation.
+pub mod attachment;
 /// Translate a literal application key with named parameters.
 #[macro_export]
 macro_rules! t {
