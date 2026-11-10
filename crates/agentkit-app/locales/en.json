@@ -383,5 +383,13 @@
   "ak.plan.approved": "Plan approved, please execute.",
   "ak.plan.additional": "Additional user context",
   "ak.plan.waiting": "Waiting for context compaction before execution. If compaction fails, send /compact to retry.",
-  "ak.plan.dispatch_wait": "Plan accepted. Waiting for execution confirmation; do not approve it again."
+  "ak.plan.dispatch_wait": "Plan accepted. Waiting for execution confirmation; do not approve it again.",
+  "ak.attach.drop": "Drop to attach files",
+  "ak.attach.failed": "Attachment %{name} failed: %{error}",
+  "ak.attach.file_only": "Choose a regular file",
+  "ak.attach.pick": "Attach files",
+  "ak.attach.picker_failed": "File picker unavailable. Retry or drop files here",
+  "ak.attach.reading": "Reading attachments…",
+  "ak.attach.sending": "Storing and sending attachments…",
+  "ak.attach.too_large": "Each attachment must be at most 50 MB"
 }

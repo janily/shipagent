@@ -263,3 +263,6 @@ pub mod session;
 
 /// Native pending-plan scheduler and canonical approval policy.
 pub mod plan_dispatch;
+
+/// Session-local attachment staging and acknowledgement ownership.
+pub mod attachments;

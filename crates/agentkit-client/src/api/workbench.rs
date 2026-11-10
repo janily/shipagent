@@ -379,3 +379,47 @@ impl WorkbenchApi {
         self.client.close();
     }
 }
+
+impl WorkbenchApi {
+    /// Store one session-owned payload using the typed 120 second file policy.
+    pub async fn store_attachment(
+        &self,
+        session: &str,
+        file: &g::FileAttachment,
+    ) -> Result<g::StoredAttachment, RpcError> {
+        self.client.files().store_attachment(session, file).await
+    }
+}
+
+impl WorkbenchApi {
+    /// Send converted payloads with the same reviewed positional operation as the renderer.
+    pub async fn send_prepared(
+        &self,
+        session: &str,
+        text: &str,
+        optimistic_id: &str,
+        files: &[super::types::PreparedAttachment],
+        stored: &[g::StoredAttachment],
+    ) -> Result<SendAck, RpcError> {
+        let options = g::SendMessageOptions {
+            optimistic_message_id: Some(optimistic_id.into()),
+            ..Default::default()
+        };
+        let ack: super::types::SendAck = super::execute(
+            &self.client,
+            super::policy::SESSIONS_SEND_MESSAGE,
+            vec![
+                serde_json::json!(session),
+                serde_json::json!(text),
+                serde_json::to_value(files)?,
+                serde_json::to_value(stored)?,
+                serde_json::to_value(options)?,
+            ],
+        )
+        .await?;
+        Ok(SendAck {
+            accepted: ack.accepted,
+            message_id: ack.message_id,
+        })
+    }
+}

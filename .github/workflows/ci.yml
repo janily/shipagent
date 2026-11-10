@@ -92,6 +92,10 @@ jobs:
         run: cargo test -p agentkit-app --lib persisted_plan_compacts_and_resumes_after_backend_restart --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
+      - name: Attachment storage, partial failure, send and restart
+        run: cargo test -p agentkit-app --lib real_attachment_storage_send_and_restart --locked -- --ignored
+        env:
+          AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
       - name: Native settings persist, confirm and restart the owned backend
         run: cargo test -p agentkit-app --lib settings_contract_parent --locked -- --ignored
         env:

@@ -1,4 +1,5 @@
 //! Session-scoped native input. Emits intent packets; owns no backend handles.
+mod attachments;
 mod keyboard;
 mod menus;
 mod policy;
@@ -42,6 +43,7 @@ pub struct Composer {
         Option<g::ThinkingLevel>,
     ),
     _subscription: Subscription,
+    attachment_subscription: Option<Subscription>,
 }
 impl EventEmitter<WorkbenchIntent> for Composer {}
 impl Composer {
@@ -78,6 +80,7 @@ impl Composer {
             send_key: SendKey::Enter,
             status: (false, false, None, None),
             _subscription: sub,
+            attachment_subscription: None,
         }
     }
     /// Enable legacy TextInput Escape cancellation only when the effective keymap retains it.
@@ -88,9 +91,12 @@ impl Composer {
     pub fn input(&self) -> &Entity<TextareaState> {
         &self.input
     }
-    pub(crate) fn bind(&mut self, store: Option<Entity<SessionStore>>) {
+    pub(crate) fn bind(&mut self, store: Option<Entity<SessionStore>>, cx: &mut Context<Self>) {
         if self.store.as_ref().map(Entity::entity_id) != store.as_ref().map(Entity::entity_id) {
             self.changing = false;
+            self.attachment_subscription = store
+                .as_ref()
+                .map(|s| cx.observe(s, |_, _, cx| cx.notify()));
         }
         self.store = store;
     }
@@ -123,7 +129,7 @@ impl Composer {
             || self.default_thinking != config.thinking
             || self.changing != pending
             || self.status != status;
-        self.bind(config.store);
+        self.bind(config.store, cx);
         self.changing = pending;
         self.status = status;
         self.ready = config.ready;
@@ -169,7 +175,8 @@ impl Composer {
         if self.enabled()
             && !self.submitting
             && !self.changing
-            && !text.trim().is_empty()
+            && (!text.trim().is_empty() || self.has_attachments(cx))
+            && !self.attachments_busy(cx)
             && !self.composing(window, cx)
         {
             self.submitting = true;

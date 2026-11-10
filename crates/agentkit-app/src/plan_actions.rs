@@ -72,6 +72,7 @@ impl WorkbenchController {
         };
         if store.read(cx).model.busy()
             || store.read(cx).model.has_pending_send()
+            || store.read(cx).attachments.sending
             || store.read(cx).selection_pending
             || store.read(cx).plan.pending.is_some()
         {

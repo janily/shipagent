@@ -252,7 +252,24 @@ fn persisted_plan_compacts_and_resumes_after_backend_restart() {
                 .unwrap()
                 .accepted
         );
-        let ready = wait_idle(&api, &id).await;
+        let plan_deadline = std::time::Instant::now() + Duration::from_secs(40);
+        let ready = loop {
+            let snapshot = api.session_generated(&id).await.unwrap();
+            if !snapshot.is_processing
+                && snapshot
+                    .messages
+                    .iter()
+                    .any(|m| m.role == g::MessageRole::Plan)
+            {
+                break snapshot;
+            }
+            assert!(
+                std::time::Instant::now() < plan_deadline,
+                "SubmitPlan did not become observable: {:?}",
+                snapshot.messages
+            );
+            smol::Timer::after(Duration::from_millis(30)).await;
+        };
         let message = ready
             .messages
             .iter()

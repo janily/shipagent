@@ -1,5 +1,7 @@
 #[path = "approval_notifications.rs"]
 mod approval_notifications;
+#[path = "attachment_actions.rs"]
+mod attachment_actions;
 #[path = "chat_actions.rs"]
 mod chat_actions;
 #[path = "chatgpt_oauth.rs"]
@@ -368,6 +370,7 @@ pub(crate) struct WorkbenchController {
         (
             agentkit_protocol::generated::SessionDraft,
             Vec<agentkit_protocol::generated::StoredAttachment>,
+            agentkit_store::core::attachments::Draft,
         ),
     >,
     quitting: Rc<Cell<bool>>,
@@ -671,15 +674,21 @@ impl WorkbenchController {
                 (
                     store.read(cx).model.draft.clone(),
                     store.read(cx).model.draft_attachments.clone(),
+                    store.read(cx).attachments.clone(),
                 ),
             );
         }
         self.stores.clear();
         self.backlog.clear();
         let mut initial = SessionStore::new(started.session);
-        if let Some((draft, attachments)) = self.drafts.remove(&initial.model.state.session.id) {
+        if let Some((draft, attachments, mut files)) =
+            self.drafts.remove(&initial.model.state.session.id)
+        {
             initial.model.draft = draft;
             initial.model.draft_attachments = attachments;
+            files.reading = 0;
+            files.sending = false;
+            initial.attachments = files;
         }
         let state = cx.new(|_| initial);
         self.stores
@@ -1307,6 +1316,33 @@ impl WorkbenchController {
             }
             return;
         }
+        match &intent {
+            WorkbenchIntent::Attach { session_id, inputs } => {
+                self.import_attachments(session_id.clone(), inputs.clone(), window, cx);
+                return;
+            }
+            WorkbenchIntent::RemoveAttachment { session_id, id } => {
+                if let Some(s) = self.stores.get(session_id) {
+                    s.update(cx, |s, cx| {
+                        if let Some(stored) = id.strip_prefix("stored:") {
+                            let files = s
+                                .model
+                                .draft_attachments
+                                .iter()
+                                .filter(|a| a.id != stored)
+                                .cloned()
+                                .collect();
+                            s.model.set_draft_attachments(files);
+                        } else {
+                            s.attachments.remove(id);
+                        }
+                        cx.notify();
+                    });
+                }
+                return;
+            }
+            _ => {}
+        }
         self.operations.retain(|task| !task.is_ready());
         if !self.view.read(cx).connection_ready() {
             return;
@@ -1330,7 +1366,10 @@ impl WorkbenchController {
             return;
         }
         match intent {
-            WorkbenchIntent::Settings(_) | WorkbenchIntent::Onboarding(_) => {}
+            WorkbenchIntent::Attach { .. }
+            | WorkbenchIntent::RemoveAttachment { .. }
+            | WorkbenchIntent::Settings(_)
+            | WorkbenchIntent::Onboarding(_) => {}
             WorkbenchIntent::Sidebar(action) => self.handle_navigation(action, api, window, cx),
             selection @ (WorkbenchIntent::ModelChanged { .. }
             | WorkbenchIntent::ThinkingChanged(_)
@@ -1347,6 +1386,19 @@ impl WorkbenchController {
                     return;
                 }
                 let is_resend = matches!(intent, WorkbenchIntent::ResendMessage(_));
+                if matches!(intent, WorkbenchIntent::Submit(_))
+                    && (store.read(cx).attachments.sending
+                        || store.read(cx).attachments.reading > 0)
+                {
+                    return;
+                }
+                if let WorkbenchIntent::Submit(text) = &intent
+                    && !store.read(cx).attachments.files.is_empty()
+                {
+                    self.submit_attachments(text.clone(), store, api, window, cx);
+                    return;
+                }
+
                 let (text, attachments) = match intent {
                     WorkbenchIntent::Submit(text) => {
                         (text, store.read(cx).model.draft_attachments.clone())
@@ -1532,9 +1584,14 @@ impl WorkbenchController {
                                     this.recovery.retry_load = None;
                                     let id = session.id.clone();
                                     let mut store = SessionStore::new(session);
-                                    if let Some((draft, attachments)) = this.drafts.remove(&id) {
+                                    if let Some((draft, attachments, mut files)) =
+                                        this.drafts.remove(&id)
+                                    {
                                         store.model.draft = draft;
                                         store.model.draft_attachments = attachments;
+                                        files.reading = 0;
+                                        files.sending = false;
+                                        store.attachments = files;
                                     }
                                     let replay = filter_snapshot_events(
                                         &store.model.state.session,

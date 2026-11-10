@@ -12,9 +12,36 @@ use gpui_kit::component::{
 };
 use gpui_kit::{prelude::*, *};
 
+/// A native import gesture; payload decoding belongs to the app background worker.
+#[derive(Clone)]
+pub enum AttachmentInput {
+    /// A selected or dropped local file.
+    Path(std::path::PathBuf),
+    /// Encoded clipboard image with its actual format extension.
+    Image {
+        /// Synthetic display filename with the actual image format extension.
+        name: String,
+        /// Encoded clipboard image bytes.
+        bytes: std::sync::Arc<[u8]>,
+    },
+}
 /// Semantic UI actions, handled only by the app controller.
 #[derive(Clone)]
 pub enum WorkbenchIntent {
+    /// Import into the session captured when the gesture began.
+    Attach {
+        /// Session captured at the gesture.
+        session_id: String,
+        /// Files selected by the user.
+        inputs: Vec<AttachmentInput>,
+    },
+    /// Remove only this local file identity.
+    RemoveAttachment {
+        /// Session owning this local draft.
+        session_id: String,
+        /// Stable local attachment identity.
+        id: String,
+    },
     /// Restart the owned backend, confirming interruption when needed.
     RestartBackend,
     /// Retry loading the same requested conversation.
@@ -369,7 +396,8 @@ impl WorkbenchView {
             .update(cx, |chat, cx| chat.bind(store.clone(), cx));
         self.error = store.read(cx).model.last_error.clone();
         self.state = Some(store.clone());
-        self.composer.update(cx, |c, _| c.bind(Some(store.clone())));
+        self.composer
+            .update(cx, |c, cx| c.bind(Some(store.clone()), cx));
 
         let draft = store.read(cx).model.draft.text.clone();
         self.composer
@@ -417,7 +445,7 @@ impl WorkbenchView {
         self.session_subscriptions.clear();
         self.permission_prompt.update(cx, |p, cx| p.suspend(cx));
         self.state = None;
-        self.composer.update(cx, |c, _| c.bind(None));
+        self.composer.update(cx, |c, cx| c.bind(None, cx));
         self.chat.update(cx, |chat, cx| chat.clear(cx));
         self.scroll.update(cx, |s, cx| s.reset(0, cx));
         cx.notify();
