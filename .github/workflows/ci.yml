@@ -89,7 +89,7 @@ jobs:
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
       - name: Pending plan compaction and persisted restart dispatch
-        run: cargo test -p agentkit-app --lib persisted_plan_compacts_and_resumes_after_backend_restart --locked -- --ignored
+        run: cargo test -p agentkit-app --lib persisted_plan_compacts_and_resumes_after_backend_restart --locked -- --ignored --nocapture
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
       - name: Attachment storage, partial failure, send and restart

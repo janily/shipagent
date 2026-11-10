@@ -25,3 +25,9 @@ test('rejects invalid pacing and missing fixture root',()=>{
  assert.throws(()=>createScenarioModel({name:'text',chunk_ms:-1},'/fixture'));
  assert.throws(()=>createScenarioModel({name:'text',chunk_ms:1},''));
 });
+test('plan waits for its own SubmitPlan result rather than unrelated tool history',()=>run('plan',async request=>{
+ const foreign=[{role:'assistant',tool_calls:[{id:'bootstrap',type:'function',function:{name:'read',arguments:'{}'}}]},{role:'tool',tool_call_id:'bootstrap',content:'environment context'},{role:'user',content:'Prepare a plan.'}];
+ assert.match(await(await request({messages:foreign})).text(),/mcp__session__SubmitPlan/);
+ const completed=[...foreign,{role:'assistant',tool_calls:[{id:'normalized-plan-id',type:'function',function:{name:'mcp__session__SubmitPlan',arguments:'{}'}}]},{role:'tool',tool_call_id:'normalized-plan-id',content:'Plan submitted'}];
+ assert.doesNotMatch(await(await request({messages:completed})).text(),/tool_calls/);
+}));

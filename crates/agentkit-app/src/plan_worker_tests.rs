@@ -215,6 +215,7 @@ fn persisted_plan_compacts_and_resumes_after_backend_restart() {
                 .arg(repo.join("tools/fixtures/model.mjs"))
                 .arg(repo.join("tools/fake-llm/scenarios/plan.yaml"))
                 .env("AGENTKIT_FIXTURE_ROOT", &root)
+                .env("AGENTKIT_FIXTURE_DIAGNOSTICS", "1")
                 .stdout(Stdio::piped())
                 .stderr(Stdio::inherit())
                 .spawn()

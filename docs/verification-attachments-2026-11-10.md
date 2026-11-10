@@ -36,3 +36,5 @@ Linux Xvfb/lavapipe 实际渲染 `examples/attachments`，完整原生 Workbench
 下一项 T-2-07 @ 提及、/ Skill；T-2-08 草稿持久化。阶段0/P0、实体 IME/辅助功能、参考机性能、Developer ID/公证仍开放。
 
 首轮 CI i18n 发现示例模型名称被源代码扫描识别为界面文案；移入明确的样例 JSON 后按同一门禁验证。
+
+Windows 最新诊断表明未发生工具调用，仅返回普通答案；另已复现脚本模型把任意历史 tool 消息当成本场景完成的缺陷。新增可重复的无关 tool 历史回归，plan 场景改为匹配真正的 SubmitPlan assistant/result 对，兼容运行时规范化 ID。六项模型单测通过；诊断仅记录角色与计数、不记录消息正文或凭据。这只证明修复一类夹具误判；Windows 根因与是否闭环仍以修复后平台诊断和结果为准。

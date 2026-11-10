@@ -12,7 +12,12 @@ const server=http.createServer(async(req,res)=>{
  try {
  let input='';for await(const chunk of req){input+=chunk;if(input.length>8*1024*1024)return json(413,{});}
  const body=JSON.parse(input);const active=body.tools?.length>0;
- const messages=body.messages??[];const tool=messages.some(m=>m.role==='tool');
+ const messages=body.messages??[];
+ // Unrelated historical context/tool results are not this scenario's completion.
+ // Match the actual assistant call/result pair, so provider-normalized IDs work.
+ const planCalls=new Set(messages.flatMap(m=>m.role==='assistant'?(m.tool_calls??[]):[]).filter(c=>c.function?.name==='mcp__session__SubmitPlan').map(c=>c.id));
+ const tool=messages.some(m=>m.role==='tool'&&(scenario.name!=='plan'||planCalls.has(m.tool_call_id)));
+ if(active&&scenario.name==='plan'&&process.env.AGENTKIT_FIXTURE_DIAGNOSTICS==='1') console.error('[fixture-plan] '+JSON.stringify({roles:messages.map(m=>m.role),toolResults:messages.filter(m=>m.role==='tool').length,planResults:messages.filter(m=>m.role==='tool'&&planCalls.has(m.tool_call_id)).length}));
  const user=JSON.stringify(messages.findLast(m=>m.role==='user')?.content??'');
  let text=active?'Fixture answer 中文。':'Fixture summary.';let tools=[];
  if(active){calls++;
