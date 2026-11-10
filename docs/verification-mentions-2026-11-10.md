@@ -24,3 +24,5 @@
 ![Skill 候选](images/mentions-dark.png)
 
 草稿磁盘持久化归下一项 T-2-08。本轮不关闭 F-26 完整 50 MB 容量缺口、阶段 0/P0、参考硬件性能、实体桌面或正式 Developer ID/公证门槛；正式签名按用户决定继续暂缓。
+
+Windows 冷启动契约边界：CI 初轮在提及恢复处失败，诊断轮又在既有附件恢复处失败，均发生在停后端后的 sessions:getMessages。源码确认 `runTurn` 先设 `isProcessing=false` 再 await `flushSession`，Windows 进程树终止会立即 kill。因此两个“已持久化重启”契约改用现有 typed `sessions:export` 的 flush 屏障，先断言磁盘导出包中的元数据，再保留原有冷读取断言；没有用 sleep 或读取重试掩盖问题。此项验证不证明任意强退无损，Windows 退出与写入交叠仍列入阶段 0/P0 生命周期验收。

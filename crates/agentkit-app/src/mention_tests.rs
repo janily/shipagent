@@ -176,6 +176,20 @@ fn real_mentions_search_send_and_restart() {
                 && requests.contains("Mentioned folder:"),
             "file path missing from actual provider input"
         );
+        let persisted =
+            crate::test_persistence::durable_bundle(sidecar.endpoint(), &workspace.id, &s.id)
+                .await
+                .unwrap();
+        assert_eq!(
+            persisted
+                .session
+                .messages
+                .iter()
+                .filter(|m| m.type_ == g::MessageRole::User
+                    && m.badges.as_ref().is_some_and(|b| b.len() == 3))
+                .count(),
+            2
+        );
         api.close();
         sidecar.shutdown(Duration::from_secs(5)).await.unwrap();
         let restarted = SidecarHandle::start(SidecarConfig::new(backend, config))

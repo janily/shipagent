@@ -217,6 +217,18 @@ fn real_attachment_storage_send_and_restart() {
             );
             smol::Timer::after(Duration::from_millis(30)).await;
         }
+        let persisted =
+            crate::test_persistence::durable_bundle(sidecar.endpoint(), &workspace.id, &s.id)
+                .await
+                .unwrap();
+        assert!(
+            persisted
+                .session
+                .messages
+                .iter()
+                .flat_map(|m| m.attachments.iter().flatten())
+                .any(|a| a.id == stored_id)
+        );
         api.close();
         sidecar.shutdown(Duration::from_secs(5)).await.unwrap();
         let restarted = SidecarHandle::start(SidecarConfig::new(backend, config))

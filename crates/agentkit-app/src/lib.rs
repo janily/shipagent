@@ -7,6 +7,8 @@ mod exit;
 mod history;
 mod keymap;
 mod menus;
+#[cfg(test)]
+mod test_persistence;
 use actions::Quit;
 use preferences::{Appearance, Geometry, PreferenceStore, Preferences};
 /// Profile-scoped frontend single-instance negotiation.
