@@ -1,30 +1,30 @@
-{"message":{"content":"Complete isolated fixture tool-failure.","id":"msg-1793683413613-iiqycv","role":"user","timestamp":1793683413613},"sessionId":"261103-quiet-gust","status":"accepted","type":"user_message"}
-{"sessionId":"261103-quiet-gust","tokenUsage":{"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-quiet-gust","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-quiet-gust","timestamp":1793683414252,"toolDisplayName":"Read File","toolInput":{"file_path":"<FIXTURE_ROOT>/absent.txt"},"toolName":"Read","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_start"}
-{"isError":true,"result":"ENOENT: no such file or directory, access '<FIXTURE_ROOT>/absent.txt'","sessionId":"261103-quiet-gust","timestamp":1793683414262,"toolName":"Read","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_result"}
-{"sessionId":"261103-quiet-gust","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":528},"inputTokens":500},"type":"usage_update"}
-{"delta":"F","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"i","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"x","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"t","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"u","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"a","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"n","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"s","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"w","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"中","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"文","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"。","sessionId":"261103-quiet-gust","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"messageId":"a1b1df50-3c75-4ca8-a029-ceafb759d78d","sessionId":"261103-quiet-gust","text":"Fixture answer 中文。","timestamp":1793683414293,"turnId":"pi-turn-1__m0","type":"text_complete"}
-{"sessionId":"261103-quiet-gust","tokenUsage":{"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-quiet-gust","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-quiet-gust","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-quiet-gust","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"backgroundTasksAlive":false,"hasUnread":true,"sessionId":"261103-quiet-gust","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":20,"totalTokens":520},"type":"complete"}
+{"message":{"content":"Complete isolated fixture tool-failure.","id":"msg-1794280523390-8b7ozm","role":"user","timestamp":1794280523390},"sessionId":"261110-apt-eclipse","status":"accepted","type":"user_message"}
+{"sessionId":"261110-apt-eclipse","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-apt-eclipse","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-apt-eclipse","timestamp":1794280524008,"toolDisplayName":"Read File","toolInput":{"file_path":"<FIXTURE_ROOT>/absent.txt"},"toolName":"Read","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_start"}
+{"isError":true,"result":"ENOENT: no such file or directory, access '<FIXTURE_ROOT>/absent.txt'","sessionId":"261110-apt-eclipse","timestamp":1794280524015,"toolName":"Read","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_result"}
+{"sessionId":"261110-apt-eclipse","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":528},"inputTokens":500},"type":"usage_update"}
+{"delta":"F","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"i","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"x","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"t","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"u","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"a","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"n","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"s","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"w","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"中","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"文","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"。","sessionId":"261110-apt-eclipse","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"messageId":"291db355-4b16-4855-8d08-e7d5b0e7ef00","sessionId":"261110-apt-eclipse","text":"Fixture answer 中文。","timestamp":1794280524046,"turnId":"pi-turn-1__m0","type":"text_complete"}
+{"sessionId":"261110-apt-eclipse","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-apt-eclipse","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-apt-eclipse","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-apt-eclipse","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"backgroundTasksAlive":false,"hasUnread":true,"sessionId":"261110-apt-eclipse","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":20,"totalTokens":520},"type":"complete"}

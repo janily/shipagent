@@ -1,14 +1,14 @@
 {
-  "261103-witty-vista": {
-    "createdAt": 1793683463789,
-    "id": "261103-witty-vista",
+  "261110-alert-lion": {
+    "createdAt": 1794280571516,
+    "id": "261110-alert-lion",
     "isProcessing": false,
-    "lastMessageAt": 1793683463789,
+    "lastMessageAt": 1794280571516,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture background-shell",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-witty-vista",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-alert-lion",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_07964a93",
+    "workspaceId": "ws_e3653136",
     "workspaceName": "Default"
   }
 }

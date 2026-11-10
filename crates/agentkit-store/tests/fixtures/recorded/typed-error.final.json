@@ -1,17 +1,17 @@
 {
-  "261103-neat-sparrow": {
-    "createdAt": 1793683449241,
-    "id": "261103-neat-sparrow",
+  "261110-golden-coral": {
+    "createdAt": 1794280557779,
+    "id": "261110-golden-coral",
     "isProcessing": false,
-    "lastMessageAt": 1793683449245,
+    "lastMessageAt": 1794280557783,
     "lastMessageRole": "user",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture typed-error.",
-        "id": "msg-1793683449245-nk902m",
+        "id": "msg-1794280557783-bby56i",
         "role": "user",
-        "timestamp": 1793683449245
+        "timestamp": 1794280557783
       },
       {
         "content": "Invalid API Key: Your API key was rejected. It may be invalid or expired.",
@@ -19,14 +19,14 @@
         "errorCode": "invalid_api_key",
         "errorOriginal": "401: {\"message\":\"Fixture credentials rejected\",\"type\":\"authentication_error\"}",
         "errorTitle": "Invalid API Key",
-        "id": "msg-1793683449904-fg8u4j",
+        "id": "msg-1794280558379-soff3m",
         "role": "error",
-        "timestamp": 1793683449904
+        "timestamp": 1794280558379
       }
     ],
     "name": "Fixture typed-error",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-neat-sparrow",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-golden-coral",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -46,7 +46,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_0dbf6c15",
+    "workspaceId": "ws_52491b5c",
     "workspaceName": "Default"
   }
 }

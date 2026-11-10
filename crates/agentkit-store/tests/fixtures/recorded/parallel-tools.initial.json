@@ -1,14 +1,14 @@
 {
-  "261103-fresh-thunder": {
-    "createdAt": 1793683402548,
-    "id": "261103-fresh-thunder",
+  "261110-tall-carbon": {
+    "createdAt": 1794280513130,
+    "id": "261110-tall-carbon",
     "isProcessing": false,
-    "lastMessageAt": 1793683402548,
+    "lastMessageAt": 1794280513130,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture parallel-tools",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-fresh-thunder",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-tall-carbon",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_24f5956d",
+    "workspaceId": "ws_79b1b149",
     "workspaceName": "Default"
   }
 }

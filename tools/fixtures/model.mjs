@@ -1,8 +1,9 @@
 import http from 'node:http';
+import pathApiDefault from 'node:path';
 import {readFile} from 'node:fs/promises';
 import {setTimeout as delay} from 'node:timers/promises';
 import {pathToFileURL} from 'node:url';
-export function createScenarioModel(scenario,root) {
+export function createScenarioModel(scenario,root,pathApi=pathApiDefault) {
  if(!root || typeof scenario.name!=='string' || !Number.isInteger(scenario.chunk_ms) || scenario.chunk_ms<0 || scenario.chunk_ms>1000) throw new Error('Invalid scripted scenario');
 let calls=0;
 const server=http.createServer(async(req,res)=>{
@@ -17,20 +18,20 @@ const server=http.createServer(async(req,res)=>{
  // Match the actual assistant call/result pair, so provider-normalized IDs work.
  const planCalls=new Set(messages.flatMap(m=>m.role==='assistant'?(m.tool_calls??[]):[]).filter(c=>c.function?.name==='mcp__session__SubmitPlan').map(c=>c.id));
  const tool=messages.some(m=>m.role==='tool'&&(scenario.name!=='plan'||planCalls.has(m.tool_call_id)));
- if(active&&scenario.name==='plan'&&process.env.AGENTKIT_FIXTURE_DIAGNOSTICS==='1') console.error('[fixture-plan] '+JSON.stringify({roles:messages.map(m=>m.role),toolResults:messages.filter(m=>m.role==='tool').length,planResults:messages.filter(m=>m.role==='tool'&&planCalls.has(m.tool_call_id)).length}));
+ if(active&&scenario.name==='plan'&&process.env.AGENTKIT_FIXTURE_DIAGNOSTICS==='1') console.error('[fixture-plan] '+JSON.stringify({roles:messages.map(m=>m.role),extendedRoot:root.charCodeAt(0)===92&&root.charCodeAt(1)===92&&root[2]==='?',planPathHasForwardSlash:pathApi.join(root,'plan.md').includes('/'),toolResults:messages.filter(m=>m.role==='tool').length,planResults:messages.filter(m=>m.role==='tool'&&planCalls.has(m.tool_call_id)).length}));
  const user=JSON.stringify(messages.findLast(m=>m.role==='user')?.content??'');
  let text=active?'Fixture answer 中文。':'Fixture summary.';let tools=[];
  if(active){calls++;
  if(scenario.name==='typed-error')return json(401,{error:{message:'Fixture credentials rejected',type:'authentication_error'}});
  if(scenario.name==='retry'&&calls<=3)return json(500,{error:{message:'Fixture transient overload'}});
  if(!tool){
- const path=`${root}/proof.txt`;
+ const path=pathApi.join(root,'proof.txt');
  switch(scenario.name){
  case 'single-tool':tools=[['read',{path}]];break;
- case 'parallel-tools':tools=[['read',{path}],['read',{path:`${root}/second.txt`}]];break;
- case 'tool-failure':tools=[['read',{path:`${root}/absent.txt`}]];break;
- case 'permission-allow':case 'permission-deny':tools=[['write',{path:`${root}/decision.txt`,content:'FIXTURE_WRITE'}]];break;
- case 'plan':tools=[['mcp__session__SubmitPlan',{planPath:`${root}/plan.md`}]];break;
+ case 'parallel-tools':tools=[['read',{path}],['read',{path:pathApi.join(root,'second.txt')}]];break;
+ case 'tool-failure':tools=[['read',{path:pathApi.join(root,'absent.txt')}]];break;
+ case 'permission-allow':case 'permission-deny':tools=[['write',{path:pathApi.join(root,'decision.txt'),content:'FIXTURE_WRITE'}]];break;
+ case 'plan':tools=[['mcp__session__SubmitPlan',{planPath:pathApi.join(root,'plan.md')}]];break;
  case 'background-shell':tools=[['bash',{command:'echo FIXTURE_BACKGROUND; sleep 1; echo FIXTURE_DONE',run_in_background:true}]];break;
  case 'nested-agent':{let depth=user.includes('[nested:2]')?2:user.includes('[nested:1]')?1:0;if(depth<2)tools=[['mcp__session__spawn_session',{prompt:`[nested:${depth+1}] Complete fixture child.`,name:`Fixture child ${depth+1}`,workingDirectory:root}]];break;}
  }

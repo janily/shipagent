@@ -1,32 +1,32 @@
 {
-  "261103-lively-zenith": {
-    "createdAt": 1793683418299,
+  "261110-smooth-flower": {
+    "createdAt": 1794280527964,
     "hasUnread": true,
-    "id": "261103-lively-zenith",
+    "id": "261110-smooth-flower",
     "isProcessing": false,
-    "lastFinalMessageId": "4d3db413-a3fb-4d5a-8f05-dd75bfc7940d",
-    "lastMessageAt": 1793683418306,
+    "lastFinalMessageId": "2708b6fc-de19-48d2-b8b9-de667afc4b01",
+    "lastMessageAt": 1794280527968,
     "lastMessageRole": "assistant",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture permission-allow.",
-        "id": "msg-1793683418306-1ciqvd",
+        "id": "msg-1794280527968-10s2ya",
         "role": "user",
-        "timestamp": 1793683418306
+        "timestamp": 1794280527968
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "4d3db413-a3fb-4d5a-8f05-dd75bfc7940d",
+        "id": "2708b6fc-de19-48d2-b8b9-de667afc4b01",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683419096,
+        "timestamp": 1794280528588,
         "turnId": "pi-turn-1__m0"
       }
     ],
     "name": "Fixture permission-allow",
     "permissionMode": "ask",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-lively-zenith",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-smooth-flower",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -46,7 +46,7 @@
       "totalTokens": 520.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_f6d289fb",
+    "workspaceId": "ws_0d5e75ae",
     "workspaceName": "Default"
   }
 }

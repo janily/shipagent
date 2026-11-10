@@ -1,8 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {win32} from 'node:path';
 import {createScenarioModel} from './model.mjs';
-async function run(name,fn){
- const server=createScenarioModel({name,chunk_ms:0},'/fixture');await new Promise(r=>server.listen(0,'127.0.0.1',r));
+async function run(name,fn,root='/fixture',pathApi=undefined){
+ const server=createScenarioModel({name,chunk_ms:0},root,pathApi);await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const request=(extra={})=>fetch(`http://127.0.0.1:${server.address().port}/v1/chat/completions`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'fixture-model',stream:true,messages:[{role:'user',content:'fixture'}],tools:[{function:{name:'read'}}],...extra})});
  try{await fn(request);}finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
 }
@@ -31,3 +32,9 @@ test('plan waits for its own SubmitPlan result rather than unrelated tool histor
  const completed=[...foreign,{role:'assistant',tool_calls:[{id:'normalized-plan-id',type:'function',function:{name:'mcp__session__SubmitPlan',arguments:'{}'}}]},{role:'tool',tool_call_id:'normalized-plan-id',content:'Plan submitted'}];
  assert.doesNotMatch(await(await request({messages:completed})).text(),/tool_calls/);
 }));
+
+test('plan preserves Windows extended path separators',()=>run('plan',async request=>{
+ const wire=await(await request()).text();
+ const deltas=wire.split('\n').filter(l=>l.startsWith('data: {')).map(l=>JSON.parse(l.slice(6))).flatMap(c=>c.choices??[]).flatMap(c=>c.delta?.tool_calls??[]);
+ assert.equal(JSON.parse(deltas[0].function.arguments).planPath,String.raw`\\?\C:\fixture\plan.md`);
+},String.raw`\\?\C:\fixture`,win32));

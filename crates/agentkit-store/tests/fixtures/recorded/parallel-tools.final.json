@@ -1,32 +1,32 @@
 {
-  "261103-fresh-thunder": {
-    "createdAt": 1793683402548,
+  "261110-tall-carbon": {
+    "createdAt": 1794280513130,
     "hasUnread": true,
-    "id": "261103-fresh-thunder",
+    "id": "261110-tall-carbon",
     "isProcessing": false,
-    "lastFinalMessageId": "f57fccf9-4271-426d-8143-980410ccd703",
-    "lastMessageAt": 1793683402552,
+    "lastFinalMessageId": "08ab4b4c-36e1-423f-9fb2-92dd99fc7b84",
+    "lastMessageAt": 1794280513134,
     "lastMessageRole": "assistant",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture parallel-tools.",
-        "id": "msg-1793683402552-f0i5mu",
+        "id": "msg-1794280513134-843m5q",
         "role": "user",
-        "timestamp": 1793683402552
+        "timestamp": 1794280513134
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "f57fccf9-4271-426d-8143-980410ccd703",
+        "id": "08ab4b4c-36e1-423f-9fb2-92dd99fc7b84",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683403303,
+        "timestamp": 1794280513772,
         "turnId": "pi-turn-1__m0"
       }
     ],
     "name": "Fixture parallel-tools",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-fresh-thunder",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-tall-carbon",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -46,7 +46,7 @@
       "totalTokens": 520.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_24f5956d",
+    "workspaceId": "ws_79b1b149",
     "workspaceName": "Default"
   }
 }

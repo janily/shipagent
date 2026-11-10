@@ -1,31 +1,31 @@
-{"message":{"content":"Complete isolated fixture permission-deny.","id":"msg-1793683423158-kzf0x7","role":"user","timestamp":1793683423158},"sessionId":"261103-early-pine","status":"accepted","type":"user_message"}
-{"sessionId":"261103-early-pine","tokenUsage":{"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-early-pine","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-early-pine","timestamp":1793683423884,"toolDisplayName":"Write File","toolInput":{"content":"FIXTURE_WRITE","file_path":"<FIXTURE_ROOT>/decision.txt"},"toolName":"Write","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_start"}
-{"request":{"canAlwaysAllow":true,"command":"<FIXTURE_ROOT>/decision.txt","description":"Write: <FIXTURE_ROOT>/decision.txt","requestId":"pi-perm-1793683423890-xw4xov","sessionId":"261103-early-pine","toolName":"Write","type":"file_write"},"sessionId":"261103-early-pine","type":"permission_request"}
-{"isError":true,"result":"Permission denied by user.","sessionId":"261103-early-pine","timestamp":1793683423893,"toolName":"Write","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_result"}
-{"sessionId":"261103-early-pine","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":517},"inputTokens":500},"type":"usage_update"}
-{"delta":"F","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"i","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"x","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"t","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"u","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"a","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"n","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"s","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"w","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"中","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"文","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"。","sessionId":"261103-early-pine","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"messageId":"59b086f2-cffc-489b-adf1-9a9fb108a343","sessionId":"261103-early-pine","text":"Fixture answer 中文。","timestamp":1793683423922,"turnId":"pi-turn-1__m0","type":"text_complete"}
-{"sessionId":"261103-early-pine","tokenUsage":{"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-early-pine","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-early-pine","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-early-pine","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"backgroundTasksAlive":false,"hasUnread":true,"sessionId":"261103-early-pine","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":20,"totalTokens":520},"type":"complete"}
+{"message":{"content":"Complete isolated fixture permission-deny.","id":"msg-1794280532580-v73x67","role":"user","timestamp":1794280532580},"sessionId":"261110-bright-glade","status":"accepted","type":"user_message"}
+{"sessionId":"261110-bright-glade","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-bright-glade","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-bright-glade","timestamp":1794280533146,"toolDisplayName":"Write File","toolInput":{"content":"FIXTURE_WRITE","file_path":"<FIXTURE_ROOT>/decision.txt"},"toolName":"Write","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_start"}
+{"request":{"canAlwaysAllow":true,"command":"<FIXTURE_ROOT>/decision.txt","description":"Write: <FIXTURE_ROOT>/decision.txt","requestId":"pi-perm-1794280533151-bvh2j3","sessionId":"261110-bright-glade","toolName":"Write","type":"file_write"},"sessionId":"261110-bright-glade","type":"permission_request"}
+{"isError":true,"result":"Permission denied by user.","sessionId":"261110-bright-glade","timestamp":1794280533154,"toolName":"Write","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_result"}
+{"sessionId":"261110-bright-glade","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":517},"inputTokens":500},"type":"usage_update"}
+{"delta":"F","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"i","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"x","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"t","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"u","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"a","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"n","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"s","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"w","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"中","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"文","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"。","sessionId":"261110-bright-glade","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"messageId":"21c41aee-ed9c-43bf-83df-6185ce9a07e5","sessionId":"261110-bright-glade","text":"Fixture answer 中文。","timestamp":1794280533182,"turnId":"pi-turn-1__m0","type":"text_complete"}
+{"sessionId":"261110-bright-glade","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-bright-glade","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-bright-glade","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-bright-glade","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"backgroundTasksAlive":false,"hasUnread":true,"sessionId":"261110-bright-glade","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":20,"totalTokens":520},"type":"complete"}

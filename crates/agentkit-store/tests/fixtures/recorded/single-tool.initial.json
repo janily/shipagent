@@ -1,14 +1,14 @@
 {
-  "261103-fleet-steel": {
-    "createdAt": 1793683397842,
-    "id": "261103-fleet-steel",
+  "261110-witty-salmon": {
+    "createdAt": 1794280508556,
+    "id": "261110-witty-salmon",
     "isProcessing": false,
-    "lastMessageAt": 1793683397842,
+    "lastMessageAt": 1794280508556,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture single-tool",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-fleet-steel",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-witty-salmon",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_2a9ca2d3",
+    "workspaceId": "ws_ccf94112",
     "workspaceName": "Default"
   }
 }

@@ -1,32 +1,32 @@
 {
-  "261103-quiet-gust": {
-    "createdAt": 1793683413609,
+  "261110-apt-eclipse": {
+    "createdAt": 1794280523386,
     "hasUnread": true,
-    "id": "261103-quiet-gust",
+    "id": "261110-apt-eclipse",
     "isProcessing": false,
-    "lastFinalMessageId": "a1b1df50-3c75-4ca8-a029-ceafb759d78d",
-    "lastMessageAt": 1793683413613,
+    "lastFinalMessageId": "291db355-4b16-4855-8d08-e7d5b0e7ef00",
+    "lastMessageAt": 1794280523390,
     "lastMessageRole": "assistant",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture tool-failure.",
-        "id": "msg-1793683413613-iiqycv",
+        "id": "msg-1794280523390-8b7ozm",
         "role": "user",
-        "timestamp": 1793683413613
+        "timestamp": 1794280523390
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "a1b1df50-3c75-4ca8-a029-ceafb759d78d",
+        "id": "291db355-4b16-4855-8d08-e7d5b0e7ef00",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683414293,
+        "timestamp": 1794280524046,
         "turnId": "pi-turn-1__m0"
       }
     ],
     "name": "Fixture tool-failure",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-quiet-gust",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-apt-eclipse",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -46,7 +46,7 @@
       "totalTokens": 520.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_8f443191",
+    "workspaceId": "ws_f1888615",
     "workspaceName": "Default"
   }
 }

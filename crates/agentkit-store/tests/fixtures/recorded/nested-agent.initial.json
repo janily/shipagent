@@ -1,38 +1,14 @@
 {
-  "261103-clever-crystal": {
-    "createdAt": 1793683408154,
-    "id": "261103-clever-crystal",
+  "261110-calm-blossom": {
+    "createdAt": 1794280517666,
+    "id": "261110-calm-blossom",
     "isProcessing": false,
-    "lastMessageAt": 1793683408156,
-    "lastMessageRole": "user",
-    "messageCount": 0,
-    "messages": [],
-    "name": "Fixture child 1",
-    "parentSessionId": "261103-coral-steel",
-    "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-clever-crystal",
-    "supportsBranching": true,
-    "tokenUsage": {
-      "contextTokens": 0.0,
-      "costUsd": 0.0,
-      "inputTokens": 0.0,
-      "outputTokens": 0.0,
-      "totalTokens": 0.0
-    },
-    "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_7198e1bd",
-    "workspaceName": "Default"
-  },
-  "261103-coral-steel": {
-    "createdAt": 1793683407433,
-    "id": "261103-coral-steel",
-    "isProcessing": false,
-    "lastMessageAt": 1793683407433,
+    "lastMessageAt": 1794280517666,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture nested-agent",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-coral-steel",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-calm-blossom",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -42,21 +18,21 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_7198e1bd",
+    "workspaceId": "ws_d0ab4c57",
     "workspaceName": "Default"
   },
-  "261103-still-flood": {
-    "createdAt": 1793683408802,
-    "id": "261103-still-flood",
+  "261110-deep-finch": {
+    "createdAt": 1794280518862,
+    "id": "261110-deep-finch",
     "isProcessing": false,
-    "lastMessageAt": 1793683408804,
+    "lastMessageAt": 1794280518863,
     "lastMessageRole": "user",
     "messageCount": 0,
     "messages": [],
     "name": "Fixture child 2",
-    "parentSessionId": "261103-clever-crystal",
+    "parentSessionId": "261110-dynamic-coral",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-still-flood",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-deep-finch",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -66,7 +42,31 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_7198e1bd",
+    "workspaceId": "ws_d0ab4c57",
+    "workspaceName": "Default"
+  },
+  "261110-dynamic-coral": {
+    "createdAt": 1794280518271,
+    "id": "261110-dynamic-coral",
+    "isProcessing": false,
+    "lastMessageAt": 1794280518271,
+    "lastMessageRole": "user",
+    "messageCount": 0,
+    "messages": [],
+    "name": "Fixture child 1",
+    "parentSessionId": "261110-calm-blossom",
+    "permissionMode": "allow-all",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-dynamic-coral",
+    "supportsBranching": true,
+    "tokenUsage": {
+      "contextTokens": 0.0,
+      "costUsd": 0.0,
+      "inputTokens": 0.0,
+      "outputTokens": 0.0,
+      "totalTokens": 0.0
+    },
+    "workingDirectory": "<FIXTURE_ROOT>",
+    "workspaceId": "ws_d0ab4c57",
     "workspaceName": "Default"
   }
 }

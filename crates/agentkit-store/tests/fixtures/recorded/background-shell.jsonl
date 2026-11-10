@@ -1,57 +1,57 @@
-{"message":{"content":"Complete isolated fixture background-shell.","id":"msg-1793683463796-m2c5vi","role":"user","timestamp":1793683463796},"sessionId":"261103-witty-vista","status":"accepted","type":"user_message"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-witty-vista","timestamp":1793683464536,"toolDisplayName":"Run Command","toolInput":{"command":"echo FIXTURE_BACKGROUND; sleep 1; echo FIXTURE_DONE","run_in_background":true},"toolName":"Bash","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_start"}
-{"command":"echo FIXTURE_BACKGROUND; sleep 1; echo FIXTURE_DONE","sessionId":"261103-witty-vista","shellId":"shell-84152ccf-8c86-478d-a6e5-e6d55ffabd32","toolUseId":"fixture-call-0","type":"shell_backgrounded"}
-{"isError":false,"result":"Command running in background with ID: shell-84152ccf-8c86-478d-a6e5-e6d55ffabd32. Output is being written to: <FIXTURE_ROOT>/config/workspaces/default/sessions/261103-witty-vista/.pi-agent/tasks/shell-84152ccf-8c86-478d-a6e5-e6d55ffabd32.output. You will be notified when it completes.","sessionId":"261103-witty-vista","timestamp":1793683464547,"toolName":"Bash","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_result"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":582},"inputTokens":500},"type":"usage_update"}
-{"delta":"F","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"i","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"x","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"t","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"u","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"a","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"n","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"s","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"w","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"中","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"文","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"delta":"。","sessionId":"261103-witty-vista","turnId":"pi-turn-1__m0","type":"text_delta"}
-{"messageId":"dcd29bc8-add3-45b6-b276-2bb9b990e88a","sessionId":"261103-witty-vista","text":"Fixture answer 中文。","timestamp":1793683464582,"turnId":"pi-turn-1__m0","type":"text_complete"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"backgroundTasksAlive":true,"hasUnread":true,"sessionId":"261103-witty-vista","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":20,"totalTokens":520},"type":"complete"}
-{"outputFile":"<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-witty-vista/.pi-agent/tasks/shell-84152ccf-8c86-478d-a6e5-e6d55ffabd32.output","sessionId":"261103-witty-vista","status":"completed","taskId":"shell-84152ccf-8c86-478d-a6e5-e6d55ffabd32","type":"task_completed"}
-{"message":{"content":"<system-notification>\nSent by MkAgent automatically, not typed by the user. It is not a reply to, or approval of, anything you asked.\n[background-task-completed] The background agent you launched (task shell-84152ccf-8c86-478d-a6e5-e6d55ffabd32) has finished.\nIts full output is saved at: <FIXTURE_ROOT>/config/workspaces/default/sessions/261103-witty-vista/.pi-agent/tasks/shell-84152ccf-8c86-478d-a6e5-e6d55ffabd32.output\nRead that output file and present the results to the user now. Do NOT spawn another background agent — just read the file and summarize the findings inline.\n</system-notification>","hidden":true,"id":"msg-1793683465565-q62obz","role":"user","timestamp":1793683465565},"sessionId":"261103-witty-vista","status":"accepted","type":"user_message"}
-{"delta":"F","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"i","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"x","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"t","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"u","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"a","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"n","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"s","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"w","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"e","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"r","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":" ","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"中","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"文","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"delta":"。","sessionId":"261103-witty-vista","turnId":"pi-turn-2__m0","type":"text_delta"}
-{"messageId":"b806c07e-9d0b-41d6-8137-d1ac13eb80ad","sessionId":"261103-witty-vista","text":"Fixture answer 中文。","timestamp":1793683465619,"turnId":"pi-turn-2__m0","type":"text_complete"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"sessionId":"261103-witty-vista","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
-{"backgroundTasksAlive":false,"hasUnread":true,"sessionId":"261103-witty-vista","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":30,"totalTokens":530},"type":"complete"}
+{"message":{"content":"Complete isolated fixture background-shell.","id":"msg-1794280571520-pqjgwa","role":"user","timestamp":1794280571520},"sessionId":"261110-alert-lion","status":"accepted","type":"user_message"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-alert-lion","timestamp":1794280572090,"toolDisplayName":"Run Command","toolInput":{"command":"echo FIXTURE_BACKGROUND; sleep 1; echo FIXTURE_DONE","run_in_background":true},"toolName":"Bash","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_start"}
+{"command":"echo FIXTURE_BACKGROUND; sleep 1; echo FIXTURE_DONE","sessionId":"261110-alert-lion","shellId":"shell-9bbe579a-d76d-467e-93c0-e4aed99f4250","toolUseId":"fixture-call-0","type":"shell_backgrounded"}
+{"isError":false,"result":"Command running in background with ID: shell-9bbe579a-d76d-467e-93c0-e4aed99f4250. Output is being written to: <FIXTURE_ROOT>/config/workspaces/default/sessions/261110-alert-lion/.pi-agent/tasks/shell-9bbe579a-d76d-467e-93c0-e4aed99f4250.output. You will be notified when it completes.","sessionId":"261110-alert-lion","timestamp":1794280572099,"toolName":"Bash","toolUseId":"fixture-call-0","turnId":"pi-turn-1","type":"tool_result"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":582},"inputTokens":500},"type":"usage_update"}
+{"delta":"F","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"i","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"x","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"t","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"u","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"a","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"n","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"s","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"w","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"中","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"文","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"delta":"。","sessionId":"261110-alert-lion","turnId":"pi-turn-1__m0","type":"text_delta"}
+{"messageId":"b4afe39d-2553-4eec-8096-5687a29eeccc","sessionId":"261110-alert-lion","text":"Fixture answer 中文。","timestamp":1794280572127,"turnId":"pi-turn-1__m0","type":"text_complete"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"backgroundTasksAlive":true,"hasUnread":true,"sessionId":"261110-alert-lion","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":20,"totalTokens":520},"type":"complete"}
+{"outputFile":"<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-alert-lion/.pi-agent/tasks/shell-9bbe579a-d76d-467e-93c0-e4aed99f4250.output","sessionId":"261110-alert-lion","status":"completed","taskId":"shell-9bbe579a-d76d-467e-93c0-e4aed99f4250","type":"task_completed"}
+{"message":{"content":"<system-notification>\nSent by MkAgent automatically, not typed by the user. It is not a reply to, or approval of, anything you asked.\n[background-task-completed] The background agent you launched (task shell-9bbe579a-d76d-467e-93c0-e4aed99f4250) has finished.\nIts full output is saved at: <FIXTURE_ROOT>/config/workspaces/default/sessions/261110-alert-lion/.pi-agent/tasks/shell-9bbe579a-d76d-467e-93c0-e4aed99f4250.output\nRead that output file and present the results to the user now. Do NOT spawn another background agent — just read the file and summarize the findings inline.\n</system-notification>","hidden":true,"id":"msg-1794280573111-nk38ll","role":"user","timestamp":1794280573111},"sessionId":"261110-alert-lion","status":"accepted","type":"user_message"}
+{"delta":"F","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"i","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"x","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"t","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"u","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"a","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"n","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"s","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"w","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"e","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"r","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":" ","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"中","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"文","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"delta":"。","sessionId":"261110-alert-lion","turnId":"pi-turn-2__m0","type":"text_delta"}
+{"messageId":"52bbb4a0-a822-4c26-b146-8c79956ed602","sessionId":"261110-alert-lion","text":"Fixture answer 中文。","timestamp":1794280573158,"turnId":"pi-turn-2__m0","type":"text_complete"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"sessionId":"261110-alert-lion","tokenUsage":{"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"inputTokens":500},"type":"usage_update"}
+{"backgroundTasksAlive":false,"hasUnread":true,"sessionId":"261110-alert-lion","tokenUsage":{"cacheCreationTokens":0,"cacheReadTokens":0,"contextTokens":0,"contextUsage":{"canCompact":true,"isEstimate":true,"isStale":false,"limitKind":"compaction","limitTokens":114688,"usedTokens":510},"costUsd":0,"inputTokens":500,"outputTokens":30,"totalTokens":530},"type":"complete"}

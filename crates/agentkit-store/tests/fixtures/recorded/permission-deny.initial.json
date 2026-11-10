@@ -1,14 +1,14 @@
 {
-  "261103-early-pine": {
-    "createdAt": 1793683423148,
-    "id": "261103-early-pine",
+  "261110-bright-glade": {
+    "createdAt": 1794280532575,
+    "id": "261110-bright-glade",
     "isProcessing": false,
-    "lastMessageAt": 1793683423148,
+    "lastMessageAt": 1794280532575,
     "messageCount": 0,
     "messages": [],
     "name": "Fixture permission-deny",
     "permissionMode": "ask",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-early-pine",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-bright-glade",
     "supportsBranching": true,
     "tokenUsage": {
       "contextTokens": 0.0,
@@ -18,7 +18,7 @@
       "totalTokens": 0.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_2d3e5122",
+    "workspaceId": "ws_f7b67c90",
     "workspaceName": "Default"
   }
 }

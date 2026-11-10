@@ -1,32 +1,32 @@
 {
-  "261103-fleet-steel": {
-    "createdAt": 1793683397842,
+  "261110-witty-salmon": {
+    "createdAt": 1794280508556,
     "hasUnread": true,
-    "id": "261103-fleet-steel",
+    "id": "261110-witty-salmon",
     "isProcessing": false,
-    "lastFinalMessageId": "4870c02f-f572-4dfc-bae5-88f83c79bb5d",
-    "lastMessageAt": 1793683397846,
+    "lastFinalMessageId": "1cda0cd9-03fa-4236-b1c1-4d542cdf2029",
+    "lastMessageAt": 1794280508560,
     "lastMessageRole": "assistant",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture single-tool.",
-        "id": "msg-1793683397846-c7402x",
+        "id": "msg-1794280508560-t4c8vf",
         "role": "user",
-        "timestamp": 1793683397846
+        "timestamp": 1794280508560
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "4870c02f-f572-4dfc-bae5-88f83c79bb5d",
+        "id": "1cda0cd9-03fa-4236-b1c1-4d542cdf2029",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683398535,
+        "timestamp": 1794280509252,
         "turnId": "pi-turn-1__m0"
       }
     ],
     "name": "Fixture single-tool",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-fleet-steel",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-witty-salmon",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -46,7 +46,7 @@
       "totalTokens": 520.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_2a9ca2d3",
+    "workspaceId": "ws_ccf94112",
     "workspaceName": "Default"
   }
 }

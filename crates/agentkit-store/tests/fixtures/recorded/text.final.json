@@ -1,32 +1,32 @@
 {
-  "261103-refined-grove": {
-    "createdAt": 1793683391961,
+  "261110-keen-mesa": {
+    "createdAt": 1794280504022,
     "hasUnread": true,
-    "id": "261103-refined-grove",
+    "id": "261110-keen-mesa",
     "isProcessing": false,
-    "lastFinalMessageId": "a873126a-cf4c-4032-b8d3-a82cf13ed944",
-    "lastMessageAt": 1793683391972,
+    "lastFinalMessageId": "1c41f427-5eaa-4a10-ad65-15346ceb23cd",
+    "lastMessageAt": 1794280504026,
     "lastMessageRole": "assistant",
     "messageCount": 0,
     "messages": [
       {
         "content": "Complete isolated fixture text.",
-        "id": "msg-1793683391972-vmytc9",
+        "id": "msg-1794280504026-inhkm7",
         "role": "user",
-        "timestamp": 1793683391972
+        "timestamp": 1794280504026
       },
       {
         "content": "Fixture answer 中文。",
-        "id": "a873126a-cf4c-4032-b8d3-a82cf13ed944",
+        "id": "1c41f427-5eaa-4a10-ad65-15346ceb23cd",
         "isIntermediate": false,
         "role": "assistant",
-        "timestamp": 1793683393254,
+        "timestamp": 1794280504632,
         "turnId": "pi-turn-1__m0"
       }
     ],
     "name": "Fixture text",
     "permissionMode": "allow-all",
-    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261103-refined-grove",
+    "sessionFolderPath": "<FIXTURE_ROOT>/config/workspaces/default/sessions/261110-keen-mesa",
     "supportsBranching": true,
     "tokenUsage": {
       "cacheCreationTokens": 0.0,
@@ -46,7 +46,7 @@
       "totalTokens": 510.0
     },
     "workingDirectory": "<FIXTURE_ROOT>",
-    "workspaceId": "ws_33fb3e8e",
+    "workspaceId": "ws_37e7b0de",
     "workspaceName": "Default"
   }
 }
