@@ -180,6 +180,8 @@ fn real_attachment_storage_send_and_restart() {
         assert_eq!(batch.ids, ["good"]);
         assert_eq!(batch.failures.len(), 1);
         let path = batch.stored[0].stored_path.clone();
+        let stored_id = batch.stored[0].id.clone();
+        let identity = std::fs::canonicalize(&path).unwrap();
         assert_eq!(
             std::fs::read_to_string(&path).unwrap(),
             "Actual attachment 中文"
@@ -222,14 +224,21 @@ fn real_attachment_storage_send_and_restart() {
             .unwrap();
         let api = WorkbenchApi::connect(restarted.endpoint(), workspace.id);
         let snapshot = api.session_generated(&s.id).await.unwrap();
-        assert!(snapshot.messages.iter().any(|m| {
-            m.role == g::MessageRole::User
-                && m.attachments
-                    .as_ref()
-                    .is_some_and(|a| a.iter().any(|a| a.stored_path == path))
-        }));
+        let restored = snapshot
+            .messages
+            .iter()
+            .filter(|m| m.role == g::MessageRole::User)
+            .flat_map(|m| m.attachments.iter().flatten())
+            .find(|a| a.id == stored_id)
+            .unwrap();
+        // JSONL portability may change Windows prefix/separator spelling. Check
+        // the restored reference itself resolves to the same real file and bytes.
         assert_eq!(
-            std::fs::read_to_string(path).unwrap(),
+            std::fs::canonicalize(&restored.stored_path).unwrap(),
+            identity
+        );
+        assert_eq!(
+            std::fs::read_to_string(&restored.stored_path).unwrap(),
             "Actual attachment 中文"
         );
         api.close();
