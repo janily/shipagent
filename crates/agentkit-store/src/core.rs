@@ -269,3 +269,6 @@ pub mod attachments;
 
 /// Pure upstream bracket grammar and UTF-16 metadata.
 pub mod mentions;
+
+/// Draft reference conversion and native persistence status.
+pub mod drafts;

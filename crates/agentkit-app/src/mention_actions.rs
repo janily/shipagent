@@ -2,7 +2,11 @@ use super::*;
 use agentkit_protocol::generated as g;
 use agentkit_store::core::mentions;
 impl WorkbenchController {
-    fn mention_directory(&self, store: &Entity<SessionStore>, cx: &App) -> Option<String> {
+    pub(super) fn mention_directory(
+        &self,
+        store: &Entity<SessionStore>,
+        cx: &App,
+    ) -> Option<String> {
         let workspace = self.workspace_store.read(cx);
         store
             .read(cx)

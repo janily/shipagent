@@ -109,6 +109,8 @@ impl SessionListStore {
 }
 /// Per-open-session entity. Views read the canonical cache and subscribe to typed changes.
 pub struct SessionStore {
+    /// Native draft persistence and recoverable missing attachment references.
+    pub draft_sync: crate::core::drafts::Status,
     /// Session-local file payloads and individual warnings.
     pub attachments: crate::core::attachments::Draft,
     /// Plan file cache and current acceptance operation.
@@ -131,6 +133,7 @@ impl SessionStore {
         annotations.rebuild(&model.turns);
         Self {
             model,
+            draft_sync: Default::default(),
             plan: Default::default(),
             attachments: Default::default(),
             annotations,

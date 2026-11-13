@@ -3,6 +3,8 @@
 /// Central native application shell actions.
 pub mod actions;
 mod controller;
+mod draft_io;
+mod draft_writer;
 mod exit;
 mod history;
 mod keymap;
@@ -16,7 +18,7 @@ pub mod instance;
 /// Client-owned, validated preference document.
 pub mod preferences;
 use anyhow::{Context as _, Result};
-use gpui_kit::component::{Theme, ThemeMode, ThemeRegistry, TitleBar};
+use gpui_kit::component::{Theme, ThemeMode, ThemeRegistry, TitleBar, WindowExt};
 use gpui_kit::*;
 use serde::Deserialize;
 use std::{
@@ -113,6 +115,7 @@ pub fn run(brand_toml: &str) -> Result<()> {
                     &action_startup,
                     &action_quitting,
                     &action_prefs,
+                    false,
                     cx,
                 );
             });
@@ -126,6 +129,21 @@ pub fn run(brand_toml: &str) -> Result<()> {
                     &force_startup,
                     &force_quitting,
                     &force_prefs,
+                    false,
+                    cx,
+                )
+            });
+            let discard_runtime = runtime.clone();
+            let discard_startup = startup.clone();
+            let discard_quitting = quitting.clone();
+            let discard_prefs = prefs.clone();
+            cx.on_action(move |_: &actions::DiscardDraftsAndQuit, cx| {
+                orderly_quit(
+                    &discard_runtime,
+                    &discard_startup,
+                    &discard_quitting,
+                    &discard_prefs,
+                    true,
                     cx,
                 )
             });
@@ -175,12 +193,21 @@ pub fn run(brand_toml: &str) -> Result<()> {
             Theme::update(cx, |theme| theme.sheet.margin_top = px(40.));
             let quit_runtime = runtime.clone();
             let quit_prefs = prefs.clone();
-            cx.on_app_quit(move |_| {
+            cx.on_app_quit(move |cx| {
+                controller::prepare_draft_exit(cx);
+                let drafts = cx.try_global::<draft_writer::Writer>().cloned();
                 let running = quit_runtime.borrow_mut().take();
                 let prefs = quit_prefs.clone();
                 async move {
                     exit_tasks(
                         async move {
+                            if let Some(drafts) = drafts {
+                                let _ = smol::future::race(drafts.flush(), async {
+                                    smol::Timer::after(std::time::Duration::from_millis(80)).await;
+                                    Err("ak.draft.unsaved".into())
+                                })
+                                .await;
+                            }
                             if let Some(running) = running {
                                 running.shutdown_for_exit().await;
                             }
@@ -204,6 +231,7 @@ pub fn run(brand_toml: &str) -> Result<()> {
                         &close_startup,
                         &close_quitting,
                         &close_prefs,
+                        false,
                         cx,
                     );
                 }
@@ -286,22 +314,81 @@ pub fn run(brand_toml: &str) -> Result<()> {
     Ok(())
 }
 
+#[cfg(any(test, feature = "e2e", feature = "perf"))]
+fn defer_confirmed_quit(cx: &mut App) {
+    // No window lease may be held when App routes an action to its active window.
+    cx.defer(|cx| cx.dispatch_action(&actions::ConfirmedQuit));
+}
+
 fn orderly_quit(
     runtime: &controller::RuntimeSlot,
     startup: &controller::StartupSlot,
-    quitting: &Cell<bool>,
+    quitting: &Rc<Cell<bool>>,
     preferences: &PreferenceStore,
+    discard_unsaved: bool,
     cx: &mut App,
 ) {
+    if discard_unsaved {
+        if let Some(writer) = cx.try_global::<draft_writer::Writer>() {
+            writer.unbind();
+        }
+    } else {
+        controller::prepare_draft_exit(cx);
+    }
     if quitting.replace(true) {
         return;
     }
+    controller::draft_closing(true, cx);
+    let drafts = cx.try_global::<draft_writer::Writer>().cloned();
+    let quitting = quitting.clone();
     let starting = startup.borrow_mut().take();
     let runtime = runtime.clone();
     let preferences = preferences.clone();
     cx.spawn(async move |cx| {
         if let Some(starting) = starting {
             starting.await;
+        }
+        if let Some(drafts) = drafts {
+            if discard_unsaved {
+                drafts.unbind();
+            } else if smol::future::race(
+                async {
+                    // Imports accepted before the editor was frozen must join the final snapshot.
+                    while cx.update(|cx| controller::draft_imports_pending(cx)) {
+                        smol::Timer::after(std::time::Duration::from_millis(10)).await;
+                    }
+                    cx.update(controller::prepare_draft_exit);
+                    drafts.flush().await
+                },
+                async {
+                    smol::Timer::after(std::time::Duration::from_secs(5)).await;
+                    Err("ak.draft.unsaved".into())
+                },
+            )
+            .await
+            .is_err()
+            {
+                quitting.set(false);
+                cx.update(|cx| {
+                    controller::draft_closing(false, cx);
+                    if let Some(window) = cx.active_window() {
+                        let _ = window.update(cx, |_, window, cx| {
+                            window.open_alert_dialog(cx, |dialog, _, _| {
+                                dialog
+                                    .title(agentkit_ui::t!("ak.draft.quit_title"))
+                                    .description(agentkit_ui::t!("ak.draft.quit_warning"))
+                                    .cancel_text(agentkit_ui::t!("ak.menu.keep_working"))
+                                    .ok_text(agentkit_ui::t!("ak.draft.quit_discard"))
+                                    .on_ok(|_, _, cx| {
+                                        cx.dispatch_action(&actions::DiscardDraftsAndQuit);
+                                        true
+                                    })
+                            })
+                        });
+                    }
+                });
+                return;
+            }
         }
         let running = runtime.borrow_mut().take();
         let _backend_clean = if let Some(running) = running {
@@ -385,6 +472,38 @@ async fn exit_tasks(
 }
 #[cfg(test)]
 mod exit_policy_tests {
+    #![allow(clippy::unwrap_used)]
+    #[gpui_kit::test]
+    fn deferred_quit_reaches_handler_with_an_active_window(cx: &mut gpui_kit::TestAppContext) {
+        use gpui_kit::test::TestWindowExt;
+        use gpui_kit::*;
+        use std::cell::Cell;
+        use std::rc::Rc;
+        struct Empty;
+        impl Render for Empty {
+            fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+                div()
+            }
+        }
+        let received = Rc::new(Cell::new(0));
+        let window = cx.update(|cx| {
+            gpui_kit::init(cx);
+            let mark = received.clone();
+            cx.on_action(move |_: &super::actions::ConfirmedQuit, _| mark.set(mark.get() + 1));
+            gpui_kit::open_window(WindowOptions::default(), cx, |_, cx| cx.new(|_| Empty))
+                .unwrap()
+                .0
+        });
+        cx.update_window(window, |_, window, cx| {
+            window.activate_window();
+            window.render_frame(cx);
+            assert!(cx.active_window().is_some());
+            super::defer_confirmed_quit(cx);
+        })
+        .unwrap();
+        cx.run_until_parked();
+        assert_eq!(received.get(), 1);
+    }
     #[::core::prelude::v1::test]
     fn stalled_preferences_never_postpone_starting_backend_cleanup() {
         smol::block_on(async {

@@ -12,6 +12,9 @@ impl WorkbenchController {
         let Some(store) = self.stores.get(&id).cloned() else {
             return;
         };
+        if store.read(cx).draft_sync.loading || store.read(cx).draft_sync.closing {
+            return;
+        }
         store.update(cx, |s, cx| {
             s.attachments.reading += 1;
             cx.notify();
@@ -252,6 +255,9 @@ impl WorkbenchController {
                         );
                         cx.notify();
                     });
+                    if accepted && current {
+                        this.persist_draft(&store, true, cx);
+                    }
                     this.finish_attachment_view(&store, &text, clear_text, window, cx);
                 });
             }));

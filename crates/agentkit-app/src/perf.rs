@@ -411,14 +411,8 @@ pub(super) fn finish_if_terminal(
             if result.is_err() {
                 eprintln!("Benchmark report could not be written");
             }
-            let _ = weak.update_in(cx, |this, _, cx| {
-                crate::orderly_quit(
-                    &this.runtime,
-                    &this.startup,
-                    &this.quitting,
-                    &this.preferences,
-                    cx,
-                )
+            let _ = weak.update_in(cx, |_, _, cx| {
+                crate::defer_confirmed_quit(cx);
             });
         }));
 }

@@ -119,11 +119,7 @@ impl WorkbenchController {
                     for (id, store) in &this.stores {
                         this.drafts.insert(
                             id.clone(),
-                            (
-                                store.read(cx).model.draft.clone(),
-                                store.read(cx).model.draft_attachments.clone(),
-                                store.read(cx).attachments.clone(),
-                            ),
+                            draft_actions::LocalDraft::capture(store.read(cx)),
                         );
                     }
                     let old = this.state.clone();
@@ -154,12 +150,8 @@ impl WorkbenchController {
                             old
                         } else {
                             let mut store = SessionStore::new(session);
-                            if let Some((draft, attachments, mut files)) = this.drafts.remove(&id) {
-                                store.model.draft = draft;
-                                store.model.draft_attachments = attachments;
-                                files.reading = 0;
-                                files.sending = false;
-                                store.attachments = files;
+                            if let Some(draft) = this.drafts.remove(&id) {
+                                draft.restore(&mut store);
                             }
                             cx.new(|_| store)
                         };
@@ -196,9 +188,10 @@ impl WorkbenchController {
                         cx.notify();
                     });
                     this.set_phase(Phase::Online, cx);
+                    this.bind_drafts(api.clone(), cx);
                     this.view
                         .update(cx, |v, cx| v.workspace_changed(workspace_info.name, cx));
-                    this.remember_session(cx);
+                    this.remember_session(window, cx);
                     this.mark_viewed(window, cx);
                     this.handle_settings(agentkit_ui::settings::SettingsIntent::Reload, window, cx);
                     let mut replay = if let Some(store) = &this.state {

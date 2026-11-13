@@ -54,6 +54,10 @@ impl Composer {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if self.loading {
+            cx.propagate();
+            return;
+        }
         if self.mention_key(Some(-1), window, cx) {
             cx.stop_propagation();
             return;

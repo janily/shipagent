@@ -10,6 +10,8 @@ mod chatgpt_oauth;
 mod claude_oauth;
 #[path = "composer_actions.rs"]
 mod composer_actions;
+#[path = "draft_actions.rs"]
+mod draft_actions;
 #[cfg(feature = "e2e")]
 #[path = "../../../tests/e2e/native.rs"]
 pub(crate) mod e2e;
@@ -83,6 +85,37 @@ fn sidecar_message(error: &agentkit_sidecar::SidecarError) -> String {
         E::InvalidEndpoint => agentkit_ui::t!("ak.sidecar_invalid_endpoint"),
         E::RestartLimit => agentkit_ui::t!("ak.sidecar_restart_limit"),
         E::Stopped => agentkit_ui::t!("ak.sidecar_stopped"),
+    }
+}
+struct DraftOwner(WeakEntity<WorkbenchController>);
+impl Global for DraftOwner {}
+pub(crate) fn prepare_draft_exit(cx: &mut App) {
+    if let Some(owner) = cx.try_global::<DraftOwner>().and_then(|o| o.0.upgrade()) {
+        owner.update(cx, |owner, cx| owner.prepare_draft_exit(cx));
+    }
+}
+pub(crate) fn draft_imports_pending(cx: &App) -> bool {
+    cx.try_global::<DraftOwner>()
+        .and_then(|o| o.0.upgrade())
+        .is_some_and(|owner| {
+            owner
+                .read(cx)
+                .stores
+                .values()
+                .any(|s| s.read(cx).attachments.reading > 0)
+        })
+}
+pub(crate) fn draft_closing(closing: bool, cx: &mut App) {
+    if let Some(owner) = cx.try_global::<DraftOwner>().and_then(|o| o.0.upgrade()) {
+        owner.update(cx, |owner, cx| {
+            for store in owner.stores.values() {
+                store.update(cx, |s, cx| {
+                    s.draft_sync.closing = closing;
+                    cx.notify();
+                });
+            }
+            owner.view.update(cx, |v, cx| v.draft_closing(closing, cx));
+        });
     }
 }
 pub(crate) type StartupSlot = Rc<RefCell<Option<Task<()>>>>;
@@ -349,6 +382,8 @@ pub(crate) struct WorkbenchController {
     history: RefCell<crate::history::History>,
     #[cfg(feature = "perf")]
     perf: Option<perf::Capture>,
+    draft_writer: crate::draft_writer::Writer,
+    draft_sync: draft_actions::Drafts,
     capabilities: agentkit_capabilities::client_caps::NativeCapabilities,
     view: Entity<WorkbenchView>,
     brand: Brand,
@@ -367,14 +402,7 @@ pub(crate) struct WorkbenchController {
     list_overflow: bool,
     epoch: u64,
     context_events: Vec<Task<()>>,
-    drafts: std::collections::HashMap<
-        String,
-        (
-            agentkit_protocol::generated::SessionDraft,
-            Vec<agentkit_protocol::generated::StoredAttachment>,
-            agentkit_store::core::attachments::Draft,
-        ),
-    >,
+    drafts: std::collections::HashMap<String, draft_actions::LocalDraft>,
     quitting: Rc<Cell<bool>>,
     loading: bool,
     workspace_switching: bool,
@@ -461,6 +489,11 @@ impl WorkbenchController {
             } else {
                 (None, None)
             };
+        if cx.try_global::<crate::draft_writer::Writer>().is_none() {
+            cx.set_global(crate::draft_writer::Writer::new());
+        }
+        let draft_writer = cx.global::<crate::draft_writer::Writer>().clone();
+        cx.set_global(DraftOwner(cx.entity().downgrade()));
         let mut this = Self {
             #[cfg(feature = "e2e")]
             e2e: None,
@@ -477,6 +510,8 @@ impl WorkbenchController {
             }),
             history: RefCell::new(Default::default()),
             capabilities,
+            draft_writer,
+            draft_sync: Default::default(),
             view,
             brand,
             runtime,
@@ -578,6 +613,7 @@ impl WorkbenchController {
                 });
             }
         }));
+        this.draft_notices(window, cx);
         this.start(window, cx);
         #[cfg(feature = "e2e")]
         e2e::install(&mut this, window, cx);
@@ -637,8 +673,16 @@ impl WorkbenchController {
             self.state.as_ref().map(|s| &s.read(cx).model.state.session),
         );
         let quitting = self.quitting.clone();
+        let drafts = self.draft_writer.clone();
+        self.prepare_draft_exit(cx);
         *self.startup.borrow_mut() = Some(cx.spawn_in(window, async move |weak, cx| {
             if let Some(previous) = previous {
+                let _ = smol::future::race(drafts.flush(), async {
+                    smol::Timer::after(Duration::from_secs(5)).await;
+                    Err("ak.draft.unsaved".into())
+                })
+                .await;
+                drafts.unbind();
                 previous.shutdown().await;
             }
             // Environment and filesystem work stays off the GPUI foreground thread.
@@ -675,31 +719,21 @@ impl WorkbenchController {
         for (id, store) in &self.stores {
             self.drafts.insert(
                 id.clone(),
-                (
-                    store.read(cx).model.draft.clone(),
-                    store.read(cx).model.draft_attachments.clone(),
-                    store.read(cx).attachments.clone(),
-                ),
+                draft_actions::LocalDraft::capture(store.read(cx)),
             );
         }
         self.stores.clear();
         self.backlog.clear();
         let mut initial = SessionStore::new(started.session);
-        if let Some((draft, attachments, mut files)) =
-            self.drafts.remove(&initial.model.state.session.id)
-        {
-            initial.model.draft = draft;
-            initial.model.draft_attachments = attachments;
-            files.reading = 0;
-            files.sending = false;
-            initial.attachments = files;
+        if let Some(draft) = self.drafts.remove(&initial.model.state.session.id) {
+            draft.restore(&mut initial);
         }
         let state = cx.new(|_| initial);
         self.stores
             .insert(state.read(cx).model.state.session.id.clone(), state.clone());
         self.state = Some(state.clone());
         self.workspace = Some(started.workspace.clone());
-        self.remember_session(cx);
+        self.remember_session(window, cx);
         self.workspace_store.update(cx, |s, cx| {
             s.catalog = started.workspaces;
             s.id = started.workspace.id.clone();
@@ -732,12 +766,16 @@ impl WorkbenchController {
             p.session = Some(state.read(cx).model.state.session.id.clone());
         });
         *self.runtime.borrow_mut() = Some(started.running);
+        self.bind_drafts(api.clone(), cx);
         self.view.update(cx, |view, cx| {
             view.connected(started.workspace.name, started.model, cx);
             view.bind_list(self.list.clone(), cx);
             view.bind_context(self.app_state.clone(), self.workspace_store.clone(), cx);
             view.bind_session(state, window, cx);
         });
+        if let Some(store) = self.state.clone() {
+            self.watch_draft(store, window, cx);
+        }
         if !self
             .app_state
             .read(cx)
@@ -973,6 +1011,7 @@ impl WorkbenchController {
             ) {
                 self.stores.remove(&id);
                 self.drafts.remove(&id);
+                self.draft_writer.save(id.clone(), Default::default(), true);
                 if self
                     .state
                     .as_ref()
@@ -1127,7 +1166,7 @@ impl WorkbenchController {
         }
     }
 
-    fn remember_session(&self, cx: &App) {
+    fn remember_session(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(store) = &self.state {
             let id = store.read(cx).model.state.session.id.clone();
             let workspace = self.workspace.as_ref().map(|w| w.id.clone());
@@ -1138,6 +1177,9 @@ impl WorkbenchController {
                 p.session = Some(id);
                 p.workspace = workspace;
             });
+        }
+        if let Some(store) = self.state.clone() {
+            self.watch_draft(store, window, cx);
         }
     }
     fn mark_viewed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -1240,7 +1282,7 @@ impl WorkbenchController {
     }
     fn handle(&mut self, intent: WorkbenchIntent, window: &mut Window, cx: &mut Context<Self>) {
         if matches!(intent, WorkbenchIntent::Quit) {
-            window.dispatch_action(Box::new(Quit), cx);
+            window.defer(cx, |window, cx| window.dispatch_action(Box::new(Quit), cx));
             return;
         }
         if self.quitting.get() {
@@ -1331,6 +1373,10 @@ impl WorkbenchController {
             }
             return;
         }
+        if let WorkbenchIntent::RetryDraft(id) = intent {
+            self.retry_draft(id, window, cx);
+            return;
+        }
         match &intent {
             WorkbenchIntent::Attach { session_id, inputs } => {
                 self.import_attachments(session_id.clone(), inputs.clone(), window, cx);
@@ -1348,6 +1394,8 @@ impl WorkbenchController {
                                 .cloned()
                                 .collect();
                             s.model.set_draft_attachments(files);
+                        } else if let Some(id) = id.strip_prefix("draft-ref:") {
+                            s.draft_sync.unavailable.retain(|r| r.id != id);
                         } else {
                             s.attachments.remove(id);
                         }
@@ -1381,7 +1429,8 @@ impl WorkbenchController {
             return;
         }
         match intent {
-            WorkbenchIntent::Attach { .. }
+            WorkbenchIntent::RetryDraft(_)
+            | WorkbenchIntent::Attach { .. }
             | WorkbenchIntent::RemoveAttachment { .. }
             | WorkbenchIntent::Settings(_)
             | WorkbenchIntent::Onboarding(_) => {}
@@ -1407,6 +1456,17 @@ impl WorkbenchController {
                     return;
                 }
                 let is_resend = matches!(intent, WorkbenchIntent::ResendMessage(_));
+                if !is_resend
+                    && (store.read(cx).draft_sync.loading
+                        || !store.read(cx).draft_sync.unavailable.is_empty())
+                {
+                    self.view
+                        .update(cx, |v, cx| v.submission_finished("", false, window, cx));
+                    return;
+                }
+                if !is_resend {
+                    self.save_draft(cx);
+                }
                 if matches!(intent, WorkbenchIntent::Submit(_))
                     && (store.read(cx).attachments.sending
                         || store.read(cx).attachments.reading > 0)
@@ -1512,10 +1572,12 @@ impl WorkbenchController {
                         #[cfg(feature = "e2e")]
                         if let Some(p)=&mut this.e2e {p.ack(&id,result.as_ref().is_ok_and(|a|a.accepted));}
                         let accepted=result.as_ref().is_ok_and(|ack|ack.accepted) || store.read(cx).model.send_confirmed(&pending.id);
-                        let clear_draft=accepted && store.read(cx).model.draft_is_current(&pending.id);
+                        let owns_draft=store.read(cx).model.draft_is_current(&pending.id);
+                        let clear_draft=accepted && owns_draft;
                         let failure=(!accepted).then(||result.as_ref().err().map(|e|e.to_string()).unwrap_or_else(||agentkit_ui::t!("ak.send_rejected")));
                         store.update(cx,|s,cx|{s.model.finish_send(&pending.id,accepted);s.model.last_error=failure.clone();if !accepted{cx.emit(agentkit_store::core::session::SessionStoreEvent::TurnsChanged{from_turn:0});}cx.notify();});
-                        if this.state.as_ref().is_some_and(|s|s.entity_id()==store.entity_id()) {this.view.update(cx,|v,cx| {v.submission_finished(&text,clear_draft,window,cx);if !accepted {if !is_resend{v.restore_draft(&text,window,cx);}v.show_error(failure.unwrap_or_default(),false,cx);}});}
+                        if accepted && !is_resend {this.persist_draft(&store,true,cx);}
+                        if this.state.as_ref().is_some_and(|s|s.entity_id()==store.entity_id()) {this.view.update(cx,|v,cx| {v.submission_finished(&text,clear_draft,window,cx);if !accepted {if !is_resend && owns_draft {v.restore_draft(&text,window,cx);}v.show_error(failure.unwrap_or_default(),false,cx);}});}
                     });
                 }));
             }
@@ -1586,7 +1648,7 @@ impl WorkbenchController {
                     }
                     self.view
                         .update(cx, |v, cx| v.bind_session(store, window, cx));
-                    self.remember_session(cx);
+                    self.remember_session(window, cx);
                     self.mark_viewed(window, cx);
                     return;
                 }
@@ -1640,24 +1702,9 @@ impl WorkbenchController {
                                     this.recovery.retry_load = None;
                                     let id = session.id.clone();
                                     let mut store = SessionStore::new(session);
-                                    if let Some((draft, attachments, mut files)) =
-                                        this.drafts.remove(&id)
-                                    {
-                                        store.model.draft = draft;
-                                        store.model.draft_attachments = attachments;
-                                        files.reading = 0;
-                                        files.sending = false;
-                                        store.attachments = files;
+                                    if let Some(draft) = this.drafts.remove(&id) {
+                                        draft.restore(&mut store);
                                     }
-                                    let replay = filter_snapshot_events(
-                                        &store.model.state.session,
-                                        &this.backlog,
-                                    );
-                                    for (event, context) in replay {
-                                        let _ = store.model.apply(&event, &context);
-                                    }
-                                    this.backlog.clear();
-                                    store.refresh_annotations();
                                     let store = cx.new(|_| store);
                                     this.stores.insert(id.clone(), store.clone());
                                     this.state = Some(store.clone());
@@ -1673,7 +1720,7 @@ impl WorkbenchController {
                                             v.command_focus(false, false, window, cx);
                                         }
                                     });
-                                    this.remember_session(cx);
+                                    this.remember_session(window, cx);
                                     this.mark_viewed(window, cx);
                                 }
                                 Err(e) => this.view.update(cx, |v, cx| {

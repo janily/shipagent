@@ -398,5 +398,19 @@
   "ak.mention.commands": "命令",
   "ak.mention.compact": "压缩会话上下文",
   "ak.mention.empty": "没有匹配项",
-  "ak.mention.failed": "搜索失败：%{error}。修改关键词重试。"
+  "ak.mention.failed": "搜索失败：%{error}。修改关键词重试。",
+  "ak.draft.loading": "正在恢复草稿…",
+  "ak.draft.saving": "正在保存草稿…",
+  "ak.draft.failed": "草稿同步失败：%{error}",
+  "ak.draft.attachments_unavailable": "部分附件未能恢复，请重试或移除后发送。",
+  "ak.draft.content_too_large": "剪贴板附件超过草稿的 20 MiB 内容限制。",
+  "ak.draft.missing_content": "草稿附件内容缺失。",
+  "ak.draft.invalid_content": "草稿附件内容无效。",
+  "ak.draft.worker_stopped": "草稿保存服务已停止。",
+  "ak.draft.unsaved": "部分草稿尚未保存。",
+  "ak.draft.quit_title": "草稿尚未保存",
+  "ak.draft.quit_warning": "保存失败。可以返回重试，或退出并放弃未保存的修改。",
+  "ak.draft.quit_discard": "不保存并退出",
+  "ak.draft.closing": "正在保存草稿并退出…",
+  "ak.draft.retry": "重试"
 }

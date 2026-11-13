@@ -476,3 +476,18 @@ impl WorkbenchApi {
         self.client.files().search(base, query).await
     }
 }
+
+impl WorkbenchApi {
+    /// Read the backend-owned text and attachment draft for one session.
+    pub async fn draft(&self, id: &str) -> Result<Option<g::SessionDraft>, RpcError> {
+        self.client.drafts().get(id).await
+    }
+    /// Persist an exact snapshot through the existing draft protocol.
+    pub async fn set_draft(&self, id: &str, draft: &g::SessionDraft) -> Result<(), RpcError> {
+        self.client.drafts().set(id, draft).await
+    }
+    /// Remove a consumed or explicitly emptied draft.
+    pub async fn delete_draft(&self, id: &str) -> Result<(), RpcError> {
+        self.client.drafts().delete(id).await
+    }
+}
