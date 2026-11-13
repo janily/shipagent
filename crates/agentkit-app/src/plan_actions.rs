@@ -207,6 +207,7 @@ impl WorkbenchController {
                             }
                         });
                     }
+                    this.invalidate_plan_review(&id, window, cx);
                     this.wake_plan(&id, window, cx);
                 });
             }));
@@ -239,15 +240,17 @@ impl WorkbenchController {
             let _ = tx.send(result).await;
         })
         .detach();
+        let review_id = id.to_string();
         self.operations
             .push(cx.spawn_in(window, async move |weak, cx| {
                 let Ok(result) = rx.recv().await else {
                     return;
                 };
-                let _ = weak.update_in(cx, |this, _, cx| {
+                let _ = weak.update_in(cx, |this, window, cx| {
                     if !this.settings_operation_current(epoch, transport, cx) {
                         return;
                     }
+                    let refresh_review = !matches!(&result, Ok(worker::Outcome::Unchanged));
                     match result {
                         Ok(outcome) => {
                             store.update(cx, |s, cx| {
@@ -293,6 +296,9 @@ impl WorkbenchController {
                                 });
                             }
                         }
+                    }
+                    if refresh_review {
+                        this.invalidate_plan_review(&review_id, window, cx);
                     }
                 });
             }));

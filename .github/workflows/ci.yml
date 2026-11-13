@@ -104,6 +104,10 @@ jobs:
         run: cargo test -p agentkit-app --lib draft_contract_parent --locked -- --ignored
         env:
           AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
+      - name: Native views, search jump, cross-client state and cold plan index
+        run: cargo test -p agentkit-app --lib navigation_contract_parent --locked -- --ignored
+        env:
+          AGENTKIT_BACKEND_DIR: ${{ github.workspace }}/target/backend/${{ runner.os == 'Linux' && 'linux-x64' || runner.os == 'macOS' && 'darwin-arm64' || 'win32-x64' }}
       - name: Native settings persist, confirm and restart the owned backend
         run: cargo test -p agentkit-app --lib settings_contract_parent --locked -- --ignored
         env:

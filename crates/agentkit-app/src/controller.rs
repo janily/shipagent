@@ -425,6 +425,7 @@ pub(crate) struct WorkbenchController {
     chat_dialog_subscription: Option<Subscription>,
     navigation_subscription: Option<Subscription>,
     navigation_pending: bool,
+    navigation_state: navigation::State,
     onboarding_saved: Option<(String, f64)>,
     settings_pending: bool,
     oauth_cancel: Option<async_channel::Sender<()>>,
@@ -548,6 +549,7 @@ impl WorkbenchController {
             chat_dialog_subscription: None,
             navigation_subscription: None,
             navigation_pending: false,
+            navigation_state: Default::default(),
             onboarding_saved: None,
             settings_pending: false,
             oauth_cancel: None,
@@ -857,24 +859,28 @@ impl WorkbenchController {
             connections,
         } = started.context;
         let catalog = api.clone();
-        self.context_events.push(cx.spawn(async move |weak, cx| {
-            while let Ok(update) = unread.recv().await {
-                if weak
-                    .update(cx, |this, cx| match update {
-                        Ok(update) => this.app_state.update(cx, |s, cx| {
-                            s.unread = update.total_unread_sessions;
-                            cx.notify();
-                        }),
-                        Err(_) => this.view.update(cx, |v, cx| {
-                            v.show_error(agentkit_ui::t!("ak.event_invalid"), false, cx)
-                        }),
-                    })
-                    .is_err()
-                {
-                    break;
+        self.context_events
+            .push(cx.spawn_in(window, async move |weak, cx| {
+                while let Ok(update) = unread.recv().await {
+                    if weak
+                        .update_in(cx, |this, window, cx| match update {
+                            Ok(update) => {
+                                this.app_state.update(cx, |s, cx| {
+                                    s.unread = update.total_unread_sessions;
+                                    cx.notify();
+                                });
+                                this.invalidate_navigation_summaries(window, cx);
+                            }
+                            Err(_) => this.view.update(cx, |v, cx| {
+                                v.show_error(agentkit_ui::t!("ak.event_invalid"), false, cx)
+                            }),
+                        })
+                        .is_err()
+                    {
+                        break;
+                    }
                 }
-            }
-        }));
+            }));
         self.context_events.push(cx.spawn(async move |weak, cx| {
             while let Ok(update) = skills.recv().await {
                 if weak
@@ -928,6 +934,7 @@ impl WorkbenchController {
             }
         }));
         self.set_phase(agentkit_ui::recovery::Phase::Online, cx);
+        self.refresh_plan_views(window, cx);
         self.mark_viewed(window, cx);
         self.start_monitor(api, window, cx);
     }
@@ -1114,6 +1121,7 @@ impl WorkbenchController {
                 cx.notify();
             });
         }
+        self.refresh_plan_views(window, cx);
         if self.list.read(cx).model.refresh_required
             && !self.list_refresh.pending()
             && !self.workspace_switching
@@ -1144,7 +1152,8 @@ impl WorkbenchController {
                             match sessions {
                                 Ok(sessions) => {
                                     let replay = std::mem::take(&mut this.list_backlog);
-                                    let overflow = std::mem::take(&mut this.list_overflow);
+                                    let overflow = std::mem::take(&mut this.list_overflow)
+                                        || this.list_refresh.take_dirty();
                                     this.list.update(cx, |s, cx| {
                                         s.replace(sessions, cx);
                                         for event in &replay {
@@ -1156,6 +1165,9 @@ impl WorkbenchController {
                                 Err(error) => this
                                     .view
                                     .update(cx, |v, cx| v.show_error(error.to_string(), false, cx)),
+                            }
+                            if fetched {
+                                this.refresh_plan_views(window, cx);
                             }
                             if fetched && this.list.read(cx).model.refresh_required {
                                 this.route(Vec::new(), window, cx);
@@ -1181,6 +1193,8 @@ impl WorkbenchController {
         if let Some(store) = self.state.clone() {
             self.watch_draft(store, window, cx);
         }
+        self.finish_search_jump(cx);
+        self.refresh_plan_views(window, cx);
     }
     fn mark_viewed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(store) = self.state.clone() {
@@ -1238,14 +1252,9 @@ impl WorkbenchController {
         self.viewing = Some(cx.spawn_in(window, async move |weak, cx| {
             let result = api.view_session(&id, &workspace).await;
             if result.is_ok() {
-                let _ = weak.update_in(cx, |this, _, cx| {
+                let _ = weak.update_in(cx, |this, window, cx| {
                     if this.epoch == epoch {
-                        this.list.update(cx, |s, cx| {
-                            if let Some(s) = s.model.sessions.iter_mut().find(|s| s.id == id) {
-                                s.has_unread = Some(false);
-                            }
-                            cx.notify();
-                        });
+                        this.invalidate_navigation_summaries(window, cx);
                     }
                 });
             }
@@ -1612,6 +1621,7 @@ impl WorkbenchController {
                 if self.loading || self.navigation_pending {
                     return;
                 }
+                self.retain_search_jump(&intent);
                 self.save_draft(cx);
                 let branch = if let WorkbenchIntent::Chat(
                     agentkit_ui::transcript::ChatIntent::BranchFrom(message_id),

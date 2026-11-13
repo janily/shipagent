@@ -272,3 +272,6 @@ pub mod mentions;
 
 /// Draft reference conversion and native persistence status.
 pub mod drafts;
+
+/// Built-in sidebar membership, counts and commands.
+pub mod views;

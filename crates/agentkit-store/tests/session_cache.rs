@@ -311,6 +311,16 @@ fn permissions_and_all_summary_badges_are_session_scoped() {
         assert!(list.apply(&event(value)));
     }
     assert!(list.plans.contains("s"));
+    assert_eq!(
+        list.sessions[0].last_message_role,
+        Some(g::SessionLastMessageRole::Plan)
+    );
+    list.apply(&event(serde_json::json!({"type":"user_message","sessionId":"s","status":"accepted","message":{"id":"next","role":"user","content":"execute","timestamp":3}})));
+    assert!(!list.plans.contains("s"));
+    assert_eq!(
+        list.sessions[0].last_message_role,
+        Some(g::SessionLastMessageRole::User)
+    );
     assert_eq!(list.sessions[0].name.as_deref(), Some("name"));
     assert_eq!(list.sessions[0].is_flagged, Some(false));
     assert_eq!(list.sessions[0].is_archived, Some(false));
