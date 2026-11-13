@@ -1,0 +1,83 @@
+{
+  "workspace": "默认工作区",
+  "sessions": [
+    {
+      "workspaceId": "fixture",
+      "workspaceName": "默认工作区",
+      "messages": [
+        {
+          "id": "u",
+          "role": "user",
+          "content": "帮我检查重连测试中的竞态条件，并说明验证方案。",
+          "timestamp": 1
+        },
+        {
+          "id": "a",
+          "role": "assistant",
+          "content": "草稿会在切换会话时保留。你可以从侧栏搜索正文、切换视图，或管理会话的置顶与已读状态。",
+          "timestamp": 2
+        }
+      ],
+      "lastMessageAt": 1794566400000,
+      "isProcessing": true,
+      "id": "title",
+      "name": "修复重连测试失败"
+    },
+    {
+      "workspaceId": "fixture",
+      "workspaceName": "默认工作区",
+      "messages": [],
+      "lastMessageAt": 1794566340000,
+      "isProcessing": false,
+      "id": "unread",
+      "name": "为 sidecar 增加 Job Object",
+      "hasUnread": true,
+      "isFlagged": true
+    },
+    {
+      "workspaceId": "fixture",
+      "workspaceName": "默认工作区",
+      "messages": [],
+      "lastMessageAt": 1794566280000,
+      "isProcessing": false,
+      "id": "body-only",
+      "name": "整理断线恢复方案"
+    },
+    {
+      "workspaceId": "fixture",
+      "workspaceName": "默认工作区",
+      "messages": [],
+      "lastMessageAt": 1794566220000,
+      "isProcessing": false,
+      "id": "plan",
+      "name": "审阅进程树托管计划",
+      "lastMessageRole": "plan"
+    },
+    {
+      "workspaceId": "fixture",
+      "workspaceName": "默认工作区",
+      "messages": [],
+      "lastMessageAt": 1794566160000,
+      "isProcessing": false,
+      "id": "archived",
+      "name": "上周发布说明",
+      "isArchived": true
+    }
+  ],
+  "matches": [
+    {
+      "sessionId": "body-only",
+      "matchCount": 2,
+      "matches": [
+        {
+          "sessionId": "body-only",
+          "lineNumber": 2,
+          "snippet": "… reconnect 之前先清理挂起请求，重连后恢复 lastSeq …"
+        }
+      ]
+    }
+  ],
+  "theme_light": "Workbench Light",
+  "theme_dark": "Workbench Dark",
+  "model": "Claude Sonnet"
+}

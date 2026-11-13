@@ -2,7 +2,7 @@ use super::*;
 use agentkit_protocol::generated::Session;
 use gpui_kit::component::{
     button::{Button, ButtonVariants},
-    menu::{ContextMenuExt, DropdownMenu},
+    menu::{ContextMenuExt, DropdownMenu, PopupMenu},
     spinner::Spinner,
     *,
 };
@@ -17,6 +17,47 @@ pub(super) struct RenameSession {
 pub(super) struct DeleteSession {
     pub id: String,
 }
+#[derive(Clone, PartialEq, Deserialize, Action)]
+#[action(namespace=navigation,no_json)]
+pub(super) struct MutateSession {
+    pub id: String,
+    pub mutation: Mutation,
+}
+fn commands(
+    mut menu: PopupMenu,
+    id: &str,
+    flagged: bool,
+    unread: bool,
+    archived: bool,
+) -> PopupMenu {
+    let choices = [
+        if flagged {
+            (t!("ak.nav.unflag"), Mutation::Unflag)
+        } else {
+            (t!("ak.nav.flag"), Mutation::Flag)
+        },
+        if unread {
+            (t!("ak.nav.mark_read"), Mutation::MarkRead)
+        } else {
+            (t!("ak.nav.mark_unread"), Mutation::MarkUnread)
+        },
+        if archived {
+            (t!("ak.nav.unarchive"), Mutation::Unarchive)
+        } else {
+            (t!("ak.nav.archive"), Mutation::Archive)
+        },
+    ];
+    for (label, mutation) in choices {
+        menu = menu.menu(
+            label,
+            Box::new(MutateSession {
+                id: id.into(),
+                mutation,
+            }),
+        );
+    }
+    menu
+}
 impl SessionSidebar {
     pub(super) fn row(
         &self,
@@ -25,6 +66,9 @@ impl SessionSidebar {
         plan: bool,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        let flagged = s.is_flagged == Some(true);
+        let unread = s.has_unread == Some(true);
+        let archived = s.is_archived == Some(true);
         let id = s.id.clone();
         let menu_id = id.clone();
         let more_id = id.clone();
@@ -47,6 +91,18 @@ impl SessionSidebar {
         } else {
             relative_time(s.last_message_at)
         };
+        let snippet = self
+            .search_results
+            .iter()
+            .find(|r| r.session_id == s.id)
+            .map(|r| {
+                r.matches
+                    .first()
+                    .map(|m| m.snippet.clone())
+                    .unwrap_or_else(|| t!("ak.nav.snippet_missing"))
+            });
+        let content_hit = snippet.is_some();
+        let query = self.search.read(cx).value().trim().to_string();
         let active = self.active.as_ref() == Some(&id);
         let selected = self.selected.as_ref() == Some(&id);
         let button = Button::new(SharedString::from(format!("session:{id}")))
@@ -57,13 +113,23 @@ impl SessionSidebar {
             .justify_start()
             .px_2()
             .child(div().w_full().min_w_0().text_ellipsis().child(name.clone()))
-            .accessibility_label(format!("{name} · {status}"))
+            .accessibility_label(format!(
+                "{name} · {}",
+                snippet.as_deref().unwrap_or(&status)
+            ))
             .disabled(!self.ready)
             .when(active || selected, |b| b.bg(cx.theme().sidebar_accent))
             .on_click(cx.listener(move |this, _, window, cx| {
                 this.selected = Some(id.clone());
                 this.focus.focus(window, cx);
-                cx.emit(SidebarIntent::Open(id.clone()));
+                if content_hit {
+                    cx.emit(SidebarIntent::OpenMatch {
+                        session_id: id.clone(),
+                        query: query.clone(),
+                    });
+                } else {
+                    cx.emit(SidebarIntent::Open(id.clone()));
+                }
             }));
         h_flex()
             .h(px(52.))
@@ -109,7 +175,7 @@ impl SessionSidebar {
                         .px_2()
                         .text_xs()
                         .text_color(cx.theme().muted_foreground)
-                        .child(status),
+                        .child(snippet.unwrap_or(status)),
                 ),
             )
             .child(
@@ -120,45 +186,57 @@ impl SessionSidebar {
                     .accessibility_label(t!("ak.nav.actions"))
                     .disabled(!self.ready)
                     .dropdown_menu_with_anchor(Anchor::TopRight, move |m, _, _| {
-                        m.action_context(action_focus.clone())
-                            .menu(
-                                t!("ak.nav.rename"),
-                                Box::new(RenameSession {
-                                    id: more_id.clone(),
-                                }),
-                            )
-                            .separator()
-                            .menu_element(
-                                Box::new(DeleteSession {
-                                    id: more_id.clone(),
-                                }),
-                                |_, cx| {
-                                    div()
-                                        .text_color(cx.theme().danger)
-                                        .child(t!("ak.nav.delete"))
-                                },
-                            )
+                        commands(
+                            m.action_context(action_focus.clone()),
+                            &more_id,
+                            flagged,
+                            unread,
+                            archived,
+                        )
+                        .menu(
+                            t!("ak.nav.rename"),
+                            Box::new(RenameSession {
+                                id: more_id.clone(),
+                            }),
+                        )
+                        .separator()
+                        .menu_element(
+                            Box::new(DeleteSession {
+                                id: more_id.clone(),
+                            }),
+                            |_, cx| {
+                                div()
+                                    .text_color(cx.theme().danger)
+                                    .child(t!("ak.nav.delete"))
+                            },
+                        )
                     }),
             )
             .context_menu(move |m, _, _| {
-                m.action_context(context_focus.clone())
-                    .menu(
-                        t!("ak.nav.rename"),
-                        Box::new(RenameSession {
-                            id: menu_id.clone(),
-                        }),
-                    )
-                    .separator()
-                    .menu_element(
-                        Box::new(DeleteSession {
-                            id: menu_id.clone(),
-                        }),
-                        |_, cx| {
-                            div()
-                                .text_color(cx.theme().danger)
-                                .child(t!("ak.nav.delete"))
-                        },
-                    )
+                commands(
+                    m.action_context(context_focus.clone()),
+                    &menu_id,
+                    flagged,
+                    unread,
+                    archived,
+                )
+                .menu(
+                    t!("ak.nav.rename"),
+                    Box::new(RenameSession {
+                        id: menu_id.clone(),
+                    }),
+                )
+                .separator()
+                .menu_element(
+                    Box::new(DeleteSession {
+                        id: menu_id.clone(),
+                    }),
+                    |_, cx| {
+                        div()
+                            .text_color(cx.theme().danger)
+                            .child(t!("ak.nav.delete"))
+                    },
+                )
             })
             .into_any_element()
     }

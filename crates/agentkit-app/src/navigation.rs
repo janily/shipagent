@@ -2,8 +2,19 @@ use super::*;
 use agentkit_ui::sidebar::{NavigationDialog, NavigationForm, SidebarIntent};
 #[path = "navigation_mutations.rs"]
 mod mutations;
+#[path = "navigation_plans.rs"]
+mod plans;
+#[path = "navigation_search.rs"]
+mod search;
 #[path = "navigation_workspace.rs"]
 mod workspace;
+#[derive(Default)]
+pub(super) struct State {
+    search: Option<Task<()>>,
+    commands: std::collections::HashMap<String, (u64, u64)>,
+    jump: Option<(String, String)>,
+    projection: plans::Projection,
+}
 impl WorkbenchController {
     pub(super) fn handle_navigation(
         &mut self,
@@ -12,6 +23,10 @@ impl WorkbenchController {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if let SidebarIntent::Search { request, query } = action {
+            self.search_navigation(request, query, api, window, cx);
+            return;
+        }
         if self.loading || self.navigation_pending {
             return;
         }
@@ -21,6 +36,25 @@ impl WorkbenchController {
                     self.handle(WorkbenchIntent::OpenSession(id), window, cx);
                 }
             }
+            SidebarIntent::OpenMatch { session_id, query } => {
+                if self.list.read(cx).model.sessions.iter().any(|s| {
+                    s.id == session_id
+                        && s.hidden != Some(true)
+                        && self
+                            .workspace
+                            .as_ref()
+                            .is_some_and(|w| w.id == s.workspace_id)
+                }) {
+                    self.navigation_state.jump = Some((session_id.clone(), query));
+                    self.handle(WorkbenchIntent::OpenSession(session_id), window, cx);
+                }
+            }
+            SidebarIntent::Command {
+                session_id,
+                mutation,
+            } => self.mutate_session(session_id, mutation, api, window, cx),
+            SidebarIntent::Search { .. } => {}
+            SidebarIntent::RetryPlans => self.retry_plan_views(window, cx),
             SidebarIntent::New => self.handle(WorkbenchIntent::NewSession, window, cx),
             SidebarIntent::SwitchWorkspace(id) => {
                 let workspace = self
@@ -153,3 +187,7 @@ impl WorkbenchController {
         });
     }
 }
+
+#[cfg(test)]
+#[path = "navigation_contract_tests.rs"]
+mod contract_tests;

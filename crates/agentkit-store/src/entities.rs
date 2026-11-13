@@ -58,6 +58,10 @@ pub struct WorkspaceStore {
 /// Window-local list and its approval/plan badges.
 #[derive(Default)]
 pub struct SessionListStore {
+    /// Background reconstruction of pending plan review membership.
+    pub plan_loading: bool,
+    /// Reconstruction failed; counts can be retried without losing visible sessions.
+    pub plan_error: bool,
     /// Pure generated summary policy.
     pub model: SessionSummaries,
 }

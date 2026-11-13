@@ -3,6 +3,7 @@
 pub(super) struct ListRefresh {
     generation: u64,
     pending: Option<u64>,
+    dirty: bool,
 }
 impl ListRefresh {
     pub fn pending(&self) -> bool {
@@ -13,12 +14,23 @@ impl ListRefresh {
             return None;
         }
         self.generation = self.generation.wrapping_add(1);
+        self.dirty = false;
         self.pending = Some(self.generation);
         Some(self.generation)
     }
     pub fn invalidate(&mut self) {
         self.generation = self.generation.wrapping_add(1);
         self.pending = None;
+        self.dirty = false;
+    }
+    /// An unread/command invalidation has no replayable per-session event.
+    pub fn mark_dirty(&mut self) {
+        if self.pending.is_some() {
+            self.dirty = true;
+        }
+    }
+    pub fn take_dirty(&mut self) -> bool {
+        std::mem::take(&mut self.dirty)
     }
     pub fn finish(&mut self, lease: u64) -> bool {
         if self.pending != Some(lease) {
@@ -46,5 +58,23 @@ mod tests {
         let returned = state.begin().expect("switch-back refresh");
         assert!(!state.finish(old));
         assert!(state.finish(returned));
+    }
+}
+
+#[cfg(test)]
+mod invalidation_tests {
+    #[::core::prelude::v1::test]
+    fn unread_invalidation_during_snapshot_requires_a_followup_and_stale_lease_cannot_consume_it() {
+        let mut s = super::ListRefresh::default();
+        let lease = s.begin();
+        s.mark_dirty();
+        assert!(!s.finish(99));
+        assert!(s.finish(lease.unwrap_or_default()));
+        assert!(s.take_dirty());
+        assert!(!s.take_dirty());
+        assert!(s.begin().is_some());
+        s.mark_dirty();
+        s.invalidate();
+        assert!(!s.take_dirty());
     }
 }

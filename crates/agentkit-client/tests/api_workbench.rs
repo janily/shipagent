@@ -209,3 +209,48 @@ fn mention_options_and_search_preserve_exact_positional_contracts() {
     api.close();
     server.join().unwrap();
 }
+
+#[test]
+fn session_state_and_content_search_use_existing_typed_positional_contracts() {
+    let expected = std::sync::Arc::new(std::sync::Mutex::new(
+        vec![
+            json!(["s",{"type":"flag"}]),
+            json!(["s",{"type":"unflag"}]),
+            json!(["s",{"type":"archive"}]),
+            json!(["s",{"type":"unarchive"}]),
+            json!(["s",{"type":"markRead"}]),
+            json!(["s",{"type":"markUnread"}]),
+            json!(["w", "中文 needle", "request-3"]),
+        ]
+        .into_iter(),
+    ));
+    let (endpoint, server) = serve_checked(
+        vec![
+            ("sessions:command", json!(null)),
+            ("sessions:command", json!(null)),
+            ("sessions:command", json!(null)),
+            ("sessions:command", json!(null)),
+            ("sessions:command", json!(null)),
+            ("sessions:command", json!(null)),
+            ("sessions:searchContent", json!([])),
+        ],
+        move |req| assert_eq!(req["args"], expected.lock().unwrap().next().unwrap()),
+    );
+    let api = WorkbenchApi::connect(endpoint, "w".into());
+    smol::block_on(async {
+        api.set_session_flag("s", true).await.unwrap();
+        api.set_session_flag("s", false).await.unwrap();
+        api.set_session_archived("s", true).await.unwrap();
+        api.set_session_archived("s", false).await.unwrap();
+        api.set_session_read("s", true).await.unwrap();
+        api.set_session_read("s", false).await.unwrap();
+        assert!(
+            api.search_session_content("w", "中文 needle", "request-3")
+                .await
+                .unwrap()
+                .is_empty()
+        );
+    });
+    api.close();
+    server.join().unwrap();
+}

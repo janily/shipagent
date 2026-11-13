@@ -5,8 +5,12 @@ mod keyboard;
 pub use keyboard::{Delete as DeleteAction, Rename as RenameAction};
 mod render;
 mod row;
+mod search;
+mod views;
 mod workspace;
 use crate::t;
+use agentkit_protocol::generated as g;
+use agentkit_store::core::views::{Mutation, View};
 use agentkit_store::entities::{SessionListStore, WorkspaceStore};
 pub use dialog::{NavigationDialog, NavigationForm};
 use gpui_kit::component::{
@@ -20,6 +24,29 @@ use std::rc::Rc;
 pub enum SidebarIntent {
     /// Open one canonical session.
     Open(String),
+    /// Debounced body search owned by the controller; query changes invalidate old results.
+    Search {
+        /// Window-local query generation.
+        request: u64,
+        /// Trimmed user input; empty cancels the debounce.
+        query: String,
+    },
+    /// Open a body match and locate the matching message after hydration.
+    OpenMatch {
+        /// Canonical session identity.
+        session_id: String,
+        /// Literal content to locate after opening.
+        query: String,
+    },
+    /// Apply an explicit session state through the backend.
+    Command {
+        /// Canonical session identity.
+        session_id: String,
+        /// Desired authoritative state.
+        mutation: Mutation,
+    },
+    /// Retry the background pending-plan projection.
+    RetryPlans,
     /// Create a session in the selected workspace.
     New,
     /// Ask for a new title.
@@ -38,7 +65,14 @@ pub struct SessionSidebar {
     list: Option<Entity<SessionListStore>>,
     workspace: Entity<workspace::WorkspaceSwitcher>,
     search: Entity<InputState>,
-    rows: Vec<usize>,
+    rows: Vec<ListRow>,
+    view: View,
+    workspace_id: String,
+    workspace_subscription: Option<Subscription>,
+    search_request: u64,
+    search_results: Vec<g::SessionSearchResult>,
+    searching: bool,
+    search_error: bool,
     sizes: Rc<Vec<Size<Pixels>>>,
     active: Option<String>,
     selected: Option<String>,
@@ -60,7 +94,7 @@ impl SessionSidebar {
         let search = cx.new(|cx| InputState::new(window, cx).placeholder(t!("ak.nav.search")));
         let input = cx.subscribe(&search, |this, _, e, cx| {
             if matches!(e, InputEvent::Change) {
-                this.rebuild(cx);
+                this.query_changed(cx);
             }
         });
         Self {
@@ -68,6 +102,13 @@ impl SessionSidebar {
             workspace,
             search,
             rows: vec![],
+            view: View::All,
+            workspace_id: String::new(),
+            workspace_subscription: None,
+            search_request: 0,
+            search_results: vec![],
+            searching: false,
+            search_error: false,
             sizes: Rc::new(vec![]),
             active: None,
             selected: None,
@@ -113,7 +154,23 @@ impl SessionSidebar {
     }
     /// Attach the window workspace catalog.
     pub fn bind_workspace(&mut self, store: Entity<WorkspaceStore>, cx: &mut Context<Self>) {
+        let changed = self.workspace_id != store.read(cx).id;
+        self.workspace_id = store.read(cx).id.clone();
+        self.workspace_subscription = Some(cx.observe(&store, |this, store, cx| {
+            let id = store.read(cx).id.clone();
+            if this.workspace_id != id {
+                this.workspace_id = id;
+                this.view = View::All;
+                this.query_changed(cx);
+            }
+        }));
         self.workspace.update(cx, |w, cx| w.bind(store, cx));
+        if changed {
+            self.view = View::All;
+            self.query_changed(cx);
+        } else {
+            self.rebuild(cx);
+        }
     }
     /// Set connection/loading gates without losing local search or keyboard selection.
     pub fn set_context(&mut self, active: Option<String>, ready: bool, cx: &mut Context<Self>) {
@@ -122,7 +179,11 @@ impl SessionSidebar {
             self.active = active.clone();
             self.selected = active;
         }
+        let was_ready = self.ready;
         self.ready = ready;
+        if was_ready != ready {
+            self.query_changed(cx);
+        }
         self.workspace.update(cx, |w, cx| {
             if w.ready != ready {
                 w.ready = ready;
@@ -134,54 +195,98 @@ impl SessionSidebar {
         }
     }
     fn rebuild(&mut self, cx: &mut Context<Self>) {
-        let query = self.search.read(cx).value().trim().to_lowercase();
-        self.rows = self
-            .list
-            .as_ref()
-            .map(|list| {
-                let sessions = &list.read(cx).model.sessions;
-                let mut rows: Vec<_> = sessions
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, s)| {
-                        s.hidden != Some(true)
-                            && s.is_archived != Some(true)
-                            && (query.is_empty()
-                                || s.name
-                                    .as_deref()
-                                    .unwrap_or("")
-                                    .to_lowercase()
-                                    .contains(&query))
+        let query = self.search.read(cx).value().trim().to_string();
+        self.rows.clear();
+        if let Some(list) = &self.list {
+            let list = list.read(cx);
+            let sessions = &list.model.sessions;
+            let workspace = (!self.workspace_id.is_empty()).then_some(self.workspace_id.as_str());
+            let titles = agentkit_store::core::views::indices(
+                sessions,
+                &list.model.plans,
+                workspace,
+                self.view,
+                &query,
+            );
+            self.rows
+                .extend(titles.iter().map(|i| ListRow::Session(*i)));
+            if !query.is_empty() {
+                let candidates = agentkit_store::core::views::indices(
+                    sessions,
+                    &list.model.plans,
+                    workspace,
+                    self.view,
+                    "",
+                );
+                let content: Vec<_> = candidates
+                    .into_iter()
+                    .filter(|i| !titles.contains(i))
+                    .filter_map(|i| {
+                        let hit = self
+                            .search_results
+                            .iter()
+                            .find(|r| r.session_id == sessions[i].id)?;
+                        let snippet = hit
+                            .matches
+                            .first()
+                            .map(|m| m.snippet.clone())
+                            .unwrap_or_else(|| t!("ak.nav.snippet_missing"));
+                        Some(ListRow::Content(i, snippet))
                     })
-                    .map(|(i, _)| i)
                     .collect();
-                rows.sort_by(|a, b| {
-                    sessions[*b]
-                        .last_message_at
-                        .cmp(&sessions[*a].last_message_at)
-                        .then_with(|| sessions[*a].id.cmp(&sessions[*b].id))
-                });
-                rows
-            })
-            .unwrap_or_default();
+                if !content.is_empty() {
+                    self.rows.push(ListRow::Header);
+                    self.rows.extend(content);
+                }
+            }
+        }
         self.sizes = Rc::new(
-            (0..self.rows.len())
-                .map(|_| size(px(240.), px(52.)))
+            self.rows
+                .iter()
+                .map(|r| {
+                    size(
+                        px(240.),
+                        px(if matches!(r, ListRow::Header) {
+                            24.
+                        } else {
+                            52.
+                        }),
+                    )
+                })
                 .collect(),
         );
         if self.selected.as_ref().is_none_or(|id| {
-            !self.rows.iter().any(|i| {
-                self.list
-                    .as_ref()
-                    .is_some_and(|s| s.read(cx).model.sessions[*i].id == *id)
-            })
+            !self
+                .rows
+                .iter()
+                .any(|r| self.row_id(r, cx).as_ref() == Some(id))
         }) {
-            self.selected = self.rows.first().and_then(|i| {
-                self.list
-                    .as_ref()
-                    .map(|s| s.read(cx).model.sessions[*i].id.clone())
-            });
+            self.selected = self.rows.iter().find_map(|r| self.row_id(r, cx));
         }
         cx.notify();
+    }
+    fn row_id(&self, row: &ListRow, cx: &App) -> Option<String> {
+        let index = row.index()?;
+        self.list
+            .as_ref()?
+            .read(cx)
+            .model
+            .sessions
+            .get(index)
+            .map(|s| s.id.clone())
+    }
+}
+#[derive(Clone)]
+enum ListRow {
+    Session(usize),
+    Content(usize, String),
+    Header,
+}
+impl ListRow {
+    fn index(&self) -> Option<usize> {
+        match self {
+            Self::Session(i) | Self::Content(i, _) => Some(*i),
+            Self::Header => None,
+        }
     }
 }

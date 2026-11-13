@@ -105,6 +105,63 @@ impl WorkbenchApi {
             .await?;
         Ok(())
     }
+    /// Set the flag through the authoritative session command channel.
+    pub async fn set_session_flag(&self, id: &str, flagged: bool) -> Result<(), RpcError> {
+        self.client
+            .sessions()
+            .command(
+                id,
+                &if flagged {
+                    g::SessionCommand::Flag
+                } else {
+                    g::SessionCommand::Unflag
+                },
+            )
+            .await
+            .map(|_| ())
+    }
+    /// Set archive membership without changing activity order.
+    pub async fn set_session_archived(&self, id: &str, archived: bool) -> Result<(), RpcError> {
+        self.client
+            .sessions()
+            .command(
+                id,
+                &if archived {
+                    g::SessionCommand::Archive
+                } else {
+                    g::SessionCommand::Unarchive
+                },
+            )
+            .await
+            .map(|_| ())
+    }
+    /// Explicitly change read status, independently of active-view tracking.
+    pub async fn set_session_read(&self, id: &str, read: bool) -> Result<(), RpcError> {
+        self.client
+            .sessions()
+            .command(
+                id,
+                &if read {
+                    g::SessionCommand::MarkRead
+                } else {
+                    g::SessionCommand::MarkUnread
+                },
+            )
+            .await
+            .map(|_| ())
+    }
+    /// Search persisted message content in one workspace.
+    pub async fn search_session_content(
+        &self,
+        workspace: &str,
+        query: &str,
+        request: &str,
+    ) -> Result<Vec<g::SessionSearchResult>, RpcError> {
+        self.client
+            .sessions()
+            .search(workspace, query, Some(request))
+            .await
+    }
     /// Authoritative unread count at bootstrap.
     pub async fn unread_snapshot(&self) -> Result<g::UnreadSummary, RpcError> {
         self.client.sessions().unread_summary().await

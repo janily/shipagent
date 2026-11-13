@@ -568,3 +568,37 @@ fn slow_session_load_shows_skeleton_after_150ms_and_fast_bind_cancels_it(cx: &mu
     })
     .unwrap();
 }
+#[gpui_kit::test]
+fn content_jump_skips_hidden_earlier_matches_and_scrolls_to_a_visible_turn(
+    cx: &mut TestAppContext,
+) {
+    let (w, v, s) = open(cx);
+    let mut snapshot = cx.update(|cx| s.read(cx).model.state.session.clone());
+    snapshot.messages = serde_json::from_value(serde_json::json!([
+        {"id":"hidden","role":"user","content":"needle hidden","timestamp":1,"hidden":true},
+        {"id":"first","role":"user","content":"first","timestamp":2},
+        {"id":"answer","role":"assistant","content":"answer","timestamp":3},
+        {"id":"target","role":"user","content":"NEEDLE visible","timestamp":4}
+    ]))
+    .unwrap();
+    let store = cx.new(|_| SessionStore::new(snapshot));
+    cx.update_window(w, |_, window, cx| {
+        v.update(cx, |v, cx| v.bind_session(store.clone(), window, cx));
+        window.render_frame(cx);
+        v.update(cx, |v, cx| {
+            assert!(!v.jump_to_match("wrong", "needle", cx));
+            assert!(!v.jump_to_match("s", "", cx));
+            assert!(v.jump_to_match("s", "needle", cx));
+        });
+        let expected = store.read(cx).model.turn_index("target").unwrap();
+        assert_eq!(
+            v.read(cx)
+                .scroll_state()
+                .read(cx)
+                .logical_scroll_top()
+                .item_ix,
+            expected
+        );
+    })
+    .unwrap();
+}
