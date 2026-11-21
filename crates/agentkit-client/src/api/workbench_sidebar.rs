@@ -1,5 +1,20 @@
 use super::*;
 impl WorkbenchApi {
+    /// Export persisted session history and its portable files.
+    pub async fn export_session_bundle(&self, id: &str) -> Result<g::SessionBundle, RpcError> {
+        self.client.sessions().export(id).await
+    }
+
+    /// Import a portable session using the selected backend transfer mode.
+    pub async fn import_session_bundle(
+        &self,
+        workspace: &str,
+        bundle: &g::SessionBundle,
+        mode: super::super::types::ImportMode,
+    ) -> Result<super::super::types::ImportResult, RpcError> {
+        self.client.sessions().import(workspace, bundle, mode).await
+    }
+
     /// Change the server workspace and future reconnect handshake together.
     pub async fn switch_workspace(&self, id: &str) -> Result<(), RpcError> {
         self.client.workspaces().switch(id).await

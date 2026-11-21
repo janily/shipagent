@@ -49,6 +49,8 @@ pub enum SidebarIntent {
     RetryPlans,
     /// Create a session in the selected workspace.
     New,
+    /// Export one persisted conversation.
+    Export(String),
     /// Ask for a new title.
     Rename(String),
     /// Ask for confirmation before deleting.

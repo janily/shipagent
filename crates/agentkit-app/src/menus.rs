@@ -71,8 +71,8 @@ pub(crate) fn build(title: &str, s: Status) -> Vec<Menu> {
         later(t!("ak.menu.new_window")),
         MenuItem::action(t!("ak.menu.new_workspace"), NewWorkspace).disabled(disabled || !s.ready),
         MenuItem::Separator,
-        later(t!("ak.menu.import")),
-        later(t!("ak.menu.export")),
+        MenuItem::action(t!("ak.menu.import"), ImportSession).disabled(disabled || !s.ready),
+        MenuItem::action(t!("ak.menu.export"), ExportSession).disabled(no_session || s.busy),
         MenuItem::Separator,
         item("app::CloseWindow", CloseWindow),
     ];
@@ -130,7 +130,7 @@ pub(crate) fn build(title: &str, s: Status) -> Vec<Menu> {
             MenuItem::action(t!("ak.nav.rename"), RenameSession).disabled(no_session),
             later(t!("ak.menu.pin")),
             later(t!("ak.menu.archive")),
-            later(t!("ak.menu.branch")),
+            MenuItem::action(t!("ak.menu.branch"), BranchSession).disabled(no_session || s.busy),
             MenuItem::Separator,
             MenuItem::action(t!("ak.nav.delete"), DeleteSession).disabled(no_session),
         ]),
@@ -223,6 +223,6 @@ mod tests {
                 }
             }
         }
-        assert!(deferred >= 6 && input_copy);
+        assert!(deferred >= 5 && input_copy);
     }
 }

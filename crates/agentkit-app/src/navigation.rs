@@ -70,6 +70,7 @@ impl WorkbenchController {
                     self.switch_navigation(w, api, window, cx);
                 }
             }
+            SidebarIntent::Export(id) => self.export_session(Some(id), window, cx),
             SidebarIntent::Rename(id) => {
                 let Some(s) = self
                     .list

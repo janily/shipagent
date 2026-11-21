@@ -23,6 +23,8 @@ mod mention_actions;
 mod menu_actions;
 #[path = "navigation.rs"]
 mod navigation;
+#[path = "session_transfer.rs"]
+mod session_transfer;
 #[path = "onboarding.rs"]
 mod onboarding;
 #[cfg(feature = "perf")]
@@ -1850,6 +1852,15 @@ impl Render for WorkbenchController {
             )
             .on_action(
                 cx.listener(|this, _: &DeleteSession, w, cx| this.session_command(true, w, cx)),
+            )
+            .on_action(
+                cx.listener(|this, _: &ExportSession, w, cx| this.export_session(None, w, cx)),
+            )
+            .on_action(
+                cx.listener(|this, _: &ImportSession, w, cx| this.choose_import(w, cx)),
+            )
+            .on_action(
+                cx.listener(|this, _: &BranchSession, w, cx| this.branch_current(w, cx)),
             )
             .on_action(cx.listener(|this, _: &NewWorkspace, w, cx| {
                 if !w.has_active_dialog(cx)

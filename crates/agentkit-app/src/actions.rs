@@ -42,6 +42,12 @@ gpui_kit::actions!(
         RenameSession,
         /// Confirm deletion of the active conversation.
         DeleteSession,
+        /// Import a portable conversation into the current workspace.
+        ImportSession,
+        /// Save the active conversation as a portable bundle.
+        ExportSession,
+        /// Continue from the latest user message in a new conversation.
+        BranchSession,
         /// Close the window through the orderly quit path.
         CloseWindow,
         /// Exit only after explicit confirmation when sessions are running.
