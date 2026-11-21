@@ -10,12 +10,18 @@ use std::{io::Read, path::Path};
 const MAX_BUNDLE_BYTES: u64 = 16 * 1024 * 1024;
 
 fn read_bundle(path: &Path) -> anyhow::Result<SessionBundle> {
-    anyhow::ensure!(std::fs::metadata(path)?.is_file(), "Expected a regular file");
+    anyhow::ensure!(
+        std::fs::metadata(path)?.is_file(),
+        "Expected a regular file"
+    );
     let mut data = Vec::new();
     std::fs::File::open(path)?
         .take(MAX_BUNDLE_BYTES + 1)
         .read_to_end(&mut data)?;
-    anyhow::ensure!(data.len() as u64 <= MAX_BUNDLE_BYTES, "Session bundle is too large");
+    anyhow::ensure!(
+        data.len() as u64 <= MAX_BUNDLE_BYTES,
+        "Session bundle is too large"
+    );
     let mut bundle: SessionBundle = serde_json::from_slice(&data)?;
     let header = &mut bundle.session.header;
     header.permission_mode = Some(PermissionMode::Ask);
@@ -36,7 +42,7 @@ fn write_bundle(path: &Path, bundle: &SessionBundle) -> anyhow::Result<()> {
 }
 
 impl WorkbenchController {
-    fn transfer_ready(&self, window: &mut Window, cx: &App) -> bool {
+    fn transfer_ready(&self, window: &mut Window, cx: &mut App) -> bool {
         !self.quitting.get()
             && !self.loading
             && !self.navigation_pending
@@ -86,39 +92,43 @@ impl WorkbenchController {
             return;
         };
         let Some(id) = id.or_else(|| {
-            self.state.as_ref().map(|s| s.read(cx).model.state.session.id.clone())
+            self.state
+                .as_ref()
+                .map(|s| s.read(cx).model.state.session.id.clone())
         }) else {
             return;
         };
         let epoch = self.epoch;
         let transport = self.transport_epoch;
         let picker = cx.prompt_for_new_path(&std::env::temp_dir(), Some("shipagent-session.json"));
-        self.operations.push(cx.spawn_in(window, async move |weak, cx| {
-            let result = async {
-                let Some(path) = picker.await?? else {
-                    return Ok(());
-                };
-                let current = weak
-                    .update_in(cx, |this, _, cx| {
-                        this.settings_operation_current(epoch, transport, cx)
-                    })
-                    .unwrap_or(false);
-                if !current {
-                    return Ok(());
+        self.operations
+            .push(cx.spawn_in(window, async move |weak, cx| {
+                let result = async {
+                    let Some(path) = picker.await?? else {
+                        return Ok(());
+                    };
+                    let current = weak
+                        .update_in(cx, |this, _, cx| {
+                            this.settings_operation_current(epoch, transport, cx)
+                        })
+                        .unwrap_or(false);
+                    if !current {
+                        return Ok(());
+                    }
+                    let mut bundle = api.export_session_bundle(&id).await?;
+                    bundle.session.header.llm_connection = None;
+                    bundle.session.header.connection_locked = None;
+                    cx.background_executor()
+                        .spawn(async move { write_bundle(&path, &bundle) })
+                        .await
                 }
-                let mut bundle = api.export_session_bundle(&id).await?;
-                bundle.session.header.llm_connection = None;
-                bundle.session.header.connection_locked = None;
-                cx.background_executor()
-                    .spawn(async move { write_bundle(&path, &bundle) })
-                    .await
-            }.await;
-            if result.is_err() {
-                let _ = weak.update_in(cx, |this, _, cx| {
-                    this.transfer_error(agentkit_ui::t!("ak.transfer.export_failed"), cx);
-                });
-            }
-        }));
+                .await;
+                if result.is_err() {
+                    let _ = weak.update_in(cx, |this, _, cx| {
+                        this.transfer_error(agentkit_ui::t!("ak.transfer.export_failed"), cx);
+                    });
+                }
+            }));
     }
 
     pub(super) fn choose_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -166,12 +176,7 @@ impl WorkbenchController {
         });
     }
 
-    fn import_session(
-        &mut self,
-        mode: ImportMode,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    fn import_session(&mut self, mode: ImportMode, window: &mut Window, cx: &mut Context<Self>) {
         let Some(api) = self.settings_api(cx) else {
             return;
         };
@@ -186,45 +191,63 @@ impl WorkbenchController {
             multiple: false,
             prompt: Some(agentkit_ui::t!("ak.menu.import").into()),
         });
-        self.operations.push(cx.spawn_in(window, async move |weak, cx| {
-            let result = async {
-                let paths = picker.await??;
-                let Some(path) = paths.and_then(|paths| paths.into_iter().next()) else {
-                    return Ok(None);
-                };
-                let bundle = cx.background_executor()
-                    .spawn(async move { read_bundle(&path) })
-                    .await?;
-                let current = weak
-                    .update_in(cx, |this, window, cx| {
-                        this.transfer_ready(window, cx)
-                            && this.settings_operation_current(epoch, transport, cx)
-                    })
-                    .unwrap_or(false);
-                if !current {
-                    return Ok(None);
+        self.operations
+            .push(cx.spawn_in(window, async move |weak, cx| {
+                let result = async {
+                    let paths = picker.await??;
+                    let Some(path) = paths.and_then(|paths| paths.into_iter().next()) else {
+                        return Ok(None);
+                    };
+                    let bundle = cx
+                        .background_executor()
+                        .spawn(async move { read_bundle(&path) })
+                        .await?;
+                    let current = weak
+                        .update_in(cx, |this, window, cx| {
+                            this.transfer_ready(window, cx)
+                                && this.settings_operation_current(epoch, transport, cx)
+                        })
+                        .unwrap_or(false);
+                    if !current {
+                        return Ok(None);
+                    }
+                    Ok::<_, anyhow::Error>(Some(
+                        api.import_session_bundle(&workspace, &bundle, mode).await?,
+                    ))
                 }
-                Ok::<_, anyhow::Error>(Some(api.import_session_bundle(&workspace, &bundle, mode).await?))
-            }.await;
-            let _ = weak.update_in(cx, |this, window, cx| {
-                if !this.settings_operation_current(epoch, transport, cx) {
-                    return;
-                }
-                match result {
-                    Ok(Some(imported)) => {
-                        this.handle(WorkbenchIntent::OpenSession(imported.session_id), window, cx);
-                        if imported.warnings.is_some_and(|warnings| !warnings.is_empty()) {
-                            this.transfer_error(agentkit_ui::t!("ak.transfer.import_warning"), cx);
+                .await;
+                let _ = weak.update_in(cx, |this, window, cx| {
+                    if !this.settings_operation_current(epoch, transport, cx) {
+                        return;
+                    }
+                    match result {
+                        Ok(Some(imported)) => {
+                            this.handle(
+                                WorkbenchIntent::OpenSession(imported.session_id),
+                                window,
+                                cx,
+                            );
+                            if imported
+                                .warnings
+                                .is_some_and(|warnings| !warnings.is_empty())
+                            {
+                                this.transfer_error(
+                                    agentkit_ui::t!("ak.transfer.import_warning"),
+                                    cx,
+                                );
+                            }
+                        }
+                        Ok(None) => {}
+                        Err(_) => {
+                            this.transfer_error(agentkit_ui::t!("ak.transfer.import_failed"), cx)
                         }
                     }
-                    Ok(None) => {}
-                    Err(_) => this.transfer_error(agentkit_ui::t!("ak.transfer.import_failed"), cx),
-                }
-            });
-        }));
+                });
+            }));
     }
 
     fn transfer_error(&self, message: String, cx: &mut Context<Self>) {
-        self.view.update(cx, |v, cx| v.show_error(message, false, cx));
+        self.view
+            .update(cx, |v, cx| v.show_error(message, false, cx));
     }
 }

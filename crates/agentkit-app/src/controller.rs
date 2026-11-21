@@ -23,8 +23,6 @@ mod mention_actions;
 mod menu_actions;
 #[path = "navigation.rs"]
 mod navigation;
-#[path = "session_transfer.rs"]
-mod session_transfer;
 #[path = "onboarding.rs"]
 mod onboarding;
 #[cfg(feature = "perf")]
@@ -36,6 +34,8 @@ mod permission_actions;
 mod plan_actions;
 #[path = "recovery/mod.rs"]
 mod recovery;
+#[path = "session_transfer.rs"]
+mod session_transfer;
 #[path = "settings_actions.rs"]
 mod settings_actions;
 #[path = "tool_content.rs"]
@@ -1856,12 +1856,8 @@ impl Render for WorkbenchController {
             .on_action(
                 cx.listener(|this, _: &ExportSession, w, cx| this.export_session(None, w, cx)),
             )
-            .on_action(
-                cx.listener(|this, _: &ImportSession, w, cx| this.choose_import(w, cx)),
-            )
-            .on_action(
-                cx.listener(|this, _: &BranchSession, w, cx| this.branch_current(w, cx)),
-            )
+            .on_action(cx.listener(|this, _: &ImportSession, w, cx| this.choose_import(w, cx)))
+            .on_action(cx.listener(|this, _: &BranchSession, w, cx| this.branch_current(w, cx)))
             .on_action(cx.listener(|this, _: &NewWorkspace, w, cx| {
                 if !w.has_active_dialog(cx)
                     && !w.has_active_sheet(cx)
