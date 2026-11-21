@@ -25,9 +25,7 @@ impl Render for SessionSidebar {
             .on_action(cx.listener(|this, _: &Down, _, cx| this.move_selection(1, cx)))
             .on_action(cx.listener(|this, _: &First, _, cx| this.move_selection(isize::MIN, cx)))
             .on_action(cx.listener(|this, _: &Last, _, cx| this.move_selection(isize::MAX, cx)))
-            .on_action(
-                cx.listener(|this, _: &Open, _, cx| this.selected_intent(SidebarIntent::Open, cx)),
-            )
+            .on_action(cx.listener(|this, _: &Open, _, cx| this.open_selected(cx)))
             .on_action(cx.listener(|this, _: &Rename, _, cx| {
                 this.selected_intent(SidebarIntent::Rename, cx)
             }))
@@ -44,6 +42,14 @@ impl Render for SessionSidebar {
                     cx.emit(SidebarIntent::Delete(a.id.clone()));
                 }
             }))
+            .on_action(cx.listener(|this, a: &row::MutateSession, _, cx| {
+                if this.ready {
+                    cx.emit(SidebarIntent::Command {
+                        session_id: a.id.clone(),
+                        mutation: a.mutation,
+                    });
+                }
+            }))
             .child(self.workspace.clone())
             .child(
                 Button::new("new-session")
@@ -58,12 +64,23 @@ impl Render for SessionSidebar {
                     .key_context("SessionSearch")
                     .on_action(cx.listener(|this, _: &Clear, window, cx| {
                         this.search.update(cx, |s, cx| s.set_value("", window, cx));
+                        this.query_changed(cx);
                     }))
                     .child(
                         Input::new(&self.search)
                             .id("session-search")
                             .disabled(!self.ready),
                     ),
+            )
+            .child(self.view_controls(cx))
+            .when(
+                self.searching
+                    || self.search_error
+                    || self.list.as_ref().is_some_and(|s| {
+                        s.read(cx).plan_error
+                            || (self.view == View::Plans && s.read(cx).plan_loading)
+                    }),
+                |v| v.child(self.search_status(cx)),
             )
             .child(
                 div()
@@ -77,19 +94,29 @@ impl Render for SessionSidebar {
                     .min_h_0()
                     .w_full()
                     .overflow_hidden()
-                    .when(self.rows.is_empty(), |v| {
-                        v.child(
-                            div()
-                                .p_3()
-                                .text_sm()
-                                .text_color(cx.theme().muted_foreground)
-                                .child(if self.search.read(cx).value().is_empty() {
-                                    t!("ak.nav.empty")
-                                } else {
-                                    t!("ak.nav.no_results")
-                                }),
-                        )
-                    })
+                    .when(
+                        self.rows.is_empty()
+                            && !self.searching
+                            && !(self.view == View::Plans
+                                && self.list.as_ref().is_some_and(|s| s.read(cx).plan_loading)),
+                        |v| {
+                            v.child(
+                                div()
+                                    .p_3()
+                                    .text_sm()
+                                    .text_color(cx.theme().muted_foreground)
+                                    .child(
+                                        if self.search.read(cx).value().is_empty()
+                                            && self.view == View::All
+                                        {
+                                            t!("ak.nav.empty")
+                                        } else {
+                                            t!("ak.nav.no_results")
+                                        },
+                                    ),
+                            )
+                        },
+                    )
                     .when(!self.rows.is_empty(), |v| {
                         v.child(
                             v_virtual_list(
@@ -99,9 +126,27 @@ impl Render for SessionSidebar {
                                 |this, range, _, cx| {
                                     range
                                         .filter_map(|i| {
+                                            let row = this.rows.get(i)?.clone();
+                                            if matches!(row, ListRow::Header) {
+                                                return Some(
+                                                    div()
+                                                        .id("content-matches")
+                                                        .test_support()
+                                                        .h_6()
+                                                        .text_xs()
+                                                        .text_color(cx.theme().muted_foreground)
+                                                        .child(t!("ak.nav.content_matches"))
+                                                        .into_any_element(),
+                                                );
+                                            }
                                             let s = this.list.as_ref()?.read(cx);
                                             let session =
-                                                s.model.sessions.get(*this.rows.get(i)?)?.clone();
+                                                s.model.sessions.get(row.index()?)?.clone();
+                                            if let ListRow::Content(_, snippet) = row {
+                                                return Some(
+                                                    this.content_row(&session, &snippet, cx),
+                                                );
+                                            }
                                             let pending = s
                                                 .model
                                                 .awaiting

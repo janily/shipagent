@@ -39,23 +39,26 @@ impl SessionSidebar {
         if self.rows.is_empty() {
             return;
         }
-        let old = self
+        let positions: Vec<_> = self
             .rows
             .iter()
-            .position(|i| {
-                self.list.as_ref().is_some_and(|s| {
-                    Some(&s.read(cx).model.sessions[*i].id) == self.selected.as_ref()
-                })
-            })
+            .enumerate()
+            .filter(|(_, r)| r.index().is_some())
+            .map(|(i, _)| i)
+            .collect();
+        if positions.is_empty() {
+            return;
+        }
+        let old = positions
+            .iter()
+            .position(|i| self.row_id(&self.rows[*i], cx).as_ref() == self.selected.as_ref())
             .unwrap_or(0);
         let ix = (old as isize)
             .saturating_add(delta)
-            .clamp(0, self.rows.len() as isize - 1) as usize;
-        self.selected = self
-            .list
-            .as_ref()
-            .map(|s| s.read(cx).model.sessions[self.rows[ix]].id.clone());
-        self.scroll.scroll_to_item(ix, ScrollStrategy::Top);
+            .clamp(0, positions.len() as isize - 1) as usize;
+        let row = positions[ix];
+        self.selected = self.row_id(&self.rows[row], cx);
+        self.scroll.scroll_to_item(row, ScrollStrategy::Top);
         cx.notify();
     }
     pub(super) fn selected_intent(&self, f: fn(String) -> SidebarIntent, cx: &mut Context<Self>) {

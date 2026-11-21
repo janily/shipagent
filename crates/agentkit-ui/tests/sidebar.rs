@@ -73,7 +73,12 @@ fn title_search_and_escape_keep_delete_from_leaking_out_of_input(cx: &mut TestAp
         assert!(w.try_find("session:s29").is_some());
     })
     .unwrap();
-    assert!(events.borrow().is_empty());
+    assert!(
+        events
+            .borrow()
+            .iter()
+            .all(|e| matches!(e, SidebarIntent::Search { .. }))
+    );
 }
 #[gpui_kit::test]
 fn hidden_and_archived_are_excluded_and_badges_update_on_canonical_notification(
@@ -268,5 +273,244 @@ fn workspace_menu_dispatches_to_its_owner_from_search_focus(cx: &mut TestAppCont
             .borrow()
             .iter()
             .any(|e| matches!(e,SidebarIntent::SwitchWorkspace(id)if id=="other"))
+    );
+}
+
+#[gpui_kit::test]
+fn six_native_views_use_live_counts_and_do_not_move_flagged_rows_to_the_top(
+    cx: &mut TestAppContext,
+) {
+    let (w, _, list, _) = open(cx, 6);
+    cx.update(|cx| {
+        list.update(cx, |s, cx| {
+            s.model.sessions[0].is_flagged = Some(true);
+            s.model.sessions[1].has_unread = Some(true);
+            s.model.sessions[2].is_processing = true;
+            s.model.sessions[3].last_message_role = Some(g::SessionLastMessageRole::Plan);
+            s.model.plans.insert("s3".into());
+            s.model.sessions[4].is_archived = Some(true);
+            s.model.sessions[5].hidden = Some(true);
+            cx.notify();
+        })
+    });
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        assert_eq!(w.find("view:0").label(), Some("All 4"));
+        assert_eq!(w.find("view:1").label(), Some("Unread 1"));
+        assert!(w.find("session:s3").bounds().top() < w.find("session:s0").bounds().top());
+        for (view, id) in [(1, "s1"), (2, "s0"), (3, "s2"), (4, "s3"), (5, "s4")] {
+            w.click(format!("view:{view}"), cx);
+            w.render_frame(cx);
+            assert!(w.try_find(format!("session:{id}")).is_some());
+            assert!(w.try_find("session:s5").is_none());
+        }
+    })
+    .unwrap();
+}
+fn search_request(events: &Rc<RefCell<Vec<SidebarIntent>>>) -> (u64, String) {
+    events
+        .borrow()
+        .iter()
+        .rev()
+        .find_map(|e| {
+            if let SidebarIntent::Search { request, query } = e {
+                Some((*request, query.clone()))
+            } else {
+                None
+            }
+        })
+        .unwrap()
+}
+fn hit(id: &str, snippet: &str) -> Vec<g::SessionSearchResult> {
+    serde_json::from_value(serde_json::json!([{"sessionId":id,"matchCount":1,"matches":[{"sessionId":id,"lineNumber":2,"snippet":snippet}]}])).unwrap()
+}
+#[gpui_kit::test]
+fn body_search_ignores_stale_results_groups_snippets_and_opens_with_keyboard(
+    cx: &mut TestAppContext,
+) {
+    let (w, v, _, events) = open(cx, 8);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("session-search", cx);
+        w.input("needle", cx);
+    })
+    .unwrap();
+    let (old, query) = search_request(&events);
+    cx.update_window(w, |_, w, cx| {
+        w.press("backspace", cx);
+        w.input("X", cx);
+    })
+    .unwrap();
+    let (new, new_query) = search_request(&events);
+    cx.update(|cx| {
+        v.update(cx, |v, cx| {
+            v.search_results(old, &query, Ok(hit("s6", "stale")), cx);
+            v.search_results(new, &new_query, Ok(hit("s2", "needle content match")), cx);
+        })
+    });
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        assert!(w.try_find("content-session:s6").is_none());
+        assert!(w.try_find("content-matches").is_some());
+        assert!(w.try_find("content-session:s2").is_some());
+        assert_eq!(
+            w.find("content-session:s2").label(),
+            Some("Session 2 · needle content match")
+        );
+        w.click("content-session:s2", cx);
+        w.press("enter", cx);
+        w.click("session-search", cx);
+        w.press("escape", cx);
+    })
+    .unwrap();
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        assert!(w.try_find("content-matches").is_none());
+        assert!(w.try_find("session:s7").is_some());
+    })
+    .unwrap();
+    assert_eq!(events.borrow().iter().filter(|e|matches!(e,SidebarIntent::OpenMatch {session_id,query} if session_id=="s2" && query==&new_query)).count(),2);
+}
+#[gpui_kit::test]
+fn body_failure_retry_and_reconnect_invalidate_inflight_results(cx: &mut TestAppContext) {
+    let (w, v, _, events) = open(cx, 5);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("session-search", cx);
+        w.input("needle", cx);
+    })
+    .unwrap();
+    let (old, q) = search_request(&events);
+    cx.update(|cx| {
+        v.update(cx, |v, cx| {
+            v.search_results(old, &q, Err("offline".into()), cx)
+        })
+    });
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("search-retry", cx);
+    })
+    .unwrap();
+    let (retry, _) = search_request(&events);
+    assert_ne!(old, retry);
+    cx.update(|cx| {
+        v.update(cx, |v, cx| {
+            v.set_context(None, false, cx);
+            v.set_context(None, true, cx);
+            v.search_results(retry, &q, Ok(hit("s1", "stale")), cx);
+        })
+    });
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        assert!(w.try_find("content-session:s1").is_none());
+    })
+    .unwrap();
+}
+#[gpui_kit::test]
+fn title_and_body_hits_merge_snippet_and_keep_the_jump_action(cx: &mut TestAppContext) {
+    let (w, v, _, events) = open(cx, 4);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("session-search", cx);
+        w.input("Session 2", cx);
+    })
+    .unwrap();
+    let (request, query) = search_request(&events);
+    cx.update(|cx| {
+        v.update(cx, |v, cx| {
+            v.search_results(request, &query, Ok(hit("s2", "body snippet")), cx)
+        })
+    });
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        assert!(w.try_find("session:s2").is_some());
+        assert!(w.try_find("content-session:s2").is_none());
+        w.click("session:s2", cx);
+        w.press("enter", cx);
+    })
+    .unwrap();
+    assert_eq!(
+        events
+            .borrow()
+            .iter()
+            .filter(|e| matches!(e,SidebarIntent::OpenMatch {session_id,..} if session_id=="s2"))
+            .count(),
+        2
+    );
+}
+#[gpui_kit::test]
+fn replacing_workspace_binding_invalidates_old_query_results(cx: &mut TestAppContext) {
+    let (w, v, list, events) = open(cx, 3);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("session-search", cx);
+        w.input("needle", cx);
+    })
+    .unwrap();
+    let (old, q) = search_request(&events);
+    cx.update(|cx| {
+        list.update(cx, |s, cx| {
+            let mut other = session(9, 9);
+            other.workspace_id = "other".into();
+            s.model.sessions.push(other);
+            cx.notify();
+        });
+        let workspace = cx.new(|_| WorkspaceStore {
+            id: "other".into(),
+            ..Default::default()
+        });
+        v.update(cx, |v, cx| {
+            v.bind_workspace(workspace, cx);
+            v.search_results(old, &q, Ok(hit("s9", "obsolete scope")), cx);
+        });
+    });
+    assert_ne!(search_request(&events).0, old);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        assert!(w.try_find("content-session:s9").is_none());
+    })
+    .unwrap();
+}
+
+#[gpui_kit::test]
+fn selecting_plans_requests_an_explicit_readiness_refresh(cx: &mut TestAppContext) {
+    let (w, _, _, events) = open(cx, 2);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("view:4", cx);
+    })
+    .unwrap();
+    assert!(
+        events
+            .borrow()
+            .iter()
+            .any(|e| matches!(e, SidebarIntent::RetryPlans))
+    );
+}
+#[gpui_kit::test]
+fn backend_snippet_limit_does_not_hide_matching_sessions(cx: &mut TestAppContext) {
+    let (w, v, _, events) = open(cx, 3);
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        w.click("session-search", cx);
+        w.input("needle", cx);
+    })
+    .unwrap();
+    let (request, query) = search_request(&events);
+    let hits =
+        serde_json::from_value(serde_json::json!([{"sessionId":"s1","matchCount":4,"matches":[]}]))
+            .unwrap();
+    cx.update(|cx| v.update(cx, |v, cx| v.search_results(request, &query, Ok(hits), cx)));
+    cx.update_window(w, |_, w, cx| {
+        w.render_frame(cx);
+        assert!(w.try_find("content-session:s1").is_some());
+        w.click("content-session:s1", cx);
+    })
+    .unwrap();
+    assert!(
+        events
+            .borrow()
+            .iter()
+            .any(|e| matches!(e,SidebarIntent::OpenMatch {session_id,..} if session_id=="s1"))
     );
 }

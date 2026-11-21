@@ -516,6 +516,50 @@ impl WorkbenchView {
             })
             .unwrap_or_default()
     }
+    /// Deliver a version-checked sidebar content search.
+    pub fn search_results(
+        &mut self,
+        request: u64,
+        query: &str,
+        result: Result<Vec<agentkit_protocol::generated::SessionSearchResult>, String>,
+        cx: &mut Context<Self>,
+    ) {
+        self.sidebar_view
+            .update(cx, |s, cx| s.search_results(request, query, result, cx));
+    }
+    /// Locate the first matching canonical message in the current session.
+    pub fn jump_to_match(&mut self, session: &str, query: &str, cx: &mut Context<Self>) -> bool {
+        let Some(store) = &self.state else {
+            return false;
+        };
+        if store.read(cx).model.state.session.id != session {
+            return false;
+        }
+        let query = query.trim().to_lowercase();
+        if query.is_empty() {
+            return false;
+        }
+        let model = &store.read(cx).model;
+        let turn = model
+            .state
+            .session
+            .messages
+            .iter()
+            .filter(|m| {
+                m.hidden != Some(true)
+                    && m.is_intermediate != Some(true)
+                    && m.content.to_lowercase().contains(&query)
+            })
+            .find_map(|m| model.turn_index(&m.id));
+        if let Some(turn) = turn {
+            self.scroll.update(cx, |s, cx| {
+                s.scroll_to_item(turn, cx);
+            });
+            true
+        } else {
+            false
+        }
+    }
     /// Freeze native text input synchronously during the ordinary quit drain.
     pub fn draft_closing(&mut self, closing: bool, cx: &mut Context<Self>) {
         self.draft_closing = closing;

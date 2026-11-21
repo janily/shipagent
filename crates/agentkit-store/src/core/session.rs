@@ -630,9 +630,12 @@ impl SessionSummaries {
         };
         use g::SessionEvent as E;
         match e {
-            E::UserMessageEvent(_) | E::TextDeltaEvent(_) | E::ToolStartEvent(_) => {
-                s.is_processing = true
+            E::UserMessageEvent(_) => {
+                self.plans.remove(id);
+                s.last_message_role = Some(g::SessionLastMessageRole::User);
+                s.is_processing = true;
             }
+            E::TextDeltaEvent(_) | E::ToolStartEvent(_) => s.is_processing = true,
             E::CompleteEvent(_)
             | E::InterruptedEvent(_)
             | E::ErrorEvent(_)
@@ -647,6 +650,7 @@ impl SessionSummaries {
                 }
             }
             E::PlanSubmittedEvent(_) => {
+                s.last_message_role = Some(g::SessionLastMessageRole::Plan);
                 self.plans.insert(id.into());
             }
             E::TitleGeneratedEvent(e) => s.name = Some(e.title.clone()),
