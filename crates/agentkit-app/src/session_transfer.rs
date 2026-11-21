@@ -248,6 +248,6 @@ impl WorkbenchController {
 
     fn transfer_error(&self, message: String, cx: &mut Context<Self>) {
         self.view
-            .update(cx, |v, cx| v.show_error(message, false, cx));
+            .update(cx, |v, cx| v.show_operation_notice(message, cx));
     }
 }

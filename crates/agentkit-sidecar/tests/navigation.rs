@@ -72,10 +72,7 @@ fn real_session_lifecycle_and_workspace_switch_remove_reopen_keep_data() {
         assert_ne!(moved.session_id, session.id);
         assert_ne!(fork.session_id, moved.session_id);
         let copy = api.session_generated(&fork.session_id).await.unwrap();
-        assert_eq!(
-            copy.parent_session_id.as_deref(),
-            Some(session.id.as_str())
-        );
+        assert_eq!(copy.parent_session_id.as_deref(), Some(session.id.as_str()));
         assert_eq!(copy.name.as_deref(), Some("Renamed 原生会话"));
         let moved_session = api.session_generated(&moved.session_id).await.unwrap();
         assert_eq!(moved_session.parent_session_id, session.parent_session_id);
