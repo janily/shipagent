@@ -1,4 +1,3 @@
-use chrono::{Datelike, Timelike};
 /// Ported from mkagent v0.2.6 packages/ui/src/components/chat/turn-utils.ts (formatDuration).
 pub fn format_duration(ms: f64) -> String {
     if !ms.is_finite() || ms < 0.0 {
@@ -33,14 +32,21 @@ pub fn format_tokens(count: f64) -> String {
 /// Ported from mkagent v0.2.6 packages/ui/src/components/chat/message-timestamp.ts.
 /// Caller supplies the local UTC offset at this instant (including DST); no global timezone IO.
 pub fn format_message_timestamp(timestamp_ms: i64, utc_offset_seconds: i32) -> Option<String> {
-    chrono::FixedOffset::east_opt(utc_offset_seconds)?;
-    let date = chrono::DateTime::from_timestamp_millis(timestamp_ms)?
-        .naive_utc()
-        .checked_add_signed(chrono::TimeDelta::seconds(i64::from(utc_offset_seconds)))?;
+    // Preserve the range accepted by the previous formatter at both ends.
+    const SUPPORTED_YEARS: std::ops::RangeInclusive<i32> = -262_143..=262_142;
+    if !(-86_399..=86_399).contains(&utc_offset_seconds) {
+        return None;
+    }
+    let utc = time::OffsetDateTime::from_unix_timestamp_nanos(i128::from(timestamp_ms) * 1_000_000)
+        .ok()?;
+    let date = utc.checked_add(time::Duration::seconds(i64::from(utc_offset_seconds)))?;
+    if !SUPPORTED_YEARS.contains(&utc.year()) || !SUPPORTED_YEARS.contains(&date.year()) {
+        return None;
+    }
     Some(format!(
         "{}-{:02}-{:02} {:02}:{:02}:{:02}",
         date.year(),
-        date.month(),
+        date.month() as u8,
         date.day(),
         date.hour(),
         date.minute(),

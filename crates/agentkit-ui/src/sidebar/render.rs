@@ -50,6 +50,11 @@ impl Render for SessionSidebar {
                     });
                 }
             }))
+            .on_action(cx.listener(|this, a: &row::ExportSession, _, cx| {
+                if this.ready {
+                    cx.emit(SidebarIntent::Export(a.id.clone()));
+                }
+            }))
             .child(self.workspace.clone())
             .child(
                 Button::new("new-session")

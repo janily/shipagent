@@ -28,6 +28,10 @@ fn invalid_timestamp_ranges_or_offsets_return_none() {
     assert!(format_message_timestamp(i64::MAX, 0).is_none());
     assert!(format_message_timestamp(i64::MIN, 0).is_none());
     // Chrono's last representable UTC date cannot be projected beyond its calendar range.
+    assert_eq!(
+        format_message_timestamp(8210266876799999, 0).as_deref(),
+        Some("262142-12-31 23:59:59")
+    );
     assert!(format_message_timestamp(8210266876799999, 3600).is_none());
 }
 #[test]

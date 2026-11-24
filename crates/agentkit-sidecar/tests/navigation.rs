@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used)]
 //! Real typed sidebar operations and workspace binding isolation against the bundled backend.
-use agentkit_client::api::WorkbenchApi;
+use agentkit_client::api::{WorkbenchApi, types::ImportMode};
 use agentkit_sidecar::{SidecarConfig, SidecarHandle};
 use std::time::Duration;
 #[test]
@@ -57,6 +57,28 @@ fn real_session_lifecycle_and_workspace_switch_remove_reopen_keep_data() {
                 .as_deref(),
             Some("Renamed 原生会话")
         );
+        let bundle = api.export_session_bundle(&session.id).await.unwrap();
+        let serialized = serde_json::to_string(&bundle).unwrap();
+        let portable = serde_json::from_str(&serialized).unwrap();
+        let fork = api
+            .import_session_bundle(&workspace.id, &portable, ImportMode::Fork)
+            .await
+            .unwrap();
+        let moved = api
+            .import_session_bundle(&workspace.id, &portable, ImportMode::Move)
+            .await
+            .unwrap();
+        assert_ne!(fork.session_id, session.id);
+        assert_ne!(moved.session_id, session.id);
+        assert_ne!(fork.session_id, moved.session_id);
+        let copy = api.session_generated(&fork.session_id).await.unwrap();
+        assert_eq!(copy.parent_session_id.as_deref(), Some(session.id.as_str()));
+        assert_eq!(copy.name.as_deref(), Some("Renamed 原生会话"));
+        let moved_session = api.session_generated(&moved.session_id).await.unwrap();
+        assert_eq!(moved_session.parent_session_id, session.parent_session_id);
+        assert_eq!(moved_session.name, copy.name);
+        api.delete_session(&fork.session_id).await.unwrap();
+        api.delete_session(&moved.session_id).await.unwrap();
         let list = api.sessions_generated().await.unwrap();
         assert!(list.iter().all(|s| s.workspace_id == workspace.id));
         assert!(list.iter().all(|s| s.id != original_session.id));

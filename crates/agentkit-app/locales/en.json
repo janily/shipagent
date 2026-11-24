@@ -267,8 +267,8 @@
   "ak.menu.actual_size": "Actual size",
   "ak.menu.new_window": "New window (phase 2)",
   "ak.menu.new_workspace": "New workspace…",
-  "ak.menu.import": "Import session… (phase 2)",
-  "ak.menu.export": "Export session… (phase 2)",
+  "ak.menu.import": "Import session…",
+  "ak.menu.export": "Export session…",
   "ak.menu.logs": "Open logs (phase 2)",
   "ak.menu.diagnostics": "Export diagnostics… (phase 2)",
   "ak.menu.licenses": "Open-source licenses",
@@ -286,7 +286,7 @@
   "ak.menu.select_all": "Select all",
   "ak.menu.pin": "Pin (phase 2)",
   "ak.menu.archive": "Archive (phase 2)",
-  "ak.menu.branch": "Branch session (phase 2)",
+  "ak.menu.branch": "Branch from latest message",
   "ak.menu.update": "Check for updates… (phase 3)",
   "ak.menu.hide": "Hide",
   "ak.menu.invalid_keymap": "Could not load keymap.json. Default shortcuts are active; your file was preserved.",
@@ -431,5 +431,11 @@
   "ak.nav.match_missing": "Could not locate the matching message.",
   "ak.nav.plans_loading": "Loading plan reviews…",
   "ak.nav.plans_failed": "Could not refresh plan reviews.",
-  "ak.nav.snippet_missing": "Snippet unavailable; open to locate the match."
+  "ak.nav.snippet_missing": "Snippet unavailable; open to locate the match.",
+  "ak.transfer.export_failed": "Could not export the session.",
+  "ak.transfer.import_description": "Choose how to import a session file into this workspace. Move preserves the original branch relationship. The source session stays in its original application.",
+  "ak.transfer.fork": "Import as copy",
+  "ak.transfer.move": "Import as move",
+  "ak.transfer.import_warning": "The session was imported with warnings.",
+  "ak.transfer.import_failed": "Could not import the session file."
 }

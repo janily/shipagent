@@ -627,6 +627,11 @@ impl WorkbenchView {
         }
         cx.notify();
     }
+    /// Report an operation result without changing the active conversation's load state.
+    pub fn show_operation_notice(&mut self, message: String, cx: &mut Context<Self>) {
+        self.error = Some(message);
+        cx.notify();
+    }
     /// Show session loading without replacing its message history with false content.
     pub fn set_loading(&mut self, cx: &mut Context<Self>) {
         self.permission_prompt.update(cx, |p, cx| p.suspend(cx));

@@ -23,6 +23,11 @@ pub(super) struct MutateSession {
     pub id: String,
     pub mutation: Mutation,
 }
+#[derive(Clone, PartialEq, Deserialize, Action)]
+#[action(namespace=navigation,no_json)]
+pub(super) struct ExportSession {
+    pub id: String,
+}
 fn commands(
     mut menu: PopupMenu,
     id: &str,
@@ -56,7 +61,10 @@ fn commands(
             }),
         );
     }
-    menu
+    menu.menu(
+        t!("ak.menu.export"),
+        Box::new(ExportSession { id: id.into() }),
+    )
 }
 impl SessionSidebar {
     pub(super) fn row(

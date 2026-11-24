@@ -267,8 +267,8 @@
   "ak.menu.actual_size": "实际大小",
   "ak.menu.new_window": "新建窗口（阶段 2）",
   "ak.menu.new_workspace": "新建工作区…",
-  "ak.menu.import": "导入会话…（阶段 2）",
-  "ak.menu.export": "导出会话…（阶段 2）",
+  "ak.menu.import": "导入会话…",
+  "ak.menu.export": "导出会话…",
   "ak.menu.logs": "打开日志目录（阶段 2）",
   "ak.menu.diagnostics": "导出诊断信息…（阶段 2）",
   "ak.menu.licenses": "开源许可",
@@ -286,7 +286,7 @@
   "ak.menu.select_all": "全选",
   "ak.menu.pin": "置顶（阶段 2）",
   "ak.menu.archive": "归档（阶段 2）",
-  "ak.menu.branch": "从此分支（阶段 2）",
+  "ak.menu.branch": "从最新消息分支",
   "ak.menu.update": "检查更新…（阶段 3）",
   "ak.menu.hide": "隐藏",
   "ak.menu.invalid_keymap": "无法读取 keymap.json，已恢复默认快捷键；原文件已保留。",
@@ -431,5 +431,11 @@
   "ak.nav.match_missing": "未能定位到匹配的消息。",
   "ak.nav.plans_loading": "正在读取待审计划…",
   "ak.nav.plans_failed": "待审计划更新失败。",
-  "ak.nav.snippet_missing": "片段未提供，打开定位匹配消息。"
+  "ak.nav.snippet_missing": "片段未提供，打开定位匹配消息。",
+  "ak.transfer.export_failed": "无法导出会话。",
+  "ak.transfer.import_description": "选择如何将会话文件导入当前工作区。移动会保留原有分支关系，源会话仍保存在原应用中。",
+  "ak.transfer.fork": "复制导入",
+  "ak.transfer.move": "移动导入",
+  "ak.transfer.import_warning": "会话已导入，后端返回了警告。",
+  "ak.transfer.import_failed": "无法导入会话文件。"
 }
